@@ -1,0 +1,10 @@
+# ruff.toml — DVA-CBS | Projeto Diógenes
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]  # linhas longas — controladas pelo formatter
+
+[lint.isort]
+known-first-party = ["diogenes"]

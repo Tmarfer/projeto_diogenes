@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -m diogenes --help)",
+      "Bash(C:\\\\Users\\\\marquesf\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\Scripts\\\\diogenes.exe --help)",
+      "Bash(python -c ' *)",
+      "Bash(find \"C:\\\\Users\\\\marquesf\\\\OneDrive - Tribunal de Contas da União\\\\Documents\\\\Projeto_Diogenes\" -type d -name \"MOD_SINT_001\" 2>/dev/null || echo \"not found via find\")",
+      "Bash(PYTHONUTF8=1 python -m diogenes.cli.app init)",
+      "Bash(PYTHONUTF8=1 python -m pytest tests/ -q)"
+    ]
+  }
+}

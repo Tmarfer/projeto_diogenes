@@ -1,0 +1,86 @@
+# runtime.yaml — DVA-CBS | Projeto Diógenes
+# TC 015.848/2025-6 | TCU / SecexContas
+#
+# Parâmetros operacionais do sistema. Raramente editado.
+# A variável de ambiente DIOGENES_WORKSPACE sobrescreve workspace.path.
+#
+# Referência normativa: RNF-PORT-04 (PRD v0.1), Bloco 4.4 (SDD v0.1)
+
+workspace:
+  # Caminho do workspace. Sobrescrito por DIOGENES_WORKSPACE se definida.
+  path: ./workspace
+  # Profundidade máxima para compatibilidade com OneDrive (máx. 260 chars no Windows)
+  max_path_depth: 8
+
+ciclo:
+  # Número máximo de rodadas de revisão por fase (Artigo 8 da Constituição)
+  # Valor fixo: 2. Alteração exige revisão constitucional.
+  max_rodadas_revisao: 2
+
+  # Prefixos dos arquivos da Stranger's Room (não alterar)
+  stranger_room_prefixos:
+    apresentacao: "01"
+    critica_r1: "02"
+    resposta_r1: "03"
+    critica_r2: "04"
+    resposta_r2: "05"
+    decisao_final: "99"
+
+  # Estados válidos do ciclo (enum CycleState em orchestrator/states.py)
+  estados:
+    - PREPARADO
+    - AGUARDANDO_CONFIRMACAO_MANIFESTO
+    - EM_EXECUCAO_WATSON
+    - AGUARDANDO_REVISAO_MYCROFT_WATSON
+    - AGUARDANDO_DECISAO_LESTRADE_ALERTA_CRITICO
+    - EM_EXECUCAO_SHERLOCK
+    - AGUARDANDO_REVISAO_MYCROFT_SHERLOCK
+    - AGUARDANDO_VERIFICACAO_SAIDA
+    - AGUARDANDO_CHANCELA_LESTRADE
+    - ENCERRADO_CHANCELADO
+    - PAUSADO_LESTRADE
+    - ABORTADO_FALHA_AGENTE
+    - ABORTADO_LESTRADE
+
+motor_saida:
+  # Nomes dos agentes e variações a varrer no output (RF-MV)
+  padroes_agentes:
+    - "Mycroft Holmes"
+    - "Mycroft"
+    - "Dr. Watson"
+    - "Dr. John Watson"
+    - "John Watson"
+    - "Watson"
+    - "Sherlock Holmes"
+    - "Sherlock"
+    - "Inspetor Lestrade"
+    - "Lestrade"
+  # Padrões de cargo em contexto identificador (regex)
+  padroes_cargo_identificador:
+    - "Auditor Chefe (consolidou|elaborou|revisou|identificou|concluiu)"
+    - "Auditor de Integridade Técnica (analisou|verificou|identificou|traduziu)"
+    - "Auditor de Validação Metodológica (aplicou|identificou|concluiu|classificou)"
+    - "Auditor Responsável (recebeu|confirmou|chancelou|encaminhou)"
+  # Estruturas internas que não devem aparecer em documentos externos
+  padroes_estruturas_internas:
+    - "Stranger's Room"
+    - "Sala dos Estrangeiros"
+    - "Clube Diógenes"
+    - "Projeto Diógenes"
+    - "audit_index"
+    - "Motor de Start"
+    - "Motor de Saída"
+    - "stranger_room"
+  # Regex para identificadores de ciclo (não devem vazar para o output)
+  regex_cycle_id: 'MOD_\w+_A\d+_\d{8}T\d{6}Z'
+
+persistencia:
+  audit_index_filename: audit_index.csv
+  encoding: utf-8
+  timestamp_format: "%Y%m%dT%H%M%SZ"
+  timestamp_iso_format: "%Y-%m-%dT%H:%M:%SZ"
+
+observabilidade:
+  log_level: INFO
+  mostrar_progresso_llm: true
+  progresso_intervalo_segundos: 60
