@@ -15,7 +15,6 @@ Referência normativa: RNF-PORT-04 (PRD v0.1), Bloco 4.5 (SDD v0.1)
 from __future__ import annotations
 
 import os
-import sys
 from functools import lru_cache
 from pathlib import Path
 
@@ -24,7 +23,6 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, field_validator
 
 from diogenes.models import AgentSpec
-
 
 # ---------------------------------------------------------------------------
 # Modelos de configuração

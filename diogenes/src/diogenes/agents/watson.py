@@ -6,15 +6,16 @@ Constrói prompts com heartbeat injetado, chama LLM, parseia output.
 Referência normativa: RF-WA-01 a RF-WA-10 (PRD v0.1), Bloco 9.3 (SDD v0.1)
 """
 from __future__ import annotations
+
 from pathlib import Path
 
-from diogenes.config import AgentSpec
-from diogenes.models import LLMCall, LLMMessage, WatsonOutput, CycleManifest
-from diogenes.llm.base import LLMClient
-from diogenes.llm.seed import calcular_seed
-from diogenes.llm.call_id import gerar_call_id
 from diogenes.agents.file_prep import preparar_arquivo
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
+from diogenes.config import AgentSpec
+from diogenes.llm.base import LLMClient
+from diogenes.llm.call_id import gerar_call_id
+from diogenes.llm.seed import calcular_seed
+from diogenes.models import CycleManifest, LLMCall, LLMMessage, WatsonOutput
 
 
 class WatsonAgent:
@@ -80,17 +81,28 @@ class WatsonAgent:
         return self._parsear_output(resp.content)
 
     def responder_critica(
-        self, critica: str, output_anterior: WatsonOutput, rodada: int
+        self,
+        critica: str,
+        output_anterior: WatsonOutput,
+        rodada: int,
+        proximo_id_alerta: str = "",
     ) -> WatsonOutput:
         call_type = f"resposta_r{rodada}"
         hb = self._heartbeat.get_section(call_type)
 
-        user_base = (
+        preamble_partes: list[str] = []
+        if proximo_id_alerta:
+            preamble_partes.append(
+                f"**Próximo ID de alerta disponível:** `{proximo_id_alerta}`"
+            )
+
+        conteudo_base = (
             f"## Seu output anterior\n\n{output_anterior.texto}\n\n"
             f"---\n\n## Crítica de Mycroft\n\n{critica}\n\n"
             f"---\n\nResponda a cada ponto da crítica. Acate com correção "
             f"ou sustente com evidência localizada no consolidado."
         )
+        user_base = "\n\n".join(preamble_partes + [conteudo_base])
         user = injetar_heartbeat(hb, user_base)
 
         resp = self._llm.complete(LLMCall(
@@ -148,6 +160,6 @@ def _extrair_secoes(content: str) -> dict:
 
 def _contar_criticos(tabela: str) -> int:
     return sum(
-        1 for l in tabela.splitlines()
-        if "CRÍTICA" in l.upper() or "CRITICA" in l.upper()
+        1 for linha in tabela.splitlines()
+        if "CRÍTICA" in linha.upper() or "CRITICA" in linha.upper()
     )

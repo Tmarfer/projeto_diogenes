@@ -1,13 +1,18 @@
 """cli/commands/confirm_manifest.py — diogenes confirm-manifest"""
 from __future__ import annotations
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
+
+import frontmatter as fm
 import typer
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
+from diogenes.config import ConfigError, get_config
+from diogenes.models import CycleManifest, InputFileInfo
+from diogenes.orchestrator.orchestrator import Orchestrator
+from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.manifest import update_manifesto_confirmado
-from diogenes.orchestrator.states import CycleState
-from diogenes.orchestrator.orchestrator import Orchestrator
 
 app = typer.Typer()
 
@@ -19,19 +24,22 @@ def confirm_manifest(
     try:
         cfg = get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     audit = AuditIndex(cfg.workspace.path)
     record = audit.get_cycle(cycle)
     if record is None:
-        display.erro(f"Ciclo '{cycle}' não encontrado."); raise typer.Exit(1)
+        display.erro(f"Ciclo '{cycle}' não encontrado.")
+        raise typer.Exit(1)
 
     if record["status"] != CycleState.PREPARADO.value:
         display.erro(
             f"Ciclo '{cycle}' está em '{record['status']}', não PREPARADO."
-        ); raise typer.Exit(1)
+        )
+        raise typer.Exit(1)
 
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     manifest_path = cfg.workspace.path / "cycles" / cycle / "manifest.md"
     if manifest_path.exists():
         update_manifesto_confirmado(manifest_path, now_utc)
@@ -40,13 +48,7 @@ def confirm_manifest(
     display.passo_ok(f"Manifesto confirmado: {cycle}")
     display.passo_ok("Acionando Orquestrador...")
 
-    # Reconstruir CycleManifest a partir do arquivo
-    import frontmatter as fm
-    from diogenes.models import CycleManifest, InputFileInfo
-    from pathlib import Path
-
-    post = fm.load(str(manifest_path))
-    # Manifesto simplificado para Sprint 2 — Sprint 3 lerá campos completos
+    fm.load(str(manifest_path))
     cycle_dir = cfg.workspace.path / "cycles" / cycle
     inputs_dir = cycle_dir / "inputs"
     input_files = [
@@ -81,7 +83,6 @@ def confirm_manifest(
             display.passo_ok(f"Próximo: diogenes verify-output --cycle {cycle}")
             return
         if resultado == "":
-            # Pausa ou aguardando próximo sprint
             record2 = audit.get_cycle(cycle)
             status = record2["status"] if record2 else "?"
             if status == CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA.value:
@@ -93,7 +94,6 @@ def confirm_manifest(
             else:
                 display.passo_ok(f"Fase Watson concluída. Status: {status}")
                 display.aviso(
-                    "Fase Sherlock será implementada no Sprint 4. "
                     f"Use `diogenes status --cycle {cycle}` para acompanhar."
                 )
         else:
@@ -101,4 +101,4 @@ def confirm_manifest(
 
     except Exception as e:
         display.erro(f"Erro no Orquestrador: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e

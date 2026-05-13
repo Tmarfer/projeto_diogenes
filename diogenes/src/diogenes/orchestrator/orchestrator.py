@@ -7,21 +7,23 @@ Limite de duas rodadas (Art. 8): garantido por construção via MAX_RODADAS.
 Referência normativa: RF-OR-01 a RF-OR-11 (PRD v0.1), Bloco 8 (SDD v0.1)
 """
 from __future__ import annotations
+
+import re
 from pathlib import Path
 
+from diogenes.agents.mycroft import MycrooftAgent
+from diogenes.agents.sherlock import SherlockAgent
+from diogenes.agents.watson import WatsonAgent
 from diogenes.config import get_config
+from diogenes.llm.base import get_llm_client
+from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
 from diogenes.models import CycleManifest, DecisaoFinal
-from diogenes.orchestrator.states import CycleState, TRANSICOES_VALIDAS, InvalidTransitionError
 from diogenes.orchestrator.events import EventLogger
-from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.orchestrator.exceptions import OrchestratorError
+from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, InvalidTransitionError
+from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.workspace import WorkspaceManager
-from diogenes.llm.base import get_llm_client
-from diogenes.llm.exceptions import LLMCallError, LLMTimeoutError, LLMCostLimitError
-from diogenes.agents.watson import WatsonAgent
-from diogenes.agents.sherlock import SherlockAgent
-from diogenes.agents.mycroft import MycrooftAgent
 
 
 class Orchestrator:
@@ -56,9 +58,7 @@ class Orchestrator:
     # ── Ponto de entrada ─────────────────────────────────────
 
     def executar(self, manifest: CycleManifest) -> str:
-        """
-        Executa o ciclo completo. Retorna caminho do output ou "" se pausado.
-        """
+        """Executa o ciclo completo. Retorna caminho do output ou "" se pausado."""
         self._events.log("CYCLE_STARTED", details={"cycle_id": manifest.cycle_id})
         try:
             decisao_watson = self._executar_fase_watson(manifest)
@@ -98,10 +98,15 @@ class Orchestrator:
 
         tasks = self._mycroft.definir_tasks_watson(manifest)
 
+        # Tracker de ID de alerta — contador acumula entre todas as chamadas de Watson
+        alert_counter = 1
+        proximo_id = self._proximo_id_alerta(manifest.module_id, alert_counter)
+
         inputs_dir = self._cycle_dir / "inputs"
-        output_watson = self._watson.analisar(inputs_dir, manifest, tasks)
+        output_watson = self._watson.analisar(inputs_dir, manifest, tasks, proximo_id)
         self._sr.escrever_apresentacao(fase=fase, author="watson",
                                         content=output_watson.texto)
+        alert_counter += output_watson.critical_alerts_count
 
         rodada = 0
         while rodada < self.MAX_RODADAS:
@@ -115,10 +120,14 @@ class Orchestrator:
                 break
 
             rodada += 1
+            proximo_id = self._proximo_id_alerta(manifest.module_id, alert_counter)
             self._sr.escrever_critica(fase, rodada, "mycroft", avaliacao.critica)
             self._transicionar(CycleState.EM_EXECUCAO_WATSON)
-            output_watson = self._watson.responder_critica(avaliacao.critica, output_watson, rodada)
+            output_watson = self._watson.responder_critica(
+                avaliacao.critica, output_watson, rodada, proximo_id
+            )
             self._sr.escrever_resposta(fase, rodada, "watson", output_watson.texto)
+            alert_counter += output_watson.critical_alerts_count
             if rodada == self.MAX_RODADAS:
                 break
 
@@ -234,12 +243,11 @@ class Orchestrator:
             raise InvalidTransitionError(atual, destino)
         self._audit.update_status(self._cycle_id, destino.value)
 
-    def _proximo_id_alerta(self, module_id: str) -> str:
-        """Deriva o prefixo W{dígitos}-001 para Watson a partir do module_id."""
-        import re as _re
-        nums = _re.findall(r'\d+', module_id)
+    def _proximo_id_alerta(self, module_id: str, counter: int) -> str:
+        """Gera ID de alerta sequencial: W{codigo_modulo}-{counter:03d}."""
+        nums = re.findall(r'\d+', module_id)
         codigo = nums[-1].zfill(3) if nums else "000"
-        return f"W{codigo}-001"
+        return f"W{codigo}-{counter:03d}"
 
     def _abortar_por_falha(self, exc: Exception, fase: str) -> None:
         try:

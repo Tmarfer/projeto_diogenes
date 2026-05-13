@@ -1,14 +1,16 @@
 """tests/unit/test_motor_saida.py"""
 from __future__ import annotations
-from pathlib import Path
+
+from datetime import UTC
+
 import pytest
+
 from diogenes.config import get_config
-from diogenes.motors.motor_saida import MotorSaida, _classificar_posicao, _extrair_contexto
 from diogenes.motors.exceptions import MotorSaidaError
+from diogenes.motors.motor_saida import MotorSaida, _classificar_posicao, _extrair_contexto
 from diogenes.motors.motor_start import MotorStart
 from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
-
 
 # ── Relatório limpo (sem marcas) ─────────────────────────────────────────
 
@@ -159,11 +161,11 @@ class TestMotorSaidaIntegrado:
             motor.verificar(manifest.cycle_id)
 
     def test_seal_ciclo_limpo(self, cfg, ciclo_aguardando_saida):
-        from datetime import datetime, timezone
+        from datetime import datetime
         cycle_id, _ = ciclo_aguardando_saida
         motor = MotorSaida()
         motor.verificar(cycle_id)   # avança para AGUARDANDO_CHANCELA_LESTRADE
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         AuditIndex(cfg.workspace.path).seal_cycle(cycle_id, "LIMPO", now)
         record = AuditIndex(cfg.workspace.path).get_cycle(cycle_id)
         assert record["status"] == CycleState.ENCERRADO_CHANCELADO.value

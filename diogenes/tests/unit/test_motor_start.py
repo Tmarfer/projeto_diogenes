@@ -1,13 +1,13 @@
 """tests/unit/test_motor_start.py"""
 from __future__ import annotations
-from pathlib import Path
+
 import pytest
+
 from diogenes.config import get_config
-from diogenes.models import AUDIT_INDEX_COLUMNS
-from diogenes.motors.motor_start import MotorStart, _sha256_package, _collect_inputs
 from diogenes.motors.exceptions import InputMissingError, NoPreviousCycleError
-from diogenes.persistence.audit_index import AuditIndex
+from diogenes.motors.motor_start import MotorStart, _collect_inputs, _sha256_package
 from diogenes.orchestrator.states import CycleState
+from diogenes.persistence.audit_index import AuditIndex
 
 
 @pytest.fixture

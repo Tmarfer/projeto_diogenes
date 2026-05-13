@@ -6,14 +6,15 @@ Recebe pacote integrado de Mycroft. Heartbeat injetado em todas as chamadas.
 Referência normativa: RF-SH-01 a RF-SH-08 (PRD v0.1), Bloco 9.4 (SDD v0.1)
 """
 from __future__ import annotations
+
 from pathlib import Path
 
-from diogenes.config import AgentSpec
-from diogenes.models import LLMCall, LLMMessage, SherlockOutput
-from diogenes.llm.base import LLMClient
-from diogenes.llm.seed import calcular_seed
-from diogenes.llm.call_id import gerar_call_id
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
+from diogenes.config import AgentSpec
+from diogenes.llm.base import LLMClient
+from diogenes.llm.call_id import gerar_call_id
+from diogenes.llm.seed import calcular_seed
+from diogenes.models import LLMCall, LLMMessage, SherlockOutput
 
 
 class SherlockAgent:
@@ -106,4 +107,4 @@ def _extrair_secoes(content: str) -> dict:
 
 
 def _contar_dilemas(secao: str) -> int:
-    return sum(1 for l in secao.splitlines() if l.startswith("### Dilema"))
+    return sum(1 for linha in secao.splitlines() if linha.startswith("### Dilema"))

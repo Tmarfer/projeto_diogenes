@@ -1,13 +1,14 @@
 """cli/commands/proceed.py — diogenes proceed"""
 from __future__ import annotations
+
 import typer
-import frontmatter as fm
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
-from diogenes.persistence.audit_index import AuditIndex
-from diogenes.orchestrator.states import CycleState
-from diogenes.orchestrator.orchestrator import Orchestrator
+from diogenes.config import ConfigError, get_config
 from diogenes.models import CycleManifest, InputFileInfo
+from diogenes.orchestrator.orchestrator import Orchestrator
+from diogenes.orchestrator.states import CycleState
+from diogenes.persistence.audit_index import AuditIndex
 
 app = typer.Typer()
 
@@ -17,19 +18,22 @@ def proceed(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
     try:
         cfg = get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     audit = AuditIndex(cfg.workspace.path)
     record = audit.get_cycle(cycle)
     if record is None:
-        display.erro(f"Ciclo '{cycle}' não encontrado."); raise typer.Exit(1)
+        display.erro(f"Ciclo '{cycle}' não encontrado.")
+        raise typer.Exit(1)
 
     estado_ok = CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA.value
     if record["status"] != estado_ok:
         display.erro(
             f"Ciclo '{cycle}' está em '{record['status']}', "
             f"não em AGUARDANDO_DECISAO_LESTRADE_ALERTA."
-        ); raise typer.Exit(1)
+        )
+        raise typer.Exit(1)
 
     display.passo_ok("Lestrade autorizou prosseguimento. Acionando fase Sherlock...")
     manifest = _reconstruir_manifest(cfg, cycle, record)
@@ -40,9 +44,10 @@ def proceed(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
             display.passo_ok(f"Ciclo concluído. Output: {resultado}")
             display.passo_ok(f"Próximo: diogenes verify-output --cycle {cycle}")
         else:
-            display.aviso("Motor de Saída não implementado. Ver Sprint 5.")
+            display.aviso(f"Use `diogenes status --cycle {cycle}` para acompanhar.")
     except Exception as e:
-        display.erro(f"Erro no Orquestrador: {e}"); raise typer.Exit(1)
+        display.erro(f"Erro no Orquestrador: {e}")
+        raise typer.Exit(1) from e
 
 
 def _reconstruir_manifest(cfg, cycle: str, record: dict) -> CycleManifest:
