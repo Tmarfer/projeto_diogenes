@@ -74,6 +74,38 @@ motor_saida:
   # Regex para identificadores de ciclo (não devem vazar para o output)
   regex_cycle_id: 'MOD_\w+_A\d+_\d{8}T\d{6}Z'
 
+  # Tabela de substituições para higienização automática (Artigo 14/15)
+  # Aplicadas em ordem: padrões mais longos primeiro para evitar substituição parcial.
+  # Formato: [padrao, substituto]  — padrao é case-insensitive, substituto é literal.
+  substituicoes_higienizacao:
+    - ["Mycroft Holmes — Auditor Chefe", "DVA-CBS"]
+    - ["Mycroft Holmes", "a coordenação técnica"]
+    - ["Dr. John Watson", "a análise de integridade técnica"]
+    - ["Dr. Watson", "a análise de integridade técnica"]
+    - ["John Watson", "a análise de integridade técnica"]
+    - ["Sherlock Holmes", "a validação metodológica"]
+    - ["Inspetor Lestrade", "a autoridade competente"]
+    - ["por Watson", "pela análise de integridade técnica"]
+    - ["de Watson", "da análise de integridade técnica"]
+    - ["Watson", "a análise de integridade técnica"]
+    - ["por Sherlock", "pela validação metodológica"]
+    - ["de Sherlock", "da validação metodológica"]
+    - ["Sherlock", "a validação metodológica"]
+    - ["por Mycroft", "pela coordenação técnica"]
+    - ["de Mycroft", "da coordenação técnica"]
+    - ["Mycroft", "a coordenação técnica"]
+    - ["de Lestrade", "da autoridade competente"]
+    - ["a Lestrade", "à autoridade competente"]
+    - ["Lestrade", "a autoridade competente"]
+    - ["Projeto Diógenes", "DVA-CBS"]
+    - ["Clube Diógenes", "DVA-CBS"]
+    - ["Stranger's Room", "protocolo de revisão interna"]
+    - ["Sala dos Estrangeiros", "protocolo de revisão interna"]
+    - ["stranger_room", "protocolo de revisão interna"]
+    - ["Motor de Start", "sistema de controle"]
+    - ["Motor de Saída", "sistema de verificação"]
+    - ["audit_index", "registro de ciclos"]
+
 persistencia:
   audit_index_filename: audit_index.csv
   encoding: utf-8

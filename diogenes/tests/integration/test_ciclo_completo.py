@@ -37,34 +37,45 @@ TASKS_WATSON = """## Tasks para Watson
 3. Identificar cadeia de produção dos dados
 """
 
-ANALISE_WATSON = """## Resumo Executivo
+ANALISE_ARQUIVO = """## Análise do Arquivo
 
-Análise de integridade do módulo MOD_SINT_001.
+Arquivo analisado sem inconsistências.
 
-## Verificação Numérica das Planilhas
+## Insumos da Cadeia
 
-### planilha_cbs.xlsx
-- Totais verificados: sim
-- Inconsistências: nenhuma
+Entrada: dados brutos. Saída: dados processados.
 
-## Tradução dos Scripts SQL
+## Tabela de Alertas
 
-### script_extracao.sql
-**O que executa:** seleciona dados de arrecadação
+| Severidade | Localização | Descrição |
+|---|---|---|
 
-## Cadeia de Produção dos Dados
+## Arquivos Não Analisáveis
 
-script → planilha → resultado
+## Último ID de Alerta Usado
 
-## Insights e Anomalias
+W001-000
+"""
 
-Nenhuma anomalia detectada.
+ANALISE_WATSON = ANALISE_ARQUIVO  # alias mantido para testes de revisão
+
+CONSOLIDADO_WATSON = """## Resumo Executivo
+
+Análise de integridade do módulo MOD_SINT_001 concluída.
 
 ## Tabela de Alertas
 
 | Severidade | Localização | Descrição |
 |---|---|---|
 | INFORMATIVA | planilha_cbs.xlsx | Estrutura consistente |
+
+## Cadeia de Produção dos Dados
+
+script → planilha → resultado
+
+## Posição Consolidada
+
+CONSISTENTE
 
 ## Arquivos Não Analisáveis
 
@@ -138,12 +149,15 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
     Mycroft aprova → Mycroft fixa decisão.
     Quatro chamadas LLM mockadas.
     """
-    # Mockar as quatro chamadas em ordem
+    # 4 arquivos no módulo → 4 calls analisar_arquivo + 1 consolidar_watson
     PACOTE_SH = "## Pacote para Sherlock\n\nContexto sintetizado."
     for content in [
-        TASKS_WATSON, ANALISE_WATSON, AVALIACAO_APROVADO, DECISAO_FINAL,  # Watson (4)
-        PACOTE_SH,                                                          # montar_pacote_sherlock (5)
-        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (6-9)
+        TASKS_WATSON,                                               # definir_tasks_watson (1)
+        ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO,  # analisar_arquivo ×4 (2-5)
+        CONSOLIDADO_WATSON,                                         # consolidar_watson (6)
+        AVALIACAO_APROVADO, DECISAO_FINAL,                         # avaliar + fixar Watson (7-8)
+        PACOTE_SH,                                                  # montar_pacote_sherlock (9)
+        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (10-13)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",
@@ -192,12 +206,17 @@ QUESTIONAR. Há pontos a esclarecer.
 
 1. Seção "Verificação Numérica": detalhar o método de verificação dos totais
 """
+    # 4 arquivos → 4 per-file + 1 consolidar + revisão Watson
     PACOTE_SH2 = "## Pacote para Sherlock\n\nContexto sintetizado."
     for content in [
-        TASKS_WATSON, ANALISE_WATSON, AVALIACAO_QUESTIONAR,
-        ANALISE_WATSON, AVALIACAO_APROVADO, DECISAO_FINAL,  # Watson com 1 revisão (6)
-        PACOTE_SH2,                                         # montar_pacote_sherlock (7)
-        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,
+        TASKS_WATSON,                                               # definir_tasks_watson (1)
+        ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO,  # analisar_arquivo ×4 (2-5)
+        CONSOLIDADO_WATSON,                                         # consolidar_watson (6)
+        AVALIACAO_QUESTIONAR,                                       # avaliar r0 → QUESTIONAR (7)
+        ANALISE_WATSON,                                             # resposta_r1 Watson (8)
+        AVALIACAO_APROVADO, DECISAO_FINAL,                         # avaliar r1 + fixar (9-10)
+        PACOTE_SH2,                                                 # montar_pacote_sherlock (11)
+        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (12-15)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",

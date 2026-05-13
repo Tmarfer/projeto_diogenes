@@ -97,9 +97,28 @@ class Orchestrator:
         self._events.log("PHASE_STARTED", phase=fase, agent="watson")
 
         tasks = self._mycroft.definir_tasks_watson(manifest)
-
         inputs_dir = self._cycle_dir / "inputs"
-        output_watson = self._watson.analisar(inputs_dir, manifest, tasks)
+
+        # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
+        from diogenes.models import WatsonOutput as _WO
+        proximo_id = self._proximo_id_alerta(manifest.module_id)
+        analises_watson: list[_WO] = []
+        for fi in manifest.input_files:
+            analise_fi = self._watson.analisar_arquivo(
+                arquivo_path=inputs_dir / fi.rel_path,
+                arquivo_info=fi,
+                tasks_mycroft=tasks,
+                proximo_id_alerta=proximo_id,
+            )
+            analises_watson.append(analise_fi)
+            # Propagar contador de IDs ao próximo arquivo
+            if analise_fi.ultimo_id_alerta:
+                proximo_id = _incrementar_id_alerta(analise_fi.ultimo_id_alerta)
+            self._events.log("WATSON_ARQUIVO_ANALISADO",
+                             details={"arquivo": fi.name, "criticos": analise_fi.critical_alerts_count})
+
+        # Fase 2: consolidação
+        output_watson = self._watson.consolidar(analises_watson, tasks)
         self._sr.escrever_apresentacao(fase=fase, author="watson",
                                         content=output_watson.texto)
 
@@ -149,7 +168,11 @@ class Orchestrator:
         # Mycroft monta o pacote para Sherlock a partir da decisão de Watson
         decisao_watson = self._sr.ler_decisao_final("watson_integridade")
         inputs_dir = self._cycle_dir / "inputs"
-        pacote = self._mycroft.montar_pacote_sherlock(manifest, inputs_dir, decisao_watson)
+        # Ler análise completa de Watson para enriquecer o pacote de Sherlock
+        watson_apresentacao = self._sr.ler_apresentacao("watson_integridade")
+        pacote = self._mycroft.montar_pacote_sherlock(
+            manifest, inputs_dir, decisao_watson, watson_apresentacao
+        )
 
         self._transicionar(CycleState.EM_EXECUCAO_SHERLOCK)
         self._events.log("PHASE_STARTED", phase=fase, agent="sherlock")
@@ -248,3 +271,20 @@ class Orchestrator:
             self._audit.update_status(self._cycle_id, CycleState.ABORTADO_FALHA_AGENTE.value)
         self._events.log("CYCLE_ABORTED_FAILURE",
                          details={"fase": fase, "erro": str(exc)})
+
+
+# ── Helpers de módulo ─────────────────────────────────────────────────────────
+
+def _incrementar_id_alerta(ultimo_id: str) -> str:
+    """
+    Incrementa o contador de ID de alerta de Watson.
+    "W010-003" → "W010-004"
+    Retorna o mesmo string se o formato não for reconhecido.
+    """
+    import re as _re
+    m = _re.match(r'^(W\d+-)(\d+)$', ultimo_id)
+    if not m:
+        return ultimo_id
+    prefixo = m.group(1)       # "W010-"
+    n = int(m.group(2)) + 1    # 3 → 4
+    return f"{prefixo}{n:03d}"

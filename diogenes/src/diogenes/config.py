@@ -60,6 +60,7 @@ class MotorSaidaConfig(BaseModel):
     padroes_cargo_identificador: list[str]
     padroes_estruturas_internas: list[str]
     regex_cycle_id: str
+    substituicoes_higienizacao: list[list[str]] = []  # [[padrao, substituto], ...]
 
 
 class PersistenciaConfig(BaseModel):

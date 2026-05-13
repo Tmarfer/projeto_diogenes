@@ -28,12 +28,12 @@ model_fallback: claude-sonnet-4-6
 # é mais delimitado (análises já estruturadas como input).
 
 temperatura: 0.1
-max_tokens_analise_arquivo: 4000
-# Suficiente para análise de um arquivo por vez. Contexto pequeno e focado.
+max_tokens_analise_arquivo: 32768
+# Fase B/D — análise massiva de arquivos reais RFB (bases xlsx, SQL, notebooks).
+# Valor efetivo lido de agents_spec.yaml::agentes.watson.max_tokens (runtime).
 
-max_tokens_consolidar: 6000
-# A consolidação integra múltiplos watson_analise_*.md — precisa de
-# espaço para a cadeia de produção cross-file.
+max_tokens_consolidar: 32768
+# Unificado — sem distinção por call_type no runtime.
 
 timeout_segundos: 90
 ```
