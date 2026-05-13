@@ -4,15 +4,16 @@ Imutabilidade (Artigo 11), frontmatter YAML, content_hash.
 Referência normativa: RF-SR-01 a RF-SR-06 (PRD v0.1), Bloco 10 (SDD v0.1)
 """
 from __future__ import annotations
+
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import frontmatter
 
 from diogenes.config import DiogenesConfig
 from diogenes.models import DecisaoFinal
-from diogenes.orchestrator.exceptions import StrangerRoomWriteError, StrangerRoomValidationError
+from diogenes.orchestrator.exceptions import StrangerRoomValidationError, StrangerRoomWriteError
 
 _PREFIXOS: dict[str, str] = {
     "apresentacao":  "01",
@@ -68,6 +69,14 @@ class StrangerRoom:
 
     # ── Leitura ───────────────────────────────────────────────
 
+    def ler_apresentacao(self, fase: str) -> str:
+        """Retorna o conteúdo (sem frontmatter YAML) do arquivo de apresentação da fase."""
+        path = self._path_para(fase, "apresentacao")
+        if not path.exists():
+            return ""
+        post = frontmatter.load(str(path))
+        return post.content
+
     def ler_decisao_final(self, fase: str) -> DecisaoFinal:
         path = self._path_para(fase, "decisao_final")
         if not path.exists():
@@ -105,7 +114,7 @@ class StrangerRoom:
             raise StrangerRoomWriteError(
                 f"Tentativa de sobrescrever arquivo imutável: '{path}' (Artigo 11)."
             )
-        now = datetime.now(timezone.utc).strftime(self._cfg.persistencia.timestamp_iso_format)
+        now = datetime.now(UTC).strftime(self._cfg.persistencia.timestamp_iso_format)
         fm: dict = {
             "cycle_id": self._cycle_id,
             "phase": fase,

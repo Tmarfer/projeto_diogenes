@@ -1,19 +1,19 @@
 """cli/commands/show.py — diogenes show"""
 from __future__ import annotations
-from typing import Optional
-import typer
+
 import frontmatter
+import typer
 from rich.panel import Panel
-from rich.syntax import Syntax
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
+from diogenes.config import ConfigError, get_config
 
 app = typer.Typer()
 
 @app.command()
 def show(
     cycle: str = typer.Option(..., "--cycle", "-c"),
-    phase: Optional[str] = typer.Option(
+    phase: str | None = typer.Option(
         None, "--phase", "-p",
         help="watson | sherlock | ambas (padrão: ambas)"
     ),
@@ -22,13 +22,15 @@ def show(
     try:
         cfg = get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     cycle_dir = cfg.workspace.path / "cycles" / cycle
     sr_dir = cycle_dir / "stranger_room"
 
     if not sr_dir.exists():
-        display.erro(f"Stranger's Room não encontrada para ciclo '{cycle}'."); raise typer.Exit(1)
+        display.erro(f"Stranger's Room não encontrada para ciclo '{cycle}'.")
+        raise typer.Exit(1)
 
     fases_map = {
         "watson": ["watson_integridade"],
@@ -67,7 +69,6 @@ def show(
                 if ts:
                     title += f" | {ts}"
 
-                # Campos semânticos (apenas para 99_decisao_final)
                 sem_info = ""
                 if file_type == "decisao_final":
                     has_crit = meta.get("has_critical_alert")

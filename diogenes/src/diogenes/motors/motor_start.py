@@ -15,7 +15,7 @@ import hashlib
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from diogenes.config import DiogenesConfig
@@ -26,10 +26,10 @@ from diogenes.motors.exceptions import (
     InputMissingError,
     NoPreviousCycleError,
 )
+from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.manifest import write_manifesto
 from diogenes.persistence.workspace import WorkspaceManager
-from diogenes.orchestrator.states import CycleState
 
 
 def _sha256_file(path: Path) -> str:
@@ -67,7 +67,7 @@ def _package_version(pkg: str) -> str:
 
 
 def _generate_cycle_id(module_id: str, activity: int) -> str:
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     return f"{module_id}_A{activity}_{ts}"
 
 
@@ -133,7 +133,7 @@ class MotorStart:
                     f"esperado {f.sha256[:16]}…, obtido {copy_hash[:16]}…"
                 )
 
-        now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         is_sigilo = module_id.upper() in [
             m.upper() for m in self._cfg.motor_saida.padroes_agentes  # proxy via config
         ]

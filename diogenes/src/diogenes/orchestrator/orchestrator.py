@@ -7,21 +7,23 @@ Limite de duas rodadas (Art. 8): garantido por construção via MAX_RODADAS.
 Referência normativa: RF-OR-01 a RF-OR-11 (PRD v0.1), Bloco 8 (SDD v0.1)
 """
 from __future__ import annotations
+
+import re
 from pathlib import Path
 
+from diogenes.agents.mycroft import MycrooftAgent
+from diogenes.agents.sherlock import SherlockAgent
+from diogenes.agents.watson import WatsonAgent
 from diogenes.config import get_config
+from diogenes.llm.base import get_llm_client
+from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
 from diogenes.models import CycleManifest, DecisaoFinal
-from diogenes.orchestrator.states import CycleState, TRANSICOES_VALIDAS, InvalidTransitionError
 from diogenes.orchestrator.events import EventLogger
-from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.orchestrator.exceptions import OrchestratorError
+from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, InvalidTransitionError
+from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.workspace import WorkspaceManager
-from diogenes.llm.base import get_llm_client
-from diogenes.llm.exceptions import LLMCallError, LLMTimeoutError, LLMCostLimitError
-from diogenes.agents.watson import WatsonAgent
-from diogenes.agents.sherlock import SherlockAgent
-from diogenes.agents.mycroft import MycrooftAgent
 
 
 class Orchestrator:
@@ -56,9 +58,7 @@ class Orchestrator:
     # ── Ponto de entrada ─────────────────────────────────────
 
     def executar(self, manifest: CycleManifest) -> str:
-        """
-        Executa o ciclo completo. Retorna caminho do output ou "" se pausado.
-        """
+        """Executa o ciclo completo. Retorna caminho do output ou "" se pausado."""
         self._events.log("CYCLE_STARTED", details={"cycle_id": manifest.cycle_id})
         try:
             decisao_watson = self._executar_fase_watson(manifest)
@@ -97,11 +97,31 @@ class Orchestrator:
         self._events.log("PHASE_STARTED", phase=fase, agent="watson")
 
         tasks = self._mycroft.definir_tasks_watson(manifest)
-
         inputs_dir = self._cycle_dir / "inputs"
-        output_watson = self._watson.analisar(inputs_dir, manifest, tasks)
+
+        # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
+        from diogenes.models import WatsonOutput as _WO
+        proximo_id = self._proximo_id_alerta(manifest.module_id)
+        analises_watson: list[_WO] = []
+        for fi in manifest.input_files:
+            analise_fi = self._watson.analisar_arquivo(
+                arquivo_path=inputs_dir / fi.rel_path,
+                arquivo_info=fi,
+                tasks_mycroft=tasks,
+                proximo_id_alerta=proximo_id,
+            )
+            analises_watson.append(analise_fi)
+            # Propagar contador de IDs ao próximo arquivo
+            if analise_fi.ultimo_id_alerta:
+                proximo_id = _incrementar_id_alerta(analise_fi.ultimo_id_alerta)
+            self._events.log("WATSON_ARQUIVO_ANALISADO",
+                             details={"arquivo": fi.name, "criticos": analise_fi.critical_alerts_count})
+
+        # Fase 2: consolidação
+        output_watson = self._watson.consolidar(analises_watson, tasks)
         self._sr.escrever_apresentacao(fase=fase, author="watson",
                                         content=output_watson.texto)
+        alert_counter += output_watson.critical_alerts_count
 
         rodada = 0
         while rodada < self.MAX_RODADAS:
@@ -115,10 +135,14 @@ class Orchestrator:
                 break
 
             rodada += 1
+            proximo_id = self._proximo_id_alerta(manifest.module_id, alert_counter)
             self._sr.escrever_critica(fase, rodada, "mycroft", avaliacao.critica)
             self._transicionar(CycleState.EM_EXECUCAO_WATSON)
-            output_watson = self._watson.responder_critica(avaliacao.critica, output_watson, rodada)
+            output_watson = self._watson.responder_critica(
+                avaliacao.critica, output_watson, rodada, proximo_id
+            )
             self._sr.escrever_resposta(fase, rodada, "watson", output_watson.texto)
+            alert_counter += output_watson.critical_alerts_count
             if rodada == self.MAX_RODADAS:
                 break
 
@@ -149,7 +173,11 @@ class Orchestrator:
         # Mycroft monta o pacote para Sherlock a partir da decisão de Watson
         decisao_watson = self._sr.ler_decisao_final("watson_integridade")
         inputs_dir = self._cycle_dir / "inputs"
-        pacote = self._mycroft.montar_pacote_sherlock(manifest, inputs_dir, decisao_watson)
+        # Ler análise completa de Watson para enriquecer o pacote de Sherlock
+        watson_apresentacao = self._sr.ler_apresentacao("watson_integridade")
+        pacote = self._mycroft.montar_pacote_sherlock(
+            manifest, inputs_dir, decisao_watson, watson_apresentacao
+        )
 
         self._transicionar(CycleState.EM_EXECUCAO_SHERLOCK)
         self._events.log("PHASE_STARTED", phase=fase, agent="sherlock")
@@ -234,12 +262,11 @@ class Orchestrator:
             raise InvalidTransitionError(atual, destino)
         self._audit.update_status(self._cycle_id, destino.value)
 
-    def _proximo_id_alerta(self, module_id: str) -> str:
-        """Deriva o prefixo W{dígitos}-001 para Watson a partir do module_id."""
-        import re as _re
-        nums = _re.findall(r'\d+', module_id)
+    def _proximo_id_alerta(self, module_id: str, counter: int) -> str:
+        """Gera ID de alerta sequencial: W{codigo_modulo}-{counter:03d}."""
+        nums = re.findall(r'\d+', module_id)
         codigo = nums[-1].zfill(3) if nums else "000"
-        return f"W{codigo}-001"
+        return f"W{codigo}-{counter:03d}"
 
     def _abortar_por_falha(self, exc: Exception, fase: str) -> None:
         try:
@@ -248,3 +275,20 @@ class Orchestrator:
             self._audit.update_status(self._cycle_id, CycleState.ABORTADO_FALHA_AGENTE.value)
         self._events.log("CYCLE_ABORTED_FAILURE",
                          details={"fase": fase, "erro": str(exc)})
+
+
+# ── Helpers de módulo ─────────────────────────────────────────────────────────
+
+def _incrementar_id_alerta(ultimo_id: str) -> str:
+    """
+    Incrementa o contador de ID de alerta de Watson.
+    "W010-003" → "W010-004"
+    Retorna o mesmo string se o formato não for reconhecido.
+    """
+    import re as _re
+    m = _re.match(r'^(W\d+-)(\d+)$', ultimo_id)
+    if not m:
+        return ultimo_id
+    prefixo = m.group(1)       # "W010-"
+    n = int(m.group(2)) + 1    # 3 → 4
+    return f"{prefixo}{n:03d}"

@@ -1,11 +1,13 @@
 """cli/commands/resume.py — diogenes resume"""
 from __future__ import annotations
+
 import typer
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
-from diogenes.persistence.audit_index import AuditIndex
-from diogenes.orchestrator.states import CycleState
+from diogenes.config import ConfigError, get_config
 from diogenes.orchestrator.orchestrator import Orchestrator
+from diogenes.orchestrator.states import CycleState
+from diogenes.persistence.audit_index import AuditIndex
 
 app = typer.Typer()
 
@@ -15,23 +17,24 @@ def resume(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
     try:
         cfg = get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     audit = AuditIndex(cfg.workspace.path)
     record = audit.get_cycle(cycle)
     if record is None:
-        display.erro(f"Ciclo '{cycle}' não encontrado."); raise typer.Exit(1)
+        display.erro(f"Ciclo '{cycle}' não encontrado.")
+        raise typer.Exit(1)
 
     if record["status"] != CycleState.PAUSADO_LESTRADE.value:
         display.erro(
             f"Ciclo '{cycle}' está em '{record['status']}', não PAUSADO_LESTRADE."
-        ); raise typer.Exit(1)
+        )
+        raise typer.Exit(1)
 
     display.passo_ok("Retomando ciclo...")
-    # Retomada tem mesma semântica de proceed: aciona fase Sherlock
     from diogenes.cli.commands.proceed import _reconstruir_manifest
     manifest = _reconstruir_manifest(cfg, cycle, record)
-    # Avançar de PAUSADO_LESTRADE para AGUARDANDO_DECISAO para permitir proceed
     audit.update_status(cycle, CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA.value)
 
     try:
@@ -40,6 +43,7 @@ def resume(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
         if resultado:
             display.passo_ok(f"Ciclo concluído. Output: {resultado}")
         else:
-            display.aviso("Ciclo em execução. Aguarde.")
+            display.aviso(f"Use `diogenes status --cycle {cycle}` para acompanhar.")
     except Exception as e:
-        display.erro(f"Erro na retomada: {e}"); raise typer.Exit(1)
+        display.erro(f"Erro na retomada: {e}")
+        raise typer.Exit(1) from e

@@ -1,11 +1,14 @@
 """cli/commands/abort.py — diogenes abort"""
 from __future__ import annotations
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
+
 import typer
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
-from diogenes.persistence.audit_index import AuditIndex
+from diogenes.config import ConfigError, get_config
 from diogenes.orchestrator.states import CycleState
+from diogenes.persistence.audit_index import AuditIndex
 
 app = typer.Typer()
 
@@ -27,24 +30,27 @@ def abort(
     try:
         cfg = get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     audit = AuditIndex(cfg.workspace.path)
     record = audit.get_cycle(cycle)
     if record is None:
-        display.erro(f"Ciclo '{cycle}' não encontrado."); raise typer.Exit(1)
+        display.erro(f"Ciclo '{cycle}' não encontrado.")
+        raise typer.Exit(1)
 
     if record["status"] not in ESTADOS_ABORTAVEIS:
         display.erro(
             f"Ciclo '{cycle}' está em '{record['status']}' e não pode ser abortado. "
             f"Ciclos em EM_EXECUCAO precisam aguardar a conclusão da chamada LLM corrente."
-        ); raise typer.Exit(1)
+        )
+        raise typer.Exit(1)
 
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     audit.update_status(
         cycle, CycleState.ABORTADO_LESTRADE.value,
         ended_at_utc=now, notes=reason[:200],
     )
     display.passo_ok(f"Ciclo '{cycle}' abortado.")
     display.console.print(f"  Razão: {reason}")
-    display.console.print(f"  O diretório de trabalho foi preservado (Art. 16).")
+    display.console.print("  O diretório de trabalho foi preservado (Art. 16).")

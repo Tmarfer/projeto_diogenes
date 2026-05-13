@@ -1,11 +1,12 @@
 """tests/unit/test_stranger_room.py"""
 from __future__ import annotations
-from pathlib import Path
+
 import pytest
+
 from diogenes.config import get_config
 from diogenes.models import DecisaoFinal
+from diogenes.orchestrator.exceptions import StrangerRoomValidationError, StrangerRoomWriteError
 from diogenes.orchestrator.stranger_room import StrangerRoom
-from diogenes.orchestrator.exceptions import StrangerRoomWriteError, StrangerRoomValidationError
 
 
 @pytest.fixture

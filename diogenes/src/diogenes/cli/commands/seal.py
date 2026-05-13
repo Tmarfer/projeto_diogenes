@@ -1,14 +1,16 @@
 """cli/commands/seal.py — diogenes seal"""
 from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Optional
+
+from datetime import UTC, datetime
+
 import typer
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
-from diogenes.persistence.audit_index import AuditIndex
-from diogenes.orchestrator.states import CycleState
-from diogenes.motors.motor_saida import MotorSaida
+from diogenes.config import ConfigError, get_config
 from diogenes.motors.exceptions import MotorSaidaError
+from diogenes.motors.motor_saida import MotorSaida
+from diogenes.orchestrator.states import CycleState
+from diogenes.persistence.audit_index import AuditIndex
 
 app = typer.Typer()
 
@@ -19,7 +21,7 @@ def seal(
         False, "--accept-occurrences",
         help="Aceita ocorrências detectadas como falsos positivos."
     ),
-    reason: Optional[str] = typer.Option(
+    reason: str | None = typer.Option(
         None, "--reason", "-r",
         help="Justificativa (obrigatória com --accept-occurrences)."
     ),
@@ -28,18 +30,20 @@ def seal(
     try:
         cfg = get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     audit = AuditIndex(cfg.workspace.path)
     record = audit.get_cycle(cycle)
     if record is None:
-        display.erro(f"Ciclo '{cycle}' não encontrado."); raise typer.Exit(1)
+        display.erro(f"Ciclo '{cycle}' não encontrado.")
+        raise typer.Exit(1)
 
     status = record["status"]
 
     # Caminho normal: documento limpo → AGUARDANDO_CHANCELA_LESTRADE
     if status == CycleState.AGUARDANDO_CHANCELA_LESTRADE.value:
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         audit.seal_cycle(cycle, "LIMPO", now)
         _exibir_chancela(cycle, "LIMPO", record.get("output_filename", ""))
         return
@@ -50,7 +54,8 @@ def seal(
             display.erro(
                 "--reason é obrigatório com --accept-occurrences. "
                 "Descreva por que as ocorrências são falsos positivos."
-            ); raise typer.Exit(1)
+            )
+            raise typer.Exit(1)
         # Re-executar Motor de Saída para registrar o hash atual
         try:
             motor = MotorSaida()
@@ -59,7 +64,7 @@ def seal(
             pass  # pode já ter sido verificado; continuar
         # Forçar transição para chancela
         audit.update_status(cycle, CycleState.AGUARDANDO_CHANCELA_LESTRADE.value)
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         audit.seal_cycle(cycle, "ACEITO_JUSTIFICADO", now, notes=reason)
         _exibir_chancela(cycle, "ACEITO_JUSTIFICADO", record.get("output_filename", ""))
         display.console.print(f"  [dim]Justificativa registrada:[/dim] {reason}")
@@ -80,4 +85,6 @@ def _exibir_chancela(cycle: str, decision: str, output_filename: str) -> None:
     if output_filename:
         display.passo_ok(f"Output final: {output_filename}")
     display.console.print()
-    display.console.print("[dim]Status: ENCERRADO_CHANCELADO — ciclo imutável a partir deste momento.[/dim]")
+    display.console.print(
+        "[dim]Status: ENCERRADO_CHANCELADO — ciclo imutável a partir deste momento.[/dim]"
+    )

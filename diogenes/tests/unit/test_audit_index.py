@@ -1,11 +1,14 @@
 """tests/unit/test_audit_index.py"""
 from __future__ import annotations
-from pathlib import Path
-import pytest
-from diogenes.models import AUDIT_INDEX_COLUMNS, CycleRecord
-from diogenes.persistence.audit_index import AuditIndex
-from diogenes.orchestrator.states import CycleState
+
 import csv
+from pathlib import Path
+
+import pytest
+
+from diogenes.models import AUDIT_INDEX_COLUMNS, CycleRecord
+from diogenes.orchestrator.states import CycleState
+from diogenes.persistence.audit_index import AuditIndex
 
 
 def _record(cycle_id: str, module_id: str = "MOD_010", activity: int = 1) -> CycleRecord:

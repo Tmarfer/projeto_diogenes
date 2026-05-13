@@ -27,12 +27,12 @@ model_preferencial: claude-opus-4-6
 temperatura: 0.1
 # Máxima consistência: a mesma evidência deve produzir a mesma classificação.
 
-max_tokens_verificar_ponto: 2000
-# Contexto pequeno e foco em um único ponto. Output estruturado e conciso.
+max_tokens_verificar_ponto: 32768
+# Fase B/D — validação metodológica completa com cadeia de raciocínio explícita.
+# Valor efetivo lido de agents_spec.yaml::agentes.sherlock.max_tokens (runtime).
 
-max_tokens_consolidar: 8000
-# Integra todos os sherlock_ponto_*.md. Módulos com muitos pontos e
-# roteiro de perguntas para Sala de Sigilo podem gerar output extenso.
+max_tokens_consolidar: 32768
+# Unificado — sem distinção por call_type no runtime.
 
 timeout_segundos: 90
 ```

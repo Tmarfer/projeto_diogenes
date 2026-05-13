@@ -3,17 +3,17 @@ tests/integration/test_ciclo_completo.py
 Ciclo end-to-end com mock de chamadas LLM via pytest-httpx.
 """
 from __future__ import annotations
+
 import json
-from pathlib import Path
+
 import pytest
 from pytest_httpx import HTTPXMock
+
 from diogenes.config import get_config
-from diogenes.models import CycleManifest, InputFileInfo
 from diogenes.motors.motor_start import MotorStart
 from diogenes.orchestrator.orchestrator import Orchestrator
 from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
-from diogenes.orchestrator.states import CycleState
 
 
 def _mock_response(content: str, model: str = "google/gemini-2.0-flash-exp:free") -> dict:
@@ -37,34 +37,45 @@ TASKS_WATSON = """## Tasks para Watson
 3. Identificar cadeia de produção dos dados
 """
 
-ANALISE_WATSON = """## Resumo Executivo
+ANALISE_ARQUIVO = """## Análise do Arquivo
 
-Análise de integridade do módulo MOD_SINT_001.
+Arquivo analisado sem inconsistências.
 
-## Verificação Numérica das Planilhas
+## Insumos da Cadeia
 
-### planilha_cbs.xlsx
-- Totais verificados: sim
-- Inconsistências: nenhuma
+Entrada: dados brutos. Saída: dados processados.
 
-## Tradução dos Scripts SQL
+## Tabela de Alertas
 
-### script_extracao.sql
-**O que executa:** seleciona dados de arrecadação
+| Severidade | Localização | Descrição |
+|---|---|---|
 
-## Cadeia de Produção dos Dados
+## Arquivos Não Analisáveis
 
-script → planilha → resultado
+## Último ID de Alerta Usado
 
-## Insights e Anomalias
+W001-000
+"""
 
-Nenhuma anomalia detectada.
+ANALISE_WATSON = ANALISE_ARQUIVO  # alias mantido para testes de revisão
+
+CONSOLIDADO_WATSON = """## Resumo Executivo
+
+Análise de integridade do módulo MOD_SINT_001 concluída.
 
 ## Tabela de Alertas
 
 | Severidade | Localização | Descrição |
 |---|---|---|
 | INFORMATIVA | planilha_cbs.xlsx | Estrutura consistente |
+
+## Cadeia de Produção dos Dados
+
+script → planilha → resultado
+
+## Posição Consolidada
+
+CONSISTENTE
 
 ## Arquivos Não Analisáveis
 
@@ -138,12 +149,15 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
     Mycroft aprova → Mycroft fixa decisão.
     Quatro chamadas LLM mockadas.
     """
-    # Mockar as quatro chamadas em ordem
+    # 4 arquivos no módulo → 4 calls analisar_arquivo + 1 consolidar_watson
     PACOTE_SH = "## Pacote para Sherlock\n\nContexto sintetizado."
     for content in [
-        TASKS_WATSON, ANALISE_WATSON, AVALIACAO_APROVADO, DECISAO_FINAL,  # Watson (4)
-        PACOTE_SH,                                                          # montar_pacote_sherlock (5)
-        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (6-9)
+        TASKS_WATSON,                                               # definir_tasks_watson (1)
+        ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO,  # analisar_arquivo ×4 (2-5)
+        CONSOLIDADO_WATSON,                                         # consolidar_watson (6)
+        AVALIACAO_APROVADO, DECISAO_FINAL,                         # avaliar + fixar Watson (7-8)
+        PACOTE_SH,                                                  # montar_pacote_sherlock (9)
+        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (10-13)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",
@@ -151,7 +165,7 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
         )
 
     orq = Orchestrator(ciclo_preparado.cycle_id)
-    resultado = orq.executar(ciclo_preparado)
+    orq.executar(ciclo_preparado)
 
     # Verificar estado no audit_index
     record = AuditIndex(workspace).get_cycle(ciclo_preparado.cycle_id)
@@ -173,7 +187,7 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
     # Verificar events.jsonl
     events_path = cycle_dir / "_runtime" / "events.jsonl"
     assert events_path.exists()
-    eventos = [json.loads(l) for l in events_path.read_text().splitlines() if l.strip()]
+    eventos = [json.loads(ln) for ln in events_path.read_text().splitlines() if ln.strip()]
     tipos = [e["event_type"] for e in eventos]
     assert "CYCLE_STARTED" in tipos
     assert "PHASE_ENDED" in tipos
@@ -192,12 +206,17 @@ QUESTIONAR. Há pontos a esclarecer.
 
 1. Seção "Verificação Numérica": detalhar o método de verificação dos totais
 """
+    # 4 arquivos → 4 per-file + 1 consolidar + revisão Watson
     PACOTE_SH2 = "## Pacote para Sherlock\n\nContexto sintetizado."
     for content in [
-        TASKS_WATSON, ANALISE_WATSON, AVALIACAO_QUESTIONAR,
-        ANALISE_WATSON, AVALIACAO_APROVADO, DECISAO_FINAL,  # Watson com 1 revisão (6)
-        PACOTE_SH2,                                         # montar_pacote_sherlock (7)
-        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,
+        TASKS_WATSON,                                               # definir_tasks_watson (1)
+        ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO,  # analisar_arquivo ×4 (2-5)
+        CONSOLIDADO_WATSON,                                         # consolidar_watson (6)
+        AVALIACAO_QUESTIONAR,                                       # avaliar r0 → QUESTIONAR (7)
+        ANALISE_WATSON,                                             # resposta_r1 Watson (8)
+        AVALIACAO_APROVADO, DECISAO_FINAL,                         # avaliar r1 + fixar (9-10)
+        PACOTE_SH2,                                                 # montar_pacote_sherlock (11)
+        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (12-15)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",

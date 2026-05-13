@@ -16,58 +16,51 @@
 # Referência normativa: RNF-PORT-03, RNF-PORT-04 (PRD v0.1), Bloco 4.3 (SDD v0.1)
 
 # Fase ativa do piloto: A (free) | B (baratos) | D (MOD_010)
-fase_ativa: A
+fase_ativa: B
 
 agentes:
 
   mycroft:
     # Auditor Chefe — síntese, delegação, decisão, consolidação
-    # Fase A: free; Fase B/D: sonnet para custo controlado
-    modelo: z-ai/glm-4.5-air:free                  # Fase A
-    # modelo: google/gemma-4-31b-it:free             # Fase A (rate-limited no AI Studio)
-    # modelo: nvidia/nemotron-3-super-120b-a12b:free # Fase A (alternativa)
-    # modelo: minimax/minimax-m2.5:free              # Fase A (alternativa)
-    # modelo: anthropic/claude-sonnet-4-6            # Fase B e D
-    temperatura: 0.1
-    max_tokens: 4096
-    max_tokens_ciclo: 32768
+    modelo: meta-llama/llama-4-maverick             # Fase B — síntese e orquestração
+    # modelo: z-ai/glm-4.5-air:free                 # Fase A (free)
+    # modelo: anthropic/claude-sonnet-4-6            # Fase D
+    temperatura: 0.0  # 0.0 = determinístico; elimina alucinações na síntese
+    max_tokens: 32768
+    max_tokens_ciclo: 131072
     timeout_segundos: 300
     max_tentativas_retry: 2
     backoff_segundos: 10
 
   watson:
     # Auditor de Integridade Técnica — análise documental, tradução SQL/Python
-    # Exige: capacidade analítica com documentos técnicos heterogêneos,
-    # contexto longo para ingerir planilhas e scripts completos.
-    modelo: qwen/qwen3-coder:free                   # Fase A (forte em SQL/Python)
-    # modelo: z-ai/glm-4.5-air:free                  # Fase A (alternativa)
-    # modelo: moonshotai/kimi-k2                     # Fase B
-    # modelo: google/gemini-2.5-flash                # Fase D
+    # Exige contexto longo (>128k) para ingerir os ~95k tokens do pacote de arquivos.
+    modelo: google/gemini-2.5-flash-lite            # Fase B — 1M ctx, ideal para carga massiva
+    # modelo: google/gemma-4-31b-it:free            # Fase A (rate-limit em requests grandes)
+    # modelo: google/gemini-2.5-flash               # Fase D
     temperatura: 0.0    # máximo determinismo — Watson não especula
-    max_tokens: 8192    # Watson produz relatórios longos
-    max_tokens_ciclo: 65536
+    max_tokens: 32768   # 4× anterior — elimina truncagem na analise_inicial + revisões
+    max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 2
     backoff_segundos: 10
 
   sherlock:
     # Auditor de Validação Metodológica CBS — análise normativa, classificação
-    # Exige: raciocínio dedutivo sobre metodologia jurídico-tributária,
-    # precisão na classificação ponto a ponto com fundamentação explícita.
-    modelo: nvidia/nemotron-3-super-120b-a12b:free      # Fase A (raciocínio dedutivo)
-    # modelo: minimax/minimax-m2.5:free                   # Fase A (alternativa)
-    # modelo: deepseek/deepseek-r1                        # Fase B
-    # modelo: anthropic/claude-opus-4-6                   # Fase D
+    # Exige raciocínio dedutivo sobre metodologia jurídico-tributária.
+    modelo: deepseek/deepseek-v4-flash              # Fase B — raciocínio + custo baixo
+    # modelo: minimax/minimax-m2.5:free             # Fase A (free)
+    # modelo: anthropic/claude-opus-4-6             # Fase D
     temperatura: 0.1
-    max_tokens: 8192
-    max_tokens_ciclo: 65536
+    max_tokens: 32768
+    max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 2
     backoff_segundos: 10
 
 # Teto de custo global por ciclo em USD (RNF-CUST-02)
 # Fase A: 0.00 (free); Fase B: 5.00; Fase D: 10.00
-teto_custo_ciclo_usd: 0.00
+teto_custo_ciclo_usd: 5.00
 
 # Seed base para reprodutibilidade (RNF-REPR-02)
 # Seed efetiva por chamada: seed_base + hash(cycle_id + fase + n_chamada) % 10000

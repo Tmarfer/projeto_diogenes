@@ -1,8 +1,10 @@
 """cli/commands/init.py — diogenes init"""
 from __future__ import annotations
+
 import typer
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
+from diogenes.config import ConfigError, get_config
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.workspace import WorkspaceManager
 
@@ -15,7 +17,7 @@ def init() -> None:
         cfg = get_config()
     except ConfigError as e:
         display.erro(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
     ws = cfg.workspace.path
     WorkspaceManager(ws).inicializar_workspace()
     AuditIndex(ws).create_if_not_exists()

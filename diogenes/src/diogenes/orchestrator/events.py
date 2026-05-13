@@ -3,8 +3,9 @@ orchestrator/events.py — Logger de eventos do ciclo em events.jsonl.
 Append-only. Um objeto JSON por linha (SDD Bloco 5.6).
 """
 from __future__ import annotations
+
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ class EventLogger:
     def log(self, event_type: str, phase: str | None = None,
             agent: str | None = None, details: dict[str, Any] | None = None) -> None:
         event = {
-            "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "cycle_id": self._cycle_id,
             "event_type": event_type,
             "phase": phase,

@@ -1,7 +1,9 @@
 """llm/base.py — Protocol LLMClient e factory get_llm_client (SDD Bloco 6.2)"""
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Protocol, runtime_checkable
+
 from diogenes.models import LLMCall, LLMResponse
 
 
