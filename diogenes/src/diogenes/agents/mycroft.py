@@ -233,8 +233,20 @@ def _extrair_secoes(content: str) -> dict:
 def _parsear_avaliacao(content: str) -> AvaliacaoMycroft:
     secoes = _extrair_secoes(content)
     av = secoes.get("Avaliação", "")
-    tipo = "APROVADO" if "APROVADO" in av.upper() else "QUESTIONAR"
-    critica = secoes.get("Pontos para Revisão", "") if tipo == "QUESTIONAR" else ""
+    # Detect tipo: check "resultado:" header field (template format from skills.md)
+    # before falling back to scanning the body of ## Avaliação.
+    # The heartbeat template uses resultado: APROVADO|CRITICA in the document header,
+    # not "APROVADO"/"QUESTIONAR" as the first line of ## Avaliação (legacy prompt format).
+    # Note: Markdown bold wraps "resultado:" as **resultado:** so the colon precedes
+    # the closing **, yielding the pattern: resultado:** value.
+    m = re.search(r"resultado:\*{0,2}\s*(APROVADO|CRITICA)", content, re.IGNORECASE)
+    if m:
+        tipo = "APROVADO" if m.group(1).upper() == "APROVADO" else "QUESTIONAR"
+    else:
+        tipo = "APROVADO" if "APROVADO" in av.upper() else "QUESTIONAR"
+    # Critique text: the template puts it inside ## Avaliação (not ## Pontos para Revisão).
+    # Fall back chain: "Pontos para Revisão" (legacy) → "Avaliação" (template) → full text.
+    critica = (secoes.get("Pontos para Revisão") or av or content) if tipo == "QUESTIONAR" else ""
     return AvaliacaoMycroft(tipo=tipo, texto=content, critica=critica)
 
 
