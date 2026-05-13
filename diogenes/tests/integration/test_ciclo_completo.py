@@ -3,17 +3,17 @@ tests/integration/test_ciclo_completo.py
 Ciclo end-to-end com mock de chamadas LLM via pytest-httpx.
 """
 from __future__ import annotations
+
 import json
-from pathlib import Path
+
 import pytest
 from pytest_httpx import HTTPXMock
+
 from diogenes.config import get_config
-from diogenes.models import CycleManifest, InputFileInfo
 from diogenes.motors.motor_start import MotorStart
 from diogenes.orchestrator.orchestrator import Orchestrator
 from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
-from diogenes.orchestrator.states import CycleState
 
 
 def _mock_response(content: str, model: str = "google/gemini-2.0-flash-exp:free") -> dict:
@@ -151,7 +151,7 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
         )
 
     orq = Orchestrator(ciclo_preparado.cycle_id)
-    resultado = orq.executar(ciclo_preparado)
+    orq.executar(ciclo_preparado)
 
     # Verificar estado no audit_index
     record = AuditIndex(workspace).get_cycle(ciclo_preparado.cycle_id)
@@ -173,7 +173,7 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
     # Verificar events.jsonl
     events_path = cycle_dir / "_runtime" / "events.jsonl"
     assert events_path.exists()
-    eventos = [json.loads(l) for l in events_path.read_text().splitlines() if l.strip()]
+    eventos = [json.loads(ln) for ln in events_path.read_text().splitlines() if ln.strip()]
     tipos = [e["event_type"] for e in eventos]
     assert "CYCLE_STARTED" in tipos
     assert "PHASE_ENDED" in tipos

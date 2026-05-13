@@ -6,18 +6,19 @@ Usa o openai SDK com base_url configurável (SDD Bloco 1.2.4).
 Referência normativa: Bloco 6.4 (SDD v0.1)
 """
 from __future__ import annotations
+
 import hashlib
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
-from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError, APIStatusError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI, RateLimitError
 
 from diogenes.config import DiogenesConfig
+from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
 from diogenes.models import LLMCall, LLMResponse
-from diogenes.llm.exceptions import LLMCallError, LLMTimeoutError, LLMCostLimitError
 
 
 class OpenRouterClient:
@@ -137,7 +138,7 @@ class OpenRouterClient:
             "phase": call.phase,
             "agent": call.agent,
             "call_type": call.call_type,
-            "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "provider": "openrouter",
             "model": call.model,
             "temperatura": call.temperature,
@@ -169,7 +170,7 @@ class OpenRouterClient:
             "call_id": f"{call.call_id}_falha_{attempt}",
             "cycle_id": call.cycle_id, "agent": call.agent,
             "call_type": call.call_type,
-            "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "model": call.model, "error_type": etype,
             "error_message": emsg, "retry_attempt": attempt,
         }

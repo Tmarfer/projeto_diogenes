@@ -1,5 +1,6 @@
 """llm/seed.py — seed determinística por chamada (SDD Bloco 6.5)"""
 from __future__ import annotations
+
 import hashlib
 
 

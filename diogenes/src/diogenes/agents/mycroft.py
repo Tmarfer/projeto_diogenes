@@ -7,18 +7,25 @@ injetada no início do user_prompt (antes dos inputs específicos).
 Referência normativa: Bloco 9.2 (SDD v0.1)
 """
 from __future__ import annotations
+
 import re
 from pathlib import Path
 
-from diogenes.config import AgentSpec
-from diogenes.models import (
-    LLMCall, LLMMessage, AvaliacaoMycroft, DecisaoFinal,
-    WatsonOutput, SherlockOutput, RelatorioOutput, CycleManifest,
-)
-from diogenes.llm.base import LLMClient
-from diogenes.llm.seed import calcular_seed
-from diogenes.llm.call_id import gerar_call_id
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
+from diogenes.config import AgentSpec
+from diogenes.llm.base import LLMClient
+from diogenes.llm.call_id import gerar_call_id
+from diogenes.llm.seed import calcular_seed
+from diogenes.models import (
+    AvaliacaoMycroft,
+    CycleManifest,
+    DecisaoFinal,
+    LLMCall,
+    LLMMessage,
+    RelatorioOutput,
+    SherlockOutput,
+    WatsonOutput,
+)
 
 
 class MycrooftAgent:

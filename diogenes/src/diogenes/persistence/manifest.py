@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from diogenes.models import CycleManifest, InputFileInfo
+from diogenes.models import CycleManifest
 
 ACTIVITY_NAMES: dict[int, str] = {
     1: "Atividade 1 — Validação de Módulo",

@@ -8,8 +8,8 @@ início do user_prompt, antes dos demais inputs (SDD Bloco 6, Bloco 9).
 Referência normativa: Bloco 1.1 (PRD v0.1), Paperclip framework (SDD intro)
 """
 from __future__ import annotations
-from pathlib import Path
 
+from pathlib import Path
 
 # Mapeamento call_type (código) → nome da seção no heartbeat.md
 # Necessário porque os nomes divergem em dois casos:

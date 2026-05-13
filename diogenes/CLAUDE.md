@@ -84,7 +84,7 @@ DIOGENES_WORKSPACE=/caminho/absoluto/workspace
 # Inicializar workspace
 diogenes init
 
-# Rodar testes (todos devem passar — 42 testes)
+# Rodar testes (todos devem passar — 72 testes)
 pytest tests/
 ```
 
@@ -137,24 +137,40 @@ diogenes seal --cycle {id}
 
 ---
 
+## Tracker de ID de alerta Watson
+
+O Orquestrador (`orchestrator.py`) mantém um contador de alertas que persiste
+entre todas as chamadas de Watson (analisar + responder_critica). O ID é derivado
+do `module_id` e do contador:
+
+```
+W{codigo_modulo}-{n:03d}   ex: W010-001, W010-002
+```
+
+O ID é injetado no preamble do prompt de Watson via `proximo_id_alerta`.
+O contador acumula após cada chamada: `alert_counter += output_watson.critical_alerts_count`.
+
+---
+
 ## Padrões de código estabelecidos
 
 - `from __future__ import annotations` em todos os módulos
-- Type hints completos; `Optional[X]` apenas quando necessário (preferir `X | None`)
+- Type hints completos; `X | None` em vez de `Optional[X]`
 - Exceções tipadas em `motors/exceptions.py` e `orchestrator/exceptions.py`
 - Testes em `tests/unit/` e `tests/integration/`; fixtures globais em `conftest.py`
 - Mocks LLM via `pytest-httpx` (o openai SDK usa httpx internamente)
+- Testes CLI via `typer.testing.CliRunner`
 - Nunca usar `os.environ` diretamente — sempre via `get_config()`
 - Nunca importar `from diogenes.X import Y` dentro de `models.py`
+- Exceções em `except` clauses usam `raise ... from e` (B904)
+- Nenhuma semicolon em statements múltiplos (E702)
 
 ---
 
 ## Próximos itens pendentes
 
 - [ ] Sprint 6: Fase A — executar ciclo real com MOD_SINT_001 e modelos free
-- [ ] Tracker de ID de alerta entre chamadas de Watson (contador no Orquestrador)
-- [ ] `diogenes show` — exibição da Stranger's Room já implementada, testar na prática
-- [ ] Motor de Saída: calibrar padrões contra output real dos modelos
+- [ ] Motor de Saída: calibrar padrões contra output real dos modelos (pós-Fase A)
 - [ ] Fase B: trocar modelos em `agents_spec.yaml`, executar novamente
 - [ ] Fase D: MOD_010 com dados reais da RFB
 
