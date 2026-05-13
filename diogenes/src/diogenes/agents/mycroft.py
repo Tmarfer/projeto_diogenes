@@ -262,6 +262,8 @@ def _parsear_avaliacao(content: str) -> AvaliacaoMycroft:
     # before falling back to scanning the body of ## Avaliação.
     # The heartbeat template uses resultado: APROVADO|CRITICA in the document header,
     # not "APROVADO"/"QUESTIONAR" as the first line of ## Avaliação (legacy prompt format).
+    # Note: Markdown bold wraps "resultado:" as **resultado:** so the colon precedes
+    # the closing **, yielding the pattern: resultado:** value.
     # Markdown bold wraps "resultado:" as **resultado:** so the colon precedes the closing **.
     m = re.search(r"resultado:\*{0,2}\s*(APROVADO|CRITICA)", content, re.IGNORECASE)
     if m:
