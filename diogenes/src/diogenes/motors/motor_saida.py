@@ -79,14 +79,35 @@ class MotorSaida:
         now_utc = datetime.now(UTC).strftime(
             self._cfg.persistencia.timestamp_iso_format
         )
+
+        # Se houver ocorrências, aplicar higienização automática (Artigo 15)
+        doc_path_final = doc_path
+        if ocorrencias:
+            doc_higienizado = self._sanitizar(doc_content)
+            ocorrencias_pos = self._varrer(doc_higienizado)
+            nome_higienizado = doc_path.name.replace(
+                "relatorio_preliminar_", "relatorio_higienizado_"
+            ).replace("relatorio_final_", "relatorio_higienizado_")
+            doc_path_final = doc_path.parent / nome_higienizado
+            doc_path_final.write_text(doc_higienizado, encoding=encoding)
+            # Substituir o arquivo original pelo higienizado no portão
+            doc_path.write_text(doc_higienizado, encoding=encoding)
+            doc_content_final = doc_higienizado
+            doc_hash = "sha256:" + hashlib.sha256(doc_higienizado.encode("utf-8")).hexdigest()
+            ocorrencias_restantes = ocorrencias_pos
+        else:
+            ocorrencias_restantes = ocorrencias
+
+        documento_limpo = len(ocorrencias_restantes) == 0
+
         report = MotorSaidaReport(
             cycle_id=cycle_id,
-            doc_path=doc_path,
+            doc_path=doc_path_final,
             doc_hash=doc_hash,
-            ocorrencias=ocorrencias,
+            ocorrencias=ocorrencias,           # ocorrências originais (para log)
             verificado_em_utc=now_utc,
             total_ocorrencias=len(ocorrencias),
-            documento_limpo=len(ocorrencias) == 0,
+            documento_limpo=documento_limpo,
         )
 
         # Registrar invocação no audit_index
@@ -97,13 +118,71 @@ class MotorSaida:
             output_hash=doc_hash,
         )
 
-        # Se limpo, avançar para AGUARDANDO_CHANCELA_LESTRADE
-        if report.documento_limpo:
+        # Avançar para AGUARDANDO_CHANCELA_LESTRADE se limpo (original ou após higienização)
+        if documento_limpo:
             self._audit.update_status(
                 cycle_id, CycleState.AGUARDANDO_CHANCELA_LESTRADE.value
             )
 
         return report
+
+    # ── Higienização ─────────────────────────────────────────
+
+    def _sanitizar(self, content: str) -> str:
+        """
+        Higieniza o documento para saída externa (Artigo 14/15).
+
+        Etapas:
+        1. Remove todos os blocos <!-- SECAO: ... --> e <!-- /SECAO: ... -->
+           (marcadores internos — não pertencem ao documento externo).
+        2. Remove a linha "**Arquivos que compõem este consolidado:**" (metadado interno).
+        3. Aplica substituições de nomes por linguagem institucional.
+        4. Remove linha de assinatura de Auditor Chefe.
+        5. Corrige artefatos de substituição em cadeia.
+        """
+        resultado = content
+
+        # Etapa 1: remover tags de seção internas
+        resultado = re.sub(r"<!--\s*/?(SECAO|secao):?[^>]*-->", "", resultado, flags=re.IGNORECASE)
+
+        # Etapa 2: remover linha de metadado de arquivos internos
+        resultado = re.sub(r"^\*\*Arquivos que compõem este consolidado:\*\*.*$\n?", "", resultado, flags=re.MULTILINE)
+
+        # Etapa 3: substituições de nomes (apenas fora de nomes de arquivo)
+        for par in self._ms_cfg.substituicoes_higienizacao:
+            if len(par) != 2:
+                continue
+            padrao, substituto = par
+            # Não substituir dentro de `word.ext` (nome de arquivo)
+            partes_linha = re.split(r"(\S+\.\w{2,5})", resultado)
+            novas_partes: list[str] = []
+            for j, segmento in enumerate(partes_linha):
+                if j % 2 == 1:  # segmentos ímpares = nomes de arquivo
+                    novas_partes.append(segmento)
+                    continue
+                # Padrões iniciados por artigo/preposição: não substituir quando precedidos de letra
+                if re.match(r"^(a|de|por|ao|da|do|pela|pelo)\s", padrao, re.IGNORECASE):
+                    regex = r"(?<![A-Za-zÀ-ú])" + re.escape(padrao)
+                else:
+                    regex = re.escape(padrao)
+                novas_partes.append(re.sub(regex, substituto, segmento, flags=re.IGNORECASE))
+            resultado = "".join(novas_partes)
+
+        # Etapa 4: remover linha de assinatura de Auditor Chefe
+        resultado = re.sub(
+            r"^\*Documento produzido por:.*$\n?",
+            "",
+            resultado,
+            flags=re.MULTILINE,
+        )
+
+        # Etapa 5: corrigir artefato "*DVA-CBS | DVA-CBS |" → "*DVA-CBS |"
+        resultado = re.sub(r"\*DVA-CBS \| DVA-CBS \|", "*DVA-CBS |", resultado)
+
+        # Etapa 5b: colapsar linhas em branco excessivas (máx. 2 consecutivas)
+        resultado = re.sub(r"\n{3,}", "\n\n", resultado)
+
+        return resultado
 
     # ── Varredura ────────────────────────────────────────────
 

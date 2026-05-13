@@ -81,6 +81,7 @@ class WatsonOutput:
     critical_alerts_count: int
     has_unanalyzable_files: bool
     secoes: dict
+    ultimo_id_alerta: str = ""   # ex: "W010-003" — propagado entre chamadas per-file
 
 
 @dataclass(frozen=True)

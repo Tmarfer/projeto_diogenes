@@ -30,9 +30,50 @@ def _mock(content: str) -> dict:
 
 TASKS = "## Tasks para Watson\n\n1. Analisar planilha\n2. Traduzir SQL\n"
 
-ANALISE_WATSON = """## Resumo Executivo\nAnálise concluída.\n
-## Tabela de Alertas\n| Severidade | Localização | Descrição |\n|---|---|---|\n
-## Arquivos Não Analisáveis\n"""
+ANALISE_ARQUIVO = """## Análise do Arquivo
+
+Arquivo analisado sem inconsistências.
+
+## Insumos da Cadeia
+
+Entrada: dados brutos. Saída: dados processados.
+
+## Tabela de Alertas
+
+| Severidade | Localização | Descrição |
+|---|---|---|
+
+## Arquivos Não Analisáveis
+
+## Último ID de Alerta Usado
+
+W001-000
+"""
+
+CONSOLIDADO_WATSON = """## Resumo Executivo
+
+Análise de integridade do módulo MOD_SINT_001 concluída.
+
+## Tabela de Alertas
+
+| Severidade | Localização | Descrição |
+|---|---|---|
+| INFORMATIVA | planilha_cbs.xlsx | Estrutura consistente |
+
+## Cadeia de Produção dos Dados
+
+script → planilha → resultado
+
+## Posição Consolidada
+
+CONSISTENTE
+
+## Arquivos Não Analisáveis
+
+"""
+
+# Mantido para compatibilidade com testes que usam diretamente
+ANALISE_WATSON = CONSOLIDADO_WATSON
 
 AVALIACAO_OK = "## Avaliação\n\nAPROVADO. Output completo.\n"
 
@@ -89,14 +130,17 @@ def ciclo(cfg, module_input, workspace):
 def test_ciclo_completo_sem_revisoes(httpx_mock: HTTPXMock, ciclo, cfg, workspace):
     """
     Ciclo completo: Watson aprova → Sherlock aprova → consolidação.
-    8 chamadas LLM mockadas.
+    13 chamadas LLM mockadas (4 arquivos → 4×analisar_arquivo + 1×consolidar_watson).
     """
     PACOTE_SH3 = "## Pacote para Sherlock\n\nContexto sintetizado."
     for content in [
-        TASKS, ANALISE_WATSON, AVALIACAO_OK, DECISAO_WATSON,        # Watson (4)
-        PACOTE_SH3,                                                    # montar_pacote_sherlock (5)
-        VALIDACAO_SHERLOCK, AVALIACAO_OK, DECISAO_SHERLOCK,          # Sherlock (6-8)
-        RELATORIO,                                                     # consolidação (9)
+        TASKS,                                                              # definir_tasks_watson (1)
+        ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, # analisar_arquivo ×4 (2-5)
+        CONSOLIDADO_WATSON,                                                 # consolidar_watson (6)
+        AVALIACAO_OK, DECISAO_WATSON,                                       # avaliar + fixar Watson (7-8)
+        PACOTE_SH3,                                                         # montar_pacote_sherlock (9)
+        VALIDACAO_SHERLOCK, AVALIACAO_OK, DECISAO_SHERLOCK,                # Sherlock (10-12)
+        RELATORIO,                                                          # consolidação (13)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",
@@ -142,15 +186,55 @@ def test_ciclo_completo_sem_revisoes(httpx_mock: HTTPXMock, ciclo, cfg, workspac
 def test_alerta_critico_pausa_antes_de_sherlock(httpx_mock: HTTPXMock, ciclo, cfg, workspace):
     """
     Watson com alerta crítico: Orquestrador pausa, aguarda Lestrade.
+    8 chamadas mockadas: tasks + 4×arquivo (1 crítico + 3 normais) + consolidar + avaliar + fixar.
     """
-    ANALISE_COM_CRITICO = """## Resumo Executivo\nProblema identificado.\n
-## Tabela de Alertas\n| Severidade | Localização | Descrição |\n|---|---|---|\n| CRÍTICA | planilha, aba 1 | Total não fecha |\n
-## Arquivos Não Analisáveis\n"""
+    ANALISE_COM_CRITICO = """## Análise do Arquivo
+
+Problema identificado.
+
+## Insumos da Cadeia
+
+Entrada: dados brutos. Saída: dados com inconsistência.
+
+## Tabela de Alertas
+
+| Severidade | Localização | Descrição |
+|---|---|---|
+| CRÍTICA | planilha, aba 1 | Total não fecha |
+
+## Arquivos Não Analisáveis
+
+## Último ID de Alerta Usado
+
+W001-001
+"""
+    CONSOLIDADO_COM_CRITICO = """## Resumo Executivo
+
+Problema identificado na análise dos arquivos.
+
+## Tabela de Alertas
+
+| Severidade | Localização | Descrição |
+|---|---|---|
+| CRÍTICA | planilha, aba 1 | Total não fecha |
+
+## Posição Consolidada
+
+INCONSISTENTE
+
+## Arquivos Não Analisáveis
+
+"""
     DECISAO_CRITICA = """## Decisão Final — Watson\n### Síntese\nAlerta.\n
 ### Posição Adotada\nMantida.\n### Overrule\nNÃO\n
 ### Alertas Críticos\nCONTAGEM: 1\n### Notas para Sherlock\nAtenção ao total.\n"""
 
-    for content in [TASKS, ANALISE_COM_CRITICO, AVALIACAO_OK, DECISAO_CRITICA]:
+    for content in [
+        TASKS,                                                              # definir_tasks_watson (1)
+        ANALISE_COM_CRITICO, ANALISE_ARQUIVO, ANALISE_ARQUIVO, ANALISE_ARQUIVO,  # analisar_arquivo ×4 (2-5)
+        CONSOLIDADO_COM_CRITICO,                                            # consolidar_watson (6)
+        AVALIACAO_OK, DECISAO_CRITICA,                                      # avaliar + fixar (7-8)
+    ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",
             json=_mock(content),

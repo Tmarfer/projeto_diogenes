@@ -38,12 +38,12 @@ temperatura: 0.2
 # linguagem coerente. Temperatura ligeiramente maior que Watson e Sherlock
 # é apropriada para funções de síntese e julgamento.
 
-max_tokens_padrao: 4000
-# Suficiente para tasks_watson, avaliações, críticas e decisões.
+max_tokens_padrao: 32768
+# Fase B/D — elimina truncagem em avaliações longas, críticas e consolidar.
+# Valor efetivo lido de agents_spec.yaml::agentes.mycroft.max_tokens (runtime).
 
-max_tokens_consolidar: 8000
-# A chamada `consolidar` produz o output que fundamenta o relatório para
-# Lestrade — pode ser extenso dependendo do número de divergências e dilemas.
+max_tokens_consolidar: 32768
+# Unificado com max_tokens_padrao — sem distinção por call_type no runtime.
 
 timeout_segundos: 90
 ```

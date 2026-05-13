@@ -2,16 +2,18 @@
 agents/watson.py — DVA-CBS | Projeto Diógenes
 WatsonAgent — Auditor de Integridade Técnica.
 
-Constrói prompts com heartbeat injetado, chama LLM, parseia output.
+Fase 1: um arquivo por chamada (analisar_arquivo), sequenciado pelo Orquestrador.
+Fase 2: consolidação dos outputs individuais (consolidar).
 Referência normativa: RF-WA-01 a RF-WA-10 (PRD v0.1), Bloco 9.3 (SDD v0.1)
 """
 from __future__ import annotations
-
+import re
 from pathlib import Path
 
 from diogenes.agents.file_prep import preparar_arquivo
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
 from diogenes.config import AgentSpec
+from diogenes.models import LLMCall, LLMMessage, WatsonOutput, InputFileInfo
 from diogenes.llm.base import LLMClient
 from diogenes.llm.call_id import gerar_call_id
 from diogenes.llm.seed import calcular_seed
@@ -30,39 +32,67 @@ class WatsonAgent:
         self._system_prompt = self._construir_system_prompt()
         self._heartbeat = HeartbeatLoader(docs_dir / "heartbeat.md")
 
-    def analisar(
+    def analisar_arquivo(
         self,
-        inputs_dir: Path,
-        manifest: CycleManifest,
+        arquivo_path: Path,
+        arquivo_info: InputFileInfo,
         tasks_mycroft: str = "",
         proximo_id_alerta: str = "",
     ) -> WatsonOutput:
         """
-        Análise de integridade do pacote completo.
-        proximo_id_alerta: ex. "W010-001" — injetado no preamble para Watson.
+        Analisa UM arquivo do pacote RFB em contexto isolado.
+        Retorna WatsonOutput com ultimo_id_alerta preenchido para propagar
+        o contador de IDs ao próximo arquivo.
         """
         call_type = "analise_inicial"
         hb = self._heartbeat.get_section(call_type)
 
-        # Preamble: próximo ID de alerta (se fornecido)
-        preamble_partes: list[str] = []
+        partes: list[str] = []
         if proximo_id_alerta:
-            preamble_partes.append(
-                f"**Próximo ID de alerta disponível:** `{proximo_id_alerta}`"
-            )
-
-        # Inputs: tasks de Mycroft + arquivos
-        conteudo_partes: list[str] = []
+            partes.append(f"**Próximo ID de alerta disponível:** `{proximo_id_alerta}`")
         if tasks_mycroft:
-            conteudo_partes.append(f"[TASKS DE MYCROFT]\n{tasks_mycroft}")
-        for fi in manifest.input_files:
-            path = inputs_dir / fi.rel_path
-            conteudo = preparar_arquivo(path)
-            conteudo_partes.append(f"[ARQUIVO: {fi.name}]\n{conteudo}")
+            partes.append(f"[TASKS DE MYCROFT]\n{tasks_mycroft}")
+        conteudo = preparar_arquivo(arquivo_path)
+        partes.append(f"[ARQUIVO: {arquivo_info.name}]\n{conteudo}")
 
-        user_base = "\n\n".join(preamble_partes + conteudo_partes)
-        user = injetar_heartbeat(hb, user_base)
+        user = injetar_heartbeat(hb, "\n\n".join(partes))
+        resp = self._llm.complete(LLMCall(
+            call_id=gerar_call_id("watson", call_type),
+            cycle_id=self._cycle_id, phase=self.FASE,
+            agent="watson", call_type=call_type,
+            model=self._spec.modelo, temperature=self._spec.temperatura,
+            max_tokens=self._spec.max_tokens,
+            seed=calcular_seed(42, self._cycle_id, self.FASE, call_type,
+                               hash(arquivo_info.name) & 0xFFFF),
+            messages=[
+                LLMMessage(role="system", content=self._system_prompt),
+                LLMMessage(role="user", content=user),
+            ],
+            timeout_segundos=self._spec.timeout_segundos,
+            max_tentativas_retry=self._spec.max_tentativas_retry,
+            backoff_segundos=self._spec.backoff_segundos,
+        ))
+        return self._parsear_output(resp.content)
 
+    def consolidar(
+        self,
+        analises: list[WatsonOutput],
+        tasks_mycroft: str = "",
+    ) -> WatsonOutput:
+        """
+        Consolida as análises individuais (Fase 2).
+        Usa heartbeat consolidar_watson. Agrega critical_alerts_count de todos os arquivos.
+        """
+        call_type = "consolidar_watson"
+        hb = self._heartbeat.get_section(call_type)
+
+        partes: list[str] = []
+        if tasks_mycroft:
+            partes.append(f"[TASKS DE MYCROFT]\n{tasks_mycroft}")
+        for i, a in enumerate(analises, 1):
+            partes.append(f"[ANÁLISE DO ARQUIVO #{i}]\n{a.texto}")
+
+        user = injetar_heartbeat(hb, "\n\n---\n\n".join(partes))
         resp = self._llm.complete(LLMCall(
             call_id=gerar_call_id("watson", call_type),
             cycle_id=self._cycle_id, phase=self.FASE,
@@ -78,7 +108,23 @@ class WatsonAgent:
             max_tentativas_retry=self._spec.max_tentativas_retry,
             backoff_segundos=self._spec.backoff_segundos,
         ))
-        return self._parsear_output(resp.content)
+        consolidado = self._parsear_output(resp.content)
+        # Garantir contagem de críticos: máximo entre o que o LLM reportou
+        # e a soma das análises individuais (defesa contra omissão na síntese)
+        total_criticos = max(
+            consolidado.critical_alerts_count,
+            sum(a.critical_alerts_count for a in analises),
+        )
+        has_nao_analisavel = consolidado.has_unanalyzable_files or any(
+            a.has_unanalyzable_files for a in analises
+        )
+        return WatsonOutput(
+            texto=consolidado.texto,
+            critical_alerts_count=total_criticos,
+            has_unanalyzable_files=has_nao_analisavel,
+            secoes=consolidado.secoes,
+            ultimo_id_alerta=consolidado.ultimo_id_alerta,
+        )
 
     def responder_critica(
         self,
@@ -133,11 +179,13 @@ class WatsonAgent:
         secoes = _extrair_secoes(content)
         criticos = _contar_criticos(secoes.get("Tabela de Alertas", ""))
         nao_analisaveis = secoes.get("Arquivos Não Analisáveis", "").strip()
+        ultimo_id = _extrair_ultimo_id(secoes, content)
         return WatsonOutput(
             texto=content,
             critical_alerts_count=criticos,
             has_unanalyzable_files=bool(nao_analisaveis),
             secoes=secoes,
+            ultimo_id_alerta=ultimo_id,
         )
 
 
@@ -163,3 +211,24 @@ def _contar_criticos(tabela: str) -> int:
         1 for linha in tabela.splitlines()
         if "CRÍTICA" in linha.upper() or "CRITICA" in linha.upper()
     )
+
+
+def _extrair_ultimo_id(secoes: dict, content: str) -> str:
+    """
+    Extrai o último ID de alerta do output de Watson.
+    Tenta primeiro a seção dedicada `## Último ID de Alerta Usado`,
+    depois busca o padrão W\\d+-\\d+ de maior número em todo o texto.
+    """
+    # 1. Seção dedicada (forma canônica)
+    secao = secoes.get("Último ID de Alerta Usado", "").strip()
+    if secao:
+        m = re.search(r'W\d+-\d+', secao)
+        if m:
+            return m.group(0)
+
+    # 2. Fallback: maior ID encontrado no texto completo
+    ids = re.findall(r'W(\d+)-(\d+)', content)
+    if ids:
+        return "W" + max(ids, key=lambda t: (int(t[0]), int(t[1])))[0] + \
+               "-" + max(ids, key=lambda t: (int(t[0]), int(t[1])))[1]
+    return ""

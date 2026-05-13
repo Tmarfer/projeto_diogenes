@@ -69,6 +69,14 @@ class StrangerRoom:
 
     # ── Leitura ───────────────────────────────────────────────
 
+    def ler_apresentacao(self, fase: str) -> str:
+        """Retorna o conteúdo (sem frontmatter YAML) do arquivo de apresentação da fase."""
+        path = self._path_para(fase, "apresentacao")
+        if not path.exists():
+            return ""
+        post = frontmatter.load(str(path))
+        return post.content
+
     def ler_decisao_final(self, fase: str) -> DecisaoFinal:
         path = self._path_para(fase, "decisao_final")
         if not path.exists():

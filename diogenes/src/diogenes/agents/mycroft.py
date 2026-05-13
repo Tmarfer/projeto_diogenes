@@ -106,7 +106,8 @@ class MycrooftAgent:
     # ── montar_pacote_sherlock ────────────────────────────────
 
     def montar_pacote_sherlock(
-        self, manifest: CycleManifest, inputs_dir: Path, decisao_watson: DecisaoFinal
+        self, manifest: CycleManifest, inputs_dir: Path, decisao_watson: DecisaoFinal,
+        watson_apresentacao: str = "",
     ) -> str:
         call_type = "montar_pacote_sherlock"
         from diogenes.agents.file_prep import preparar_arquivo
@@ -114,29 +115,46 @@ class MycrooftAgent:
             f"- {fi.name} ({fi.extension}, {fi.size_bytes} bytes)"
             for fi in manifest.input_files
         )
-        docs_textuais: list[str] = []
-        for fi in manifest.input_files:
-            if fi.extension in (".md", ".pdf", ".txt"):
-                path = inputs_dir / fi.rel_path
-                if path.exists():
-                    docs_textuais.append(
-                        f"[DOCUMENTO: {fi.name}]\n{preparar_arquivo(path)}"
-                    )
-        docs_str = "\n\n".join(docs_textuais) if docs_textuais else \
-                   "[Nenhum documento textual no pacote]"
+        # Para o LLM de Mycroft: apenas metadados + decisão Watson (sem docs completos)
         user_base = (
             f"## Contexto do Módulo\n\n"
             f"Módulo: {manifest.module_id} | Atividade: {manifest.activity}\n"
             f"Sala de Sigilo: {'Sim' if manifest.is_sigilo_module else 'Não'}\n\n"
             f"## Decisão Final de Mycroft sobre Watson\n\n{decisao_watson.texto}\n\n"
             f"## Inventário dos Artefatos Entregues\n\n{inventario}\n\n"
-            f"## Documentos do Pacote\n\n{docs_str}\n\n"
-            f"Monte o pacote integrado para Sherlock conforme o template "
-            f"'montar_pacote_sherlock' do skills.md."
+            f"Monte a síntese de contexto para Sherlock conforme o template "
+            f"'montar_pacote_sherlock' do skills.md. Foco em: alertas de Watson, "
+            f"cadeia de produção, pontos de atenção para análise metodológica."
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
         resp = self._llm.complete(self._montar_call(call_type, self.FASE_SHERLOCK, user))
-        return resp.content
+
+        # Montar pacote completo: síntese Mycroft + análise Watson + documentos metodológicos
+        partes: list[str] = [resp.content]
+
+        # Análise completa de Watson (da Stranger's Room) — insumo principal para Sherlock
+        if watson_apresentacao:
+            partes.append(
+                "\n\n---\n\n## Análise de Integridade Técnica — Resultado Completo\n\n"
+                + watson_apresentacao
+            )
+
+        # Documentos metodológicos do pacote (.md) injetados diretamente
+        # para que Sherlock possa identificar os pontos a verificar
+        docs_metodologicos: list[str] = []
+        for fi in manifest.input_files:
+            if fi.extension == ".md":
+                path = inputs_dir / fi.rel_path
+                if path.exists():
+                    docs_metodologicos.append(
+                        f"\n\n---\n\n[DOCUMENTO METODOLÓGICO: {fi.name}]\n\n"
+                        + preparar_arquivo(path)
+                    )
+        if docs_metodologicos:
+            partes.append("\n\n---\n\n## Documentos Metodológicos do Pacote")
+            partes.extend(docs_metodologicos)
+
+        return "".join(partes)
 
     # ── avaliar_sherlock ──────────────────────────────────────
 
@@ -240,8 +258,19 @@ def _extrair_secoes(content: str) -> dict:
 def _parsear_avaliacao(content: str) -> AvaliacaoMycroft:
     secoes = _extrair_secoes(content)
     av = secoes.get("Avaliação", "")
-    tipo = "APROVADO" if "APROVADO" in av.upper() else "QUESTIONAR"
-    critica = secoes.get("Pontos para Revisão", "") if tipo == "QUESTIONAR" else ""
+    # Detect tipo: check "resultado:" header field (template format from skills.md)
+    # before falling back to scanning the body of ## Avaliação.
+    # The heartbeat template uses resultado: APROVADO|CRITICA in the document header,
+    # not "APROVADO"/"QUESTIONAR" as the first line of ## Avaliação (legacy prompt format).
+    # Markdown bold wraps "resultado:" as **resultado:** so the colon precedes the closing **.
+    m = re.search(r"resultado:\*{0,2}\s*(APROVADO|CRITICA)", content, re.IGNORECASE)
+    if m:
+        tipo = "APROVADO" if m.group(1).upper() == "APROVADO" else "QUESTIONAR"
+    else:
+        tipo = "APROVADO" if "APROVADO" in av.upper() else "QUESTIONAR"
+    # Critique text: the template puts it inside ## Avaliação (not ## Pontos para Revisão).
+    # Fall back chain: "Pontos para Revisão" (legacy) → "Avaliação" (template) → full text.
+    critica = (secoes.get("Pontos para Revisão") or av or content) if tipo == "QUESTIONAR" else ""
     return AvaliacaoMycroft(tipo=tipo, texto=content, critica=critica)
 
 
