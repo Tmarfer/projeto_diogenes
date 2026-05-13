@@ -6,9 +6,10 @@ Não contém lógica de negócio — apenas estruturas de dados com validação.
 Referência normativa: Bloco 2.3.2, Bloco 6.3, Bloco 9 (SDD v0.1)
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -61,7 +62,7 @@ class LLMResponse(BaseModel):
     content: str
     call_id: str
     model_used: str
-    system_fingerprint: Optional[str]
+    system_fingerprint: str | None
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
@@ -207,12 +208,12 @@ class StrangerRoomFile(BaseModel):
     file_type: str
     author: str
     role: str
-    round: Optional[int]
+    round: int | None
     timestamp_utc: str
     content_hash: str
-    has_critical_alert: Optional[bool] = None
-    has_dilemma: Optional[bool] = None
-    mycroft_overruled: Optional[bool] = None
+    has_critical_alert: bool | None = None
+    has_dilemma: bool | None = None
+    mycroft_overruled: bool | None = None
     content: str = ""
 
 
@@ -226,7 +227,7 @@ class OcorrenciaDetectada:
     padrao_detectado: str
     contexto: str
     posicao_documento: str
-    classificacao_automatica: Optional[str]
+    classificacao_automatica: str | None
 
 
 @dataclass

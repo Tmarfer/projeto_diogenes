@@ -3,10 +3,13 @@ tests/integration/test_ciclo_sherlock.py
 Ciclo end-to-end completo (Watson + Sherlock + consolidação) com mocks.
 """
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
 import pytest
 from pytest_httpx import HTTPXMock
+
 from diogenes.config import get_config
 from diogenes.motors.motor_start import MotorStart
 from diogenes.orchestrator.orchestrator import Orchestrator
@@ -170,9 +173,9 @@ def test_ciclo_completo_sem_revisoes(httpx_mock: HTTPXMock, ciclo, cfg, workspac
 
     # events.jsonl deve ter eventos de ambas as fases
     eventos = [
-        json.loads(l)
-        for l in (cycle_dir / "_runtime" / "events.jsonl").read_text().splitlines()
-        if l.strip()
+        json.loads(ln)
+        for ln in (cycle_dir / "_runtime" / "events.jsonl").read_text().splitlines()
+        if ln.strip()
     ]
     tipos = [e["event_type"] for e in eventos]
     assert "CYCLE_STARTED" in tipos

@@ -4,6 +4,7 @@ Extrai conteúdo legível de xlsx, sql, ipynb, pdf, md.
 Referência normativa: RF-WA-03 a RF-WA-05 (PRD v0.1), Bloco 9.3.2 (SDD v0.1)
 """
 from __future__ import annotations
+
 from pathlib import Path
 
 _SQL_MAX_CHARS = 8_000

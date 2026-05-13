@@ -1,13 +1,14 @@
 """cli/commands/verify_output.py — diogenes verify-output"""
 from __future__ import annotations
+
 import typer
 from rich.panel import Panel
-from rich.table import Table
+
 from diogenes.cli import display
-from diogenes.config import get_config, ConfigError
-from diogenes.motors.motor_saida import MotorSaida
-from diogenes.motors.exceptions import MotorSaidaError
+from diogenes.config import ConfigError, get_config
 from diogenes.models import MotorSaidaReport
+from diogenes.motors.exceptions import MotorSaidaError
+from diogenes.motors.motor_saida import MotorSaida
 
 app = typer.Typer()
 
@@ -19,7 +20,8 @@ def verify_output(
     try:
         get_config()
     except ConfigError as e:
-        display.erro(str(e)); raise typer.Exit(1)
+        display.erro(str(e))
+        raise typer.Exit(1) from e
 
     display.console.print(Panel(
         f"[bold]MOTOR DE SAÍDA[/bold]  —  ciclo [cyan]{cycle}[/cyan]",
@@ -30,9 +32,11 @@ def verify_output(
         motor = MotorSaida()
         report = motor.verificar(cycle)
     except MotorSaidaError as e:
-        display.passo_erro(str(e)); raise typer.Exit(1)
+        display.passo_erro(str(e))
+        raise typer.Exit(1) from e
     except FileNotFoundError as e:
-        display.passo_erro(str(e)); raise typer.Exit(1)
+        display.passo_erro(str(e))
+        raise typer.Exit(1) from e
 
     _exibir_relatorio(report, cycle)
 
@@ -43,7 +47,7 @@ def _exibir_relatorio(report: MotorSaidaReport, cycle: str) -> None:
     if report.documento_limpo:
         console.print()
         display.passo_ok(f"Documento verificado: {report.doc_path.name}")
-        display.passo_ok(f"Ocorrências detectadas: 0")
+        display.passo_ok("Ocorrências detectadas: 0")
         display.passo_ok("Documento classificado como [bold green]LIMPO[/bold green]")
         console.print()
         console.print(f"  [dim]Hash:[/dim] {report.doc_hash}")

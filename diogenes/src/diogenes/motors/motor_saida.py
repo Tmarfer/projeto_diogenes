@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from diogenes.config import get_config
@@ -76,7 +76,7 @@ class MotorSaida:
 
         ocorrencias = self._varrer(doc_content)
 
-        now_utc = datetime.now(timezone.utc).strftime(
+        now_utc = datetime.now(UTC).strftime(
             self._cfg.persistencia.timestamp_iso_format
         )
 

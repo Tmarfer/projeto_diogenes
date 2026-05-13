@@ -12,10 +12,10 @@ Referência normativa: RF-OR-11 (PRD v0.1), Bloco 8.2 (SDD v0.1)
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class CycleState(str, Enum):
+class CycleState(StrEnum):
     # Progressão normal
     PREPARADO                              = "PREPARADO"
     AGUARDANDO_CONFIRMACAO_MANIFESTO       = "AGUARDANDO_CONFIRMACAO_MANIFESTO"
