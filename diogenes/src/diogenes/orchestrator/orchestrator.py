@@ -101,7 +101,11 @@ class Orchestrator:
 
         # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
         from diogenes.models import WatsonOutput as _WO
-        proximo_id = self._proximo_id_alerta(manifest.module_id)
+        # alert_counter representa o próximo número sequencial a ser alocado
+        # (W{módulo}-{counter:03d}). Inicia em 1 para que o primeiro ID seja
+        # W{módulo}-001. Acumula entre arquivos e rodadas de revisão.
+        alert_counter = 1
+        proximo_id = self._proximo_id_alerta(manifest.module_id, alert_counter)
         analises_watson: list[_WO] = []
         for fi in manifest.input_files:
             analise_fi = self._watson.analisar_arquivo(
