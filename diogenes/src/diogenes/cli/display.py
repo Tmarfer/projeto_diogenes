@@ -8,11 +8,20 @@ Referência normativa: RNF-USAB-05, RNF-OBSE-01 (PRD v0.1), Bloco 2.3.8 (SDD v0.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+# Windows: força UTF-8 em stdout/stderr antes de instanciar o Console do rich.
+# Consoles legados (cp1252) levantam UnicodeEncodeError ao imprimir glifos
+# como ✓/✗. reconfigure() existe em TextIOWrapper desde o Python 3.7.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 console = Console()
 

@@ -26,7 +26,7 @@ agentes:
     # modelo: z-ai/glm-4.5-air:free                 # Fase A (free)
     # modelo: anthropic/claude-sonnet-4-6            # Fase D
     temperatura: 0.0  # 0.0 = determinístico; elimina alucinações na síntese
-    max_tokens: 32768
+    max_tokens: 16384  # outputs legítimos observados ≤ 8.5k tok; teto contém loops degenerados
     max_tokens_ciclo: 131072
     timeout_segundos: 300
     max_tentativas_retry: 2
@@ -39,7 +39,7 @@ agentes:
     # modelo: google/gemma-4-31b-it:free            # Fase A (rate-limit em requests grandes)
     # modelo: google/gemini-2.5-flash               # Fase D
     temperatura: 0.0    # máximo determinismo — Watson não especula
-    max_tokens: 32768   # 4× anterior — elimina truncagem na analise_inicial + revisões
+    max_tokens: 16384   # outputs legítimos observados ≤ 6k tok; teto contém loops degenerados de whitespace
     max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 2
@@ -52,7 +52,7 @@ agentes:
     # modelo: minimax/minimax-m2.5:free             # Fase A (free)
     # modelo: anthropic/claude-opus-4-6             # Fase D
     temperatura: 0.1
-    max_tokens: 32768
+    max_tokens: 24576   # validacao_inicial legítima observada ~16.4k tok — headroom maior que os demais
     max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 2

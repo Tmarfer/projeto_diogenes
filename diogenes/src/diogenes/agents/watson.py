@@ -7,17 +7,17 @@ Fase 2: consolidação dos outputs individuais (consolidar).
 Referência normativa: RF-WA-01 a RF-WA-10 (PRD v0.1), Bloco 9.3 (SDD v0.1)
 """
 from __future__ import annotations
+
 import re
 from pathlib import Path
 
 from diogenes.agents.file_prep import preparar_arquivo
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
 from diogenes.config import AgentSpec
-from diogenes.models import LLMCall, LLMMessage, WatsonOutput, InputFileInfo
 from diogenes.llm.base import LLMClient
 from diogenes.llm.call_id import gerar_call_id
 from diogenes.llm.seed import calcular_seed
-from diogenes.models import CycleManifest, LLMCall, LLMMessage, WatsonOutput
+from diogenes.models import InputFileInfo, LLMCall, LLMMessage, WatsonOutput
 
 
 class WatsonAgent:
@@ -177,8 +177,8 @@ class WatsonAgent:
 
     def _parsear_output(self, content: str) -> WatsonOutput:
         secoes = _extrair_secoes(content)
-        criticos = _contar_criticos(secoes.get("Tabela de Alertas", ""))
-        nao_analisaveis = secoes.get("Arquivos Não Analisáveis", "").strip()
+        criticos = _contar_criticos(content, secoes)
+        nao_analisaveis = _secao_por_nome(secoes, _SECOES_NAO_ANALISAVEIS).strip()
         ultimo_id = _extrair_ultimo_id(secoes, content)
         return WatsonOutput(
             texto=content,
@@ -206,10 +206,49 @@ def _extrair_secoes(content: str) -> dict:
     return secoes
 
 
-def _contar_criticos(tabela: str) -> int:
+# Nomes de seção de alertas conforme os templates do skills.md de Watson:
+# Template 1 (analise_arquivo) → "## Alertas Consolidados deste Arquivo"
+# Template 2 (consolidar_watson) → "## 3. Alertas Consolidados"
+# "Tabela de Alertas" é mantido por retrocompatibilidade com o SDD.
+_SECOES_ALERTAS = (
+    "Tabela de Alertas",
+    "Alertas Consolidados deste Arquivo",
+    "3. Alertas Consolidados",
+    "Alertas Consolidados",
+)
+_SECOES_NAO_ANALISAVEIS = (
+    "Arquivos Não Analisáveis",
+    "Arquivos Não Analisados",
+)
+
+
+def _secao_por_nome(secoes: dict, candidatos: tuple[str, ...]) -> str:
+    """Retorna o conteúdo da primeira seção cujo nome casa com um candidato."""
+    for nome in candidatos:
+        if nome in secoes:
+            return secoes[nome]
+    return ""
+
+
+def _contar_criticos(content: str, secoes: dict) -> int:
+    """
+    Conta alertas CRÍTICOS do output de Watson.
+
+    Fonte primária: o campo de cabeçalho `**Alertas CRITICA:** N` que ambos
+    os templates de Watson emitem — sobrevive à truncagem da tabela de alertas.
+    Fallback: conta linhas marcadas como CRÍTICA na seção de alertas, tentando
+    os vários nomes de seção usados pelos templates.
+    """
+    m = re.search(
+        r'\*\*\s*Alertas\s+CR[IÍ]TICA\s*:?\s*\*\*\s*:?\s*(\d+)',
+        content, re.IGNORECASE,
+    )
+    if m:
+        return int(m.group(1))
+    tabela = _secao_por_nome(secoes, _SECOES_ALERTAS)
     return sum(
         1 for linha in tabela.splitlines()
-        if "CRÍTICA" in linha.upper() or "CRITICA" in linha.upper()
+        if re.search(r'\bCR[IÍ]TICA\b', linha, re.IGNORECASE)
     )
 
 
@@ -219,14 +258,22 @@ def _extrair_ultimo_id(secoes: dict, content: str) -> str:
     Tenta primeiro a seção dedicada `## Último ID de Alerta Usado`,
     depois busca o padrão W\\d+-\\d+ de maior número em todo o texto.
     """
-    # 1. Seção dedicada (forma canônica)
+    # 1. Campo de cabeçalho `**Último ID de alerta usado:** WNNN-NNN` (Template 1)
+    m = re.search(
+        r'\*\*\s*Último ID de alerta usado\s*:?\s*\*\*\s*:?\s*(W\d+-\d+)',
+        content, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1)
+
+    # 2. Seção dedicada (forma canônica)
     secao = secoes.get("Último ID de Alerta Usado", "").strip()
     if secao:
         m = re.search(r'W\d+-\d+', secao)
         if m:
             return m.group(0)
 
-    # 2. Fallback: maior ID encontrado no texto completo
+    # 3. Fallback: maior ID encontrado no texto completo
     ids = re.findall(r'W(\d+)-(\d+)', content)
     if ids:
         return "W" + max(ids, key=lambda t: (int(t[0]), int(t[1])))[0] + \
