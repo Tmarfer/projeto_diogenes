@@ -35,7 +35,6 @@ def resume(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
     display.passo_ok("Retomando ciclo...")
     from diogenes.cli.commands.proceed import _reconstruir_manifest
     manifest = _reconstruir_manifest(cfg, cycle, record)
-    audit.update_status(cycle, CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA.value)
 
     try:
         orq = Orchestrator(cycle)

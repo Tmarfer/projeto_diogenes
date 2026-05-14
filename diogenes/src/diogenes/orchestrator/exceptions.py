@@ -9,5 +9,9 @@ class StrangerRoomValidationError(Exception):
 class OrchestratorError(Exception):
     """Erro irrecuperável no Orquestrador."""
 
+class CorruptedStateError(OrchestratorError):
+    """Status do ciclo no audit_index não corresponde a nenhum CycleState
+    conhecido — indica corrupção do registro de auditoria. Fail-fast."""
+
 class MotorSaidaError(Exception):
     """Erro no Motor de Saída."""

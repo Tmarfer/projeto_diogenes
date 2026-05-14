@@ -292,6 +292,8 @@ Você está sintetizando. Não está analisando. A fonte da verdade é o texto d
 
 Em caso de dúvida entre afirmar um achado ou omiti-lo: omita. Um relatório conservador é auditável. Um relatório que inventa é invalidável.
 
+**Distinga arquivos do pacote de arquivos apenas citados.** O manifesto de abertura — incluído no input desta chamada — é a lista fechada e única dos arquivos que compõem o pacote analisado. Um arquivo mencionado *dentro* de um artefato (ex.: um `.csv` lido pelo código de um notebook, uma tabela referenciada em um script) **não** é um arquivo do pacote a menos que conste do manifesto. Ao mencionar um arquivo que não está no manifesto, deixe explícito que ele é uma referência interna não fornecida — escreva, por exemplo, "o arquivo `X` referenciado em `Y`, não fornecido no pacote" — nunca o trate como se fosse um artefato entregue e analisado. Atenha-se estritamente ao manifesto ao falar do escopo do pacote.
+
 ---
 
 ## ⛔ PROIBIÇÃO ABSOLUTA — ARTIGO 14 (leia antes de escrever qualquer linha)

@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(python -m ruff check src/diogenes/orchestrator/orchestrator.py src/diogenes/cli/commands/resume.py)",
+      "Bash(python -m ruff check src/diogenes/orchestrator/ src/diogenes/cli/commands/resume.py)",
+      "Bash(python -m mypy src/diogenes/orchestrator/orchestrator.py)",
+      "Bash(python -m pytest tests/unit/test_orchestrator.py -q)",
+      "Bash(python -m ruff check tests/unit/test_orchestrator.py)",
+      "Bash(python -c \"import diogenes; print\\(diogenes.__file__\\)\")",
+      "Bash(PYTHONPATH=\"$\\(pwd\\)/src\" python -c \"import diogenes; print\\(diogenes.__file__\\)\")",
+      "Bash(pip install *)",
+      "Bash(cd \"C:/Projetos/Projeto_Diogenes/.claude/worktrees/gallant-williamson-8e038f\" && echo \"=== workspace_sample tree ===\" && find piloto/workspace_sample -type f && echo && echo \"=== setup_local.sh ===\" && cat piloto/setup_local.sh && echo && echo \"=== existe workspace/ na worktree? ===\" && ls -la diogenes/ | grep -i workspace || echo \"\\(sem dir workspace\\)\" && echo && echo \"=== existe workspace no OneDrive checkout? ===\" && ls -la \"C:/Users/marquesf/OneDrive - Tribunal de Contas da União/Documents/Projeto_Diogenes/diogenes/\" 2>/dev/null | grep -iE \"workspace|\\\\.env\" || echo \"\\(nada\\)\")",
+      "Bash(ONEDRIVE=\"C:/Users/marquesf/OneDrive - Tribunal de Contas da União/Documents/Projeto_Diogenes/diogenes\"; echo \"=== .env do OneDrive \\(chave mascarada\\) ===\" && sed -E 's/\\(API_KEY=\\).+/\\\\1***PREENCHIDA***/; s/\\(API_KEY=\\)$/\\\\1<VAZIA>/' \"$ONEDRIVE/.env\" && echo && echo \"=== workspace tree \\(OneDrive\\) ===\" && find \"$ONEDRIVE/workspace\" -maxdepth 4 -type f 2>/dev/null | head -40 && echo \"--- dirs ---\" && find \"$ONEDRIVE/workspace\" -maxdepth 3 -type d 2>/dev/null)",
+      "Bash(echo \"=== .git da worktree ===\" && cat .git && echo && echo \"=== main repo tem .env / workspace? ===\" && ls -la \"C:/Projetos/Projeto_Diogenes/diogenes/\" 2>/dev/null | grep -iE \"\\\\.env|workspace\" || echo \"\\(main repo local: sem .env/workspace\\)\" && echo && echo \"=== .gitignore da worktree ===\" && cat diogenes/.gitignore)",
+      "Bash(cp \"C:/Projetos/Projeto_Diogenes/diogenes/.env\" \"C:/Projetos/Projeto_Diogenes/.claude/worktrees/gallant-williamson-8e038f/diogenes/.env\" && echo \"copiado\" && sed -E 's/\\(API_KEY=\\).+/\\\\1***/' \"C:/Projetos/Projeto_Diogenes/.claude/worktrees/gallant-williamson-8e038f/diogenes/.env\" | grep -E \"WORKSPACE|API_KEY|ENV|SSL\")",
+      "Bash(python -m diogenes.cli.app init)",
+      "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" init)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \"from diogenes.cli.app import app; app\\(\\)\" start --module MOD_SINT_001 --activity 1)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \"from diogenes.cli.app import app; app\\(\\)\" confirm-manifest --cycle MOD_SINT_001_A1_20260514T123134Z)",
+      "Bash(python -c 'import sys,json *)",
+      "Bash(python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \"from diogenes.cli.app import app; app\\(\\)\" verify-output --cycle MOD_SINT_001_A1_20260514T123134Z)",
+      "Bash(python -c \"import csv; r=list\\(csv.DictReader\\(open\\('workspace/audit_index.csv'\\)\\)\\)[-1]; print\\(' ', r['status'], '| motor_saida:', r['motor_saida_decision'], '| occ:', r['motor_saida_occurrences']\\)\")",
+      "Bash(grep -rl \"rais_2025\" piloto/workspace_sample/ diogenes/workspace/cycles/MOD_SINT_001_A1_20260514T123134Z/inputs/)",
+      "Bash(grep -rl \"rais_2025\" diogenes/workspace/cycles/MOD_SINT_001_A1_20260514T123134Z/)",
+      "Bash(grep -nE \"^#{1,4} |Template\" docs/agentes/watson/skills.md)",
+      "Bash(PYTHONIOENCODING=utf-8 python -m pytest tests/ -q)",
+      "Bash(python -m ruff check src/diogenes/agents/watson.py src/diogenes/llm/openrouter.py src/diogenes/cli/display.py src/diogenes/models.py)",
+      "Bash(python -m mypy src/diogenes/agents/watson.py src/diogenes/llm/openrouter.py src/diogenes/cli/display.py)",
+      "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" list-cycles)",
+      "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" status --cycle MOD_SINT_001_A1_20260514T123134Z)",
+      "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" start --module MOD_SINT_001 --activity 1)",
+      "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" confirm-manifest --cycle MOD_SINT_001_A1_20260514T125951Z)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c 'import json *)"
+    ]
+  }
+}

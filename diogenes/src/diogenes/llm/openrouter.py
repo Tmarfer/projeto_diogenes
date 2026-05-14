@@ -73,6 +73,13 @@ class OpenRouterClient:
                     time.sleep(call.backoff_segundos * attempt)
                     continue
                 content = raw.choices[0].message.content or ""
+                finish_reason = raw.choices[0].finish_reason or ""
+                # Modelos pequenos às vezes degeneram em repetição de whitespace
+                # até esgotar o teto de tokens. Trailing whitespace nunca é
+                # semântico nos outputs markdown — removê-lo limpa o lixo.
+                content = content.rstrip()
+                if finish_reason == "length":
+                    _log_truncagem(call, len(content))
                 usage = raw.usage
                 cost = self._calcular_custo(call.model, usage.prompt_tokens, usage.completion_tokens)
                 self._custo_acumulado_usd += cost
@@ -90,6 +97,7 @@ class OpenRouterClient:
                     latency_ms=latency_ms,
                     retry_attempts=attempt,
                     http_status=200,
+                    finish_reason=finish_reason,
                 )
                 self._persistir_trace(call, resp, 200)
                 return resp
@@ -187,6 +195,7 @@ class OpenRouterClient:
             "user_prompt": call.messages[-1].content,
             "response_raw": resp.content,
             "response_parsed_ok": True,
+            "finish_reason": resp.finish_reason,
             "usage": {
                 "prompt_tokens": resp.prompt_tokens,
                 "completion_tokens": resp.completion_tokens,
@@ -216,13 +225,22 @@ class OpenRouterClient:
         )
 
 
-def _log_call(call: "LLMCall", prompt_tok: int, completion_tok: int, cost: float, latency_ms: int) -> None:
+def _log_call(call: LLMCall, prompt_tok: int, completion_tok: int, cost: float, latency_ms: int) -> None:
     label = f"{call.agent}/{call.call_type}"
     model_short = call.model.split("/")[-1]
     print(
         f"  [LLM] {label:<45} "
         f"in={prompt_tok:>6} out={completion_tok:>5} tok  "
         f"${cost:.5f}  {latency_ms/1000:.1f}s  [{model_short}]",
+        flush=True,
+    )
+
+
+def _log_truncagem(call: LLMCall, content_len: int) -> None:
+    print(
+        f"  [LLM] ⚠ TRUNCAGEM  {call.agent}/{call.call_type} atingiu max_tokens "
+        f"(finish_reason=length). Conteúdo útil: {content_len} chars após limpeza. "
+        f"Revisar concisão do prompt ou o teto de max_tokens.",
         flush=True,
     )
 

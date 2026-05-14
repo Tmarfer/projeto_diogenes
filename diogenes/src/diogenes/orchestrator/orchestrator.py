@@ -17,9 +17,9 @@ from diogenes.agents.watson import WatsonAgent
 from diogenes.config import get_config
 from diogenes.llm.base import get_llm_client
 from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
-from diogenes.models import CycleManifest, DecisaoFinal
+from diogenes.models import CycleManifest, DecisaoFinal, WatsonOutput
 from diogenes.orchestrator.events import EventLogger
-from diogenes.orchestrator.exceptions import OrchestratorError
+from diogenes.orchestrator.exceptions import CorruptedStateError, OrchestratorError
 from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, InvalidTransitionError
 from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.persistence.audit_index import AuditIndex
@@ -100,13 +100,13 @@ class Orchestrator:
         inputs_dir = self._cycle_dir / "inputs"
 
         # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
-        from diogenes.models import WatsonOutput as _WO
-        # alert_counter representa o próximo número sequencial a ser alocado
-        # (W{módulo}-{counter:03d}). Inicia em 1 para que o primeiro ID seja
-        # W{módulo}-001. Acumula entre arquivos e rodadas de revisão.
-        alert_counter = 1
-        proximo_id = self._proximo_id_alerta(manifest.module_id, alert_counter)
-        analises_watson: list[_WO] = []
+        # `proximo_id` é a ÚNICA fonte de verdade do contador de alertas: a cada
+        # chamada de Watson, é avançado com base no maior ID efetivamente
+        # parseado do output (não na contagem bruta reportada pelo LLM, que é
+        # frágil e pode ser re-emitida por inteiro a cada rodada). Isso garante
+        # IDs contíguos independentemente de como Watson formata a resposta.
+        proximo_id = self._proximo_id_alerta(manifest.module_id, 1)
+        analises_watson: list[WatsonOutput] = []
         for fi in manifest.input_files:
             analise_fi = self._watson.analisar_arquivo(
                 arquivo_path=inputs_dir / fi.rel_path,
@@ -115,9 +115,7 @@ class Orchestrator:
                 proximo_id_alerta=proximo_id,
             )
             analises_watson.append(analise_fi)
-            # Propagar contador de IDs ao próximo arquivo
-            if analise_fi.ultimo_id_alerta:
-                proximo_id = _incrementar_id_alerta(analise_fi.ultimo_id_alerta)
+            proximo_id = _avancar_id_alerta(proximo_id, analise_fi)
             self._events.log("WATSON_ARQUIVO_ANALISADO",
                              details={"arquivo": fi.name, "criticos": analise_fi.critical_alerts_count})
 
@@ -125,7 +123,7 @@ class Orchestrator:
         output_watson = self._watson.consolidar(analises_watson, tasks)
         self._sr.escrever_apresentacao(fase=fase, author="watson",
                                         content=output_watson.texto)
-        alert_counter += output_watson.critical_alerts_count
+        proximo_id = _avancar_id_alerta(proximo_id, output_watson)
 
         rodada = 0
         while rodada < self.MAX_RODADAS:
@@ -139,16 +137,13 @@ class Orchestrator:
                 break
 
             rodada += 1
-            proximo_id = self._proximo_id_alerta(manifest.module_id, alert_counter)
             self._sr.escrever_critica(fase, rodada, "mycroft", avaliacao.critica)
             self._transicionar(CycleState.EM_EXECUCAO_WATSON)
             output_watson = self._watson.responder_critica(
                 avaliacao.critica, output_watson, rodada, proximo_id
             )
             self._sr.escrever_resposta(fase, rodada, "watson", output_watson.texto)
-            alert_counter += output_watson.critical_alerts_count
-            if rodada == self.MAX_RODADAS:
-                break
+            proximo_id = _avancar_id_alerta(proximo_id, output_watson)
 
         # Garantir estado correto antes de fixar_decisao
         record = self._audit.get_cycle(self._cycle_id)
@@ -208,8 +203,6 @@ class Orchestrator:
                 avaliacao.critica, output_sherlock, rodada
             )
             self._sr.escrever_resposta(fase, rodada, "sherlock", output_sherlock.texto)
-            if rodada == self.MAX_RODADAS:
-                break
 
         # Garantir estado correto antes de fixar_decisao
         record = self._audit.get_cycle(self._cycle_id)
@@ -259,9 +252,13 @@ class Orchestrator:
             raise OrchestratorError(f"Ciclo '{self._cycle_id}' não encontrado.")
         try:
             atual = CycleState(record["status"])
-        except ValueError:
-            self._audit.update_status(self._cycle_id, destino.value)
-            return
+        except ValueError as exc:
+            # Status no audit_index não é um CycleState conhecido — corrupção
+            # do registro de auditoria. Fail-fast: nunca mascarar (Art. 11).
+            raise CorruptedStateError(
+                f"Ciclo '{self._cycle_id}' tem status inválido "
+                f"'{record['status']}' no audit_index."
+            ) from exc
         if destino not in TRANSICOES_VALIDAS.get(atual, set()):
             raise InvalidTransitionError(atual, destino)
         self._audit.update_status(self._cycle_id, destino.value)
@@ -282,6 +279,20 @@ class Orchestrator:
 
 
 # ── Helpers de módulo ─────────────────────────────────────────────────────────
+
+def _avancar_id_alerta(proximo_id_atual: str, output: WatsonOutput) -> str:
+    """
+    Avança o próximo ID de alerta disponível com base no maior ID
+    efetivamente parseado do output de Watson (`ultimo_id_alerta`).
+
+    Se o output não contém nenhum ID de alerta, nenhum ID novo foi
+    consumido — mantém `proximo_id_atual`. Isso torna o contador imune
+    a Watson re-emitir a tabela inteira a cada rodada de revisão.
+    """
+    if output.ultimo_id_alerta:
+        return _incrementar_id_alerta(output.ultimo_id_alerta)
+    return proximo_id_atual
+
 
 def _incrementar_id_alerta(ultimo_id: str) -> str:
     """

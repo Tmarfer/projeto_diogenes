@@ -70,6 +70,7 @@ class LLMResponse(BaseModel):
     latency_ms: int
     retry_attempts: int
     http_status: int
+    finish_reason: str = ""   # "stop" | "length" | ... — "length" sinaliza truncagem
 
 
 # ---------------------------------------------------------------------------
