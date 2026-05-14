@@ -262,7 +262,7 @@ class Orchestrator:
             raise InvalidTransitionError(atual, destino)
         self._audit.update_status(self._cycle_id, destino.value)
 
-    def _proximo_id_alerta(self, module_id: str, counter: int) -> str:
+    def _proximo_id_alerta(self, module_id: str, counter: int = 1) -> str:
         """Gera ID de alerta sequencial: W{codigo_modulo}-{counter:03d}."""
         nums = re.findall(r'\d+', module_id)
         codigo = nums[-1].zfill(3) if nums else "000"
