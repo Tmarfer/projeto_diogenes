@@ -1,11 +1,6 @@
-# CLAUDE.md — DVA-CBS | Projeto Diógenes
-## Contexto para o Claude Code
+# CLAUDE.md
 
-Este arquivo é lido automaticamente pelo Claude Code ao abrir este repositório.
-Contém o contexto mínimo necessário para trabalhar no projeto sem consultar
-outros documentos.
-
----
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## O que é este projeto
 
@@ -20,6 +15,62 @@ sequencialmente sob supervisão de um auditor humano (Lestrade).
 
 ---
 
+## Estrutura do repositório
+
+```
+projeto_diogenes/          ← raiz do repositório
+  diogenes/                ← pacote Python (trabalhe aqui)
+    src/diogenes/          ← código fonte
+    tests/                 ← testes
+    agents_spec.yaml       ← modelos LLM por agente e fase
+    runtime.yaml           ← parâmetros operacionais
+    .env                   ← chaves e workspace (não versionado)
+  piloto/
+    setup_local.sh         ← script de setup rápido para Fase A
+  detalhamento/            ← documentos auxiliares (Word, imagens)
+```
+
+---
+
+## Comandos de desenvolvimento
+
+**Todos os comandos devem ser executados de dentro de `diogenes/`**, pois
+`config.py` carrega `runtime.yaml` e `agents_spec.yaml` relativamente ao CWD.
+
+```bash
+cd diogenes
+
+# Instalar
+pip install -e ".[dev]"
+
+# Rodar todos os testes
+pytest tests/
+
+# Rodar um único teste
+pytest tests/unit/test_motor_start.py::NomeDoTeste -v
+
+# Rodar testes de integração
+pytest tests/integration/ -v
+
+# Lint
+ruff check src/ tests/
+
+# Formatação
+ruff format src/ tests/
+
+# Type check
+mypy src/
+```
+
+### Setup rápido para Fase A (a partir da raiz do repo)
+
+```bash
+chmod +x piloto/setup_local.sh
+./piloto/setup_local.sh
+```
+
+---
+
 ## Stack e estrutura
 
 ```
@@ -31,12 +82,32 @@ src/diogenes/
   agents/      — Watson, Mycroft (MycrooftAgent), Sherlock + heartbeat + file_prep
   cli/         — app.py + commands/ (um arquivo por subcomando)
   config.py    — get_config() com @lru_cache — ÚNICO ponto de leitura de config
-  llm/         — base.py (Protocol) + openrouter.py + azure_foundry.py + seed.py
+  llm/         — base.py (Protocol) + openrouter.py + azure_foundry.py + seed.py + call_id.py
   models.py    — TODOS os dataclasses de domínio (LLMCall, CycleRecord, etc.)
   motors/      — motor_start.py + motor_saida.py
   orchestrator/— orchestrator.py + states.py + stranger_room.py + events.py
   persistence/ — audit_index.py + manifest.py + workspace.py
 ```
+
+### Papéis dos módulos-chave
+
+| Módulo | Responsabilidade |
+|--------|-----------------|
+| `config.py` | Único ponto de leitura: `.env` + `agents_spec.yaml` + `runtime.yaml` |
+| `models.py` | Todos os dataclasses de domínio — sem lógica, sem imports internos |
+| `agents/file_prep.py` | Converte xlsx/sql/ipynb/pdf/md em texto para incluir nos prompts de Watson |
+| `orchestrator/stranger_room.py` | Persiste arquivos imutáveis Markdown+frontmatter YAML da revisão Mycroft↔Watson/Sherlock |
+| `orchestrator/events.py` | `EventLogger` — grava JSONL de auditoria em `_runtime/events.jsonl` |
+| `persistence/audit_index.py` | Lê/grava `audit_index.csv` com escrita atômica (temp + rename) |
+| `llm/base.py` | `LLMClient` Protocol + factory `get_llm_client()` |
+
+### LLM Providers
+
+`get_llm_client()` instancia o cliente pelo valor de `DIOGENES_ENV`:
+- `local` / `vps` → `OpenRouterClient` (padrão)
+- `azure` → `AzureFoundryClient`
+
+Em redes com proxy de inspeção SSL (TCU), definir `DIOGENES_SSL_VERIFY=false`.
 
 ---
 
@@ -44,9 +115,9 @@ src/diogenes/
 
 1. **Sequencialidade absoluta:** código síncrono — sem threads, sem asyncio entre
    agentes. Artigo 3 da Constituição.
-2. **config.py é o único ponto de leitura de configuração.** Nenhum módulo
+2. **`config.py` é o único ponto de leitura de configuração.** Nenhum módulo
    importa `os.environ` diretamente ou lê YAML fora de `config.py`.
-3. **models.py não importa nenhum módulo interno.** Quebrar essa regra causa
+3. **`models.py` não importa nenhum módulo interno.** Quebrar essa regra causa
    importação circular.
 4. **Stranger's Room é imutável.** Arquivos escritos nunca são sobrescritos
    (Artigo 11). `StrangerRoomWriteError` é o guardião.
@@ -73,19 +144,19 @@ src/diogenes/
 ## Configuração de ambiente
 
 ```bash
-# Instalar
-pip install -e ".[dev]"
-
 # .env obrigatório (copiar de .env.example)
 DIOGENES_LLM_BASE_URL=https://openrouter.ai/api/v1
 DIOGENES_LLM_API_KEY=<chave OpenRouter>
 DIOGENES_WORKSPACE=/caminho/absoluto/workspace
+DIOGENES_ENV=local          # local | vps | azure
 
-# Inicializar workspace
+# Opcionais
+DIOGENES_SSL_VERIFY=false   # em redes TCU com proxy de inspeção SSL
+DIOGENES_OPENROUTER_SITE_URL=https://github.com/tcu/diogenes
+DIOGENES_OPENROUTER_APP_NAME=DVA-CBS Projeto Diogenes
+
+# Inicializar workspace (rodar de dentro de diogenes/)
 diogenes init
-
-# Rodar testes (todos devem passar — 72 testes)
-pytest tests/
 ```
 
 ---
@@ -114,16 +185,17 @@ diogenes start --module MOD_010 --activity 1
 diogenes confirm-manifest --cycle {id}
   → Orchestrator.executar():
       Mycroft.definir_tasks_watson()
-      Watson.analisar()                    [heartbeat: analise_arquivo]
-      Mycroft.avaliar_watson()              [heartbeat: avaliar_agente]
+      Watson.analisar_arquivo() × N arquivos   [heartbeat: analise_arquivo]
+      Watson.consolidar()
+      Mycroft.avaliar_watson()                  [heartbeat: avaliar_agente]
       [até 2 rodadas]
-      Mycroft.fixar_decisao_watson()        [heartbeat: fixar_decisao]
-      Mycroft.montar_pacote_sherlock()      [heartbeat: montar_pacote_sherlock]
-      Sherlock.validar()                    [heartbeat: verificar_ponto]
-      Mycroft.avaliar_sherlock()            [heartbeat: avaliar_agente]
+      Mycroft.fixar_decisao_watson()            [heartbeat: fixar_decisao]
+      Mycroft.montar_pacote_sherlock()          [heartbeat: montar_pacote_sherlock]
+      Sherlock.validar()                        [heartbeat: verificar_ponto]
+      Mycroft.avaliar_sherlock()                [heartbeat: avaliar_agente]
       [até 2 rodadas]
-      Mycroft.fixar_decisao_sherlock()      [heartbeat: fixar_decisao]
-      Mycroft.consolidar()                  [heartbeat: consolidar]
+      Mycroft.fixar_decisao_sherlock()          [heartbeat: fixar_decisao]
+      Mycroft.consolidar()                      [heartbeat: consolidar]
       → grava output/relatorio_preliminar_{id}.md
   → Status: AGUARDANDO_VERIFICACAO_SAIDA
 
@@ -139,16 +211,17 @@ diogenes seal --cycle {id}
 
 ## Tracker de ID de alerta Watson
 
-O Orquestrador (`orchestrator.py`) mantém um contador de alertas que persiste
-entre todas as chamadas de Watson (analisar + responder_critica). O ID é derivado
-do `module_id` e do contador:
+O Orquestrador mantém um contador de alertas que persiste entre todas as
+chamadas de Watson (analisar_arquivo + consolidar + responder_critica).
+O ID é derivado do `module_id` e do contador:
 
 ```
 W{codigo_modulo}-{n:03d}   ex: W010-001, W010-002
 ```
 
-O ID é injetado no preamble do prompt de Watson via `proximo_id_alerta`.
+Gerado por `Orchestrator._proximo_id_alerta(module_id, counter)`.
 O contador acumula após cada chamada: `alert_counter += output_watson.critical_alerts_count`.
+O ID é propagado para o próximo arquivo via `InputFileInfo.ultimo_id_alerta`.
 
 ---
 
@@ -160,6 +233,8 @@ O contador acumula após cada chamada: `alert_counter += output_watson.critical_
 - Testes em `tests/unit/` e `tests/integration/`; fixtures globais em `conftest.py`
 - Mocks LLM via `pytest-httpx` (o openai SDK usa httpx internamente)
 - Testes CLI via `typer.testing.CliRunner`
+- `get_config.cache_clear()` obrigatório antes/depois de cada teste (feito via
+  fixture `clear_config_cache` com `autouse=True` em `conftest.py`)
 - Nunca usar `os.environ` diretamente — sempre via `get_config()`
 - Nunca importar `from diogenes.X import Y` dentro de `models.py`
 - Exceções em `except` clauses usam `raise ... from e` (B904)
