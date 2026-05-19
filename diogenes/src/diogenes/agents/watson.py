@@ -126,6 +126,46 @@ class WatsonAgent:
             ultimo_id_alerta=consolidado.ultimo_id_alerta,
         )
 
+    def validacao_planilha_rn(
+        self,
+        planilha_path: Path,
+        analises_watson: list[WatsonOutput],
+        tasks_mycroft: str = "",
+    ) -> WatsonOutput:
+        """
+        Fase opcional: percorre a Planilha de Verificação do Motor de Regras
+        ponto a ponto sob perspectiva quantitativa/estrutural.
+        Acionado apenas quando a planilha está listada no manifesto (call_type validacao_planilha_rn).
+        """
+        call_type = "validacao_planilha_rn"
+        hb = self._heartbeat.get_section(call_type)
+
+        partes: list[str] = []
+        if tasks_mycroft:
+            partes.append(f"[MC_TASKS_WATSON]\n{tasks_mycroft}")
+        planilha_conteudo = preparar_arquivo(planilha_path)
+        partes.append(f"[PLANILHA DE VERIFICAÇÃO: {planilha_path.name}]\n{planilha_conteudo}")
+        for i, a in enumerate(analises_watson, 1):
+            partes.append(f"[watson_analise #{i}]\n{a.texto}")
+
+        user = injetar_heartbeat(hb, "\n\n---\n\n".join(partes))
+        resp = self._llm.complete(LLMCall(
+            call_id=gerar_call_id("watson", call_type),
+            cycle_id=self._cycle_id, phase=self.FASE,
+            agent="watson", call_type=call_type,
+            model=self._spec.modelo, temperature=self._spec.temperatura,
+            max_tokens=self._spec.max_tokens,
+            seed=calcular_seed(42, self._cycle_id, self.FASE, call_type),
+            messages=[
+                LLMMessage(role="system", content=self._system_prompt),
+                LLMMessage(role="user", content=user),
+            ],
+            timeout_segundos=self._spec.timeout_segundos,
+            max_tentativas_retry=self._spec.max_tentativas_retry,
+            backoff_segundos=self._spec.backoff_segundos,
+        ))
+        return self._parsear_output(resp.content)
+
     def responder_critica(
         self,
         critica: str,
@@ -180,12 +220,14 @@ class WatsonAgent:
         criticos = _contar_criticos(content, secoes)
         nao_analisaveis = _secao_por_nome(secoes, _SECOES_NAO_ANALISAVEIS).strip()
         ultimo_id = _extrair_ultimo_id(secoes, content)
+        nota_metodologica = _extrair_nota_metodologica(content)
         return WatsonOutput(
             texto=content,
             critical_alerts_count=criticos,
             has_unanalyzable_files=bool(nao_analisaveis),
             secoes=secoes,
             ultimo_id_alerta=ultimo_id,
+            nota_metodologica_com_alteracao=nota_metodologica,
         )
 
 
@@ -250,6 +292,21 @@ def _contar_criticos(content: str, secoes: dict) -> int:
         1 for linha in tabela.splitlines()
         if re.search(r'\bCR[IÍ]TICA\b', linha, re.IGNORECASE)
     )
+
+
+def _extrair_nota_metodologica(content: str) -> bool:
+    """
+    Detecta se Watson sinalizou nota metodológica com alteração.
+    Campo de cabeçalho: `**Nota metodológica com alteração detectada:** Sim | Não`
+    Retorna False por default quando o campo está ausente.
+    """
+    m = re.search(
+        r'\*\*\s*Nota metodológica com alteração detectada\s*:?\s*\*{0,2}\s*:?\s*(Sim|Não)',
+        content, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1).strip().lower().startswith("sim")
+    return False
 
 
 def _extrair_ultimo_id(secoes: dict, content: str) -> str:

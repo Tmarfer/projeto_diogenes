@@ -20,21 +20,23 @@ from pathlib import Path
 # diferencia qual agente está sendo avaliado).
 CALL_TYPE_TO_SECTION: dict[str, str] = {
     # Watson
-    "analise_inicial":          "analise_arquivo",
-    "consolidar_watson":        "consolidar_watson",
-    "resposta_r1":              "resposta_r1",
-    "resposta_r2":              "resposta_r2",
+    "analise_inicial":               "analise_arquivo",
+    "consolidar_watson":             "consolidar_watson",
+    "validacao_planilha_rn":         "validacao_planilha_rn",
+    "resposta_r1":                   "resposta_r1",
+    "resposta_r2":                   "resposta_r2",
     # Mycroft
-    "definir_tasks_watson":     "definir_tasks_watson",
-    "avaliar_agente":           "avaliar_agente",
-    "avaliar_sherlock":         "avaliar_agente",       # mesma seção
-    "fixar_decisao":            "fixar_decisao",
-    "fixar_decisao_sherlock":   "fixar_decisao",        # mesma seção
-    "montar_pacote_sherlock":   "montar_pacote_sherlock",
-    "consolidar":               "consolidar",
+    "definir_tasks_watson":          "definir_tasks_watson",
+    "avaliar_agente":                "avaliar_agente",
+    "avaliar_sherlock":              "avaliar_agente",             # mesma seção
+    "fixar_decisao":                 "fixar_decisao",
+    "fixar_decisao_sherlock":        "fixar_decisao",              # mesma seção
+    "montar_pacote_sherlock":        "montar_pacote_sherlock",
+    "consolidar":                    "consolidar",
     # Sherlock
-    "validacao_inicial":        "verificar_ponto",
-    "consolidar_sherlock":      "consolidar_sherlock",
+    "validacao_inicial":             "verificar_ponto",
+    "validacao_planilha_rn_sherlock": "validacao_planilha_rn_sherlock",
+    "consolidar_sherlock":           "consolidar_sherlock",
     # resposta_r1 e resposta_r2 já coincidem com o nome da seção
 }
 

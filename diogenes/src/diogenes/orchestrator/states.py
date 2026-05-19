@@ -24,6 +24,9 @@ class CycleState(StrEnum):
     AGUARDANDO_DECISAO_LESTRADE_ALERTA     = "AGUARDANDO_DECISAO_LESTRADE_ALERTA_CRITICO"
     EM_EXECUCAO_SHERLOCK                   = "EM_EXECUCAO_SHERLOCK"
     AGUARDANDO_REVISAO_MYCROFT_SHERLOCK    = "AGUARDANDO_REVISAO_MYCROFT_SHERLOCK"
+    # Estado de espera quando sherlock_consolidado.md está incompleto (faltam seções 10.x)
+    # Lestrade é notificado; Mycroft.consolidar() só é acionado após completude confirmada
+    AGUARDANDO_COMPLETUDE                  = "AGUARDANDO_COMPLETUDE"
     AGUARDANDO_VERIFICACAO_SAIDA           = "AGUARDANDO_VERIFICACAO_SAIDA"
     AGUARDANDO_CHANCELA_LESTRADE           = "AGUARDANDO_CHANCELA_LESTRADE"
     ENCERRADO_CHANCELADO                   = "ENCERRADO_CHANCELADO"
@@ -66,8 +69,13 @@ TRANSICOES_VALIDAS: dict[CycleState, set[CycleState]] = {
     },
     CycleState.AGUARDANDO_REVISAO_MYCROFT_SHERLOCK: {
         CycleState.EM_EXECUCAO_SHERLOCK,       # Mycroft questiona → Sherlock responde
+        CycleState.AGUARDANDO_COMPLETUDE,      # relatório incompleto → espera Sherlock completar
         CycleState.AGUARDANDO_VERIFICACAO_SAIDA,
         CycleState.ABORTADO_FALHA_AGENTE,
+        CycleState.ABORTADO_LESTRADE,
+    },
+    CycleState.AGUARDANDO_COMPLETUDE: {
+        CycleState.AGUARDANDO_VERIFICACAO_SAIDA,  # após Sherlock completar as seções faltantes
         CycleState.ABORTADO_LESTRADE,
     },
     CycleState.AGUARDANDO_VERIFICACAO_SAIDA: {

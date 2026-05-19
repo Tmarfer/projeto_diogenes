@@ -83,7 +83,19 @@ DECISAO_WATSON = """## Decisão Final — Watson\n### Síntese\nBoa análise.\n
 
 VALIDACAO_SHERLOCK = """## Resumo Executivo\nMódulo verificado.\n
 ## Classificação Ponto a Ponto\n### Item 1\n**Status:** ATENDIDO\n
-## Inconsistências para Contraditório\n\n## Limitações e Pontos Não Verificáveis\n"""
+## Inconsistências para Contraditório\n\n## Limitações e Pontos Não Verificáveis\n
+## 10. Relatório Estruturado do Módulo\n
+### 10.1 Identificação do Ciclo\nMOD_SINT_001\n
+### 10.2 Síntese da Metodologia do Módulo\nMetodologia CBS.\n
+### 10.3 Resultado da Verificação de Integridade (Camada 0)\nSem críticos.\n
+### 10.4 Resultado da Verificação de Aderência Metodológica (Camadas 1 e 2)\nAtendido.\n
+### 10.5 Consistência do Resultado Final (Camada 3)\nCONSISTENTE.\n
+### 10.6 Ocorrências Identificadas\nNenhuma.\n
+### 10.7 Verificações Criadas pelos Agentes\nNenhuma.\n
+### 10.8 Análise de Impacto Sistêmico\nNenhum.\n
+### 10.9 Pendências para Validação no Simulador Completo\nNenhuma.\n
+### 10.10 Decisões da Stranger Room\nNenhum dilema.\n
+### 10.11 Histórico de Revalidações\nPrimeiro ciclo.\n"""
 
 DECISAO_SHERLOCK = """## Decisão Final — Sherlock\n### Síntese\nValidação completa.\n
 ### Posição Adotada\nAcatada.\n### Overrule\nNÃO\n

@@ -20,6 +20,7 @@ from diogenes.models import (
     AvaliacaoMycroft,
     CycleManifest,
     DecisaoFinal,
+    DefinirTasksResult,
     LLMCall,
     LLMMessage,
     RelatorioOutput,
@@ -43,7 +44,7 @@ class MycrooftAgent:
 
     # ── definir_tasks_watson ──────────────────────────────────
 
-    def definir_tasks_watson(self, manifest: CycleManifest) -> str:
+    def definir_tasks_watson(self, manifest: CycleManifest) -> DefinirTasksResult:
         call_type = "definir_tasks_watson"
         arquivos = "\n".join(
             f"- {fi.name} ({fi.extension}, {fi.size_bytes} bytes)"
@@ -59,12 +60,18 @@ class MycrooftAgent:
             f"## Arquivos do Pacote\n\n{arquivos}\n\n"
             f"Defina as tasks ordenadas para Watson. Produza a seção "
             f"'## Tasks para Watson' com lista numerada e a seção "
-            f"'## Inputs Disponíveis' com ordem e origem da priorização."
+            f"'## Inputs Disponíveis' com ordem e origem da priorização.\n"
+            f"Inclua o campo '**Planilha de Verificação no pacote:** Sim | Não' "
+            f"no cabeçalho do output, indicando se a Planilha de Verificação "
+            f"gerada pelo Motor de Regras está entre os arquivos do pacote."
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
         resp = self._llm.complete(self._montar_call(call_type, self.FASE_WATSON, user))
         secoes = _extrair_secoes(resp.content)
-        return secoes.get("Tasks para Watson", resp.content)
+        tasks_text = secoes.get("Tasks para Watson", resp.content)
+        planilha = _extrair_bool_cabecalho(resp.content, "Planilha de Verificação no pacote")
+        return DefinirTasksResult(tasks_text=tasks_text,
+                                  planilha_verificacao_no_pacote=planilha)
 
     # ── avaliar_watson ────────────────────────────────────────
 
@@ -108,6 +115,7 @@ class MycrooftAgent:
     def montar_pacote_sherlock(
         self, manifest: CycleManifest, inputs_dir: Path, decisao_watson: DecisaoFinal,
         watson_apresentacao: str = "",
+        nota_metodologica_detalhes: str = "",
     ) -> str:
         call_type = "montar_pacote_sherlock"
         from diogenes.agents.file_prep import preparar_arquivo
@@ -116,12 +124,22 @@ class MycrooftAgent:
             for fi in manifest.input_files
         )
         # Para o LLM de Mycroft: apenas metadados + decisão Watson (sem docs completos)
+        # Incluir nota metodológica quando Watson a sinalizou (Premissa 3 do skills.md de Sherlock)
+        nota_bloco = ""
+        if nota_metodologica_detalhes:
+            nota_bloco = (
+                f"\n\n## Nota Metodológica com Alteração — Prioridade para Sherlock\n\n"
+                f"{nota_metodologica_detalhes}\n\n"
+                f"[INSTRUÇÃO: Sherlock deve tratar este ponto com prioridade antes de qualquer "
+                f"verificação de ponto individual — Premissa 3 do skills.md]"
+            )
         user_base = (
             f"## Contexto do Módulo\n\n"
             f"Módulo: {manifest.module_id} | Atividade: {manifest.activity}\n"
             f"Sala de Sigilo: {'Sim' if manifest.is_sigilo_module else 'Não'}\n\n"
             f"## Decisão Final de Mycroft sobre Watson\n\n{decisao_watson.texto}\n\n"
-            f"## Inventário dos Artefatos Entregues\n\n{inventario}\n\n"
+            f"## Inventário dos Artefatos Entregues\n\n{inventario}"
+            f"{nota_bloco}\n\n"
             f"Monte a síntese de contexto para Sherlock conforme o template "
             f"'montar_pacote_sherlock' do skills.md. Foco em: alertas de Watson, "
             f"cadeia de produção, pontos de atenção para análise metodológica."
@@ -209,7 +227,11 @@ class MycrooftAgent:
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
         resp = self._llm.complete(self._montar_call(call_type, "consolidacao", user))
-        return RelatorioOutput(texto=resp.content)
+        overrule_w = _extrair_bool_cabecalho(resp.content, "Overrule Mycroft sobre Watson")
+        overrule_s = _extrair_bool_cabecalho(resp.content, "Overrule Mycroft sobre Sherlock")
+        return RelatorioOutput(texto=resp.content,
+                               overrule_watson=overrule_w,
+                               overrule_sherlock=overrule_s)
 
     # ── Internos ─────────────────────────────────────────────
 
@@ -290,6 +312,20 @@ def _parsear_decisao_final(content: str, watson_criticos: int) -> DecisaoFinal:
         has_critical_alert=contagem > 0, critical_alerts_count=contagem,
         has_dilemma=False, dilemmas_count=0,
     )
+
+
+def _extrair_bool_cabecalho(content: str, campo: str) -> bool:
+    """
+    Extrai campo booleano de cabeçalho no formato `**campo:** Sim | Não`.
+    Retorna False quando o campo está ausente ou tem valor diferente de Sim.
+    """
+    m = re.search(
+        r'\*\*\s*' + re.escape(campo) + r'\s*:?\s*\*{0,2}\s*:?\s*(Sim|Não|Sim\b)',
+        content, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1).strip().lower().startswith("sim")
+    return False
 
 
 def _parsear_decisao_sherlock(content: str, sherlock_dilemas: int) -> DecisaoFinal:
