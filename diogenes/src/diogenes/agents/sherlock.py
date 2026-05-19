@@ -7,6 +7,7 @@ Referência normativa: RF-SH-01 a RF-SH-08 (PRD v0.1), Bloco 9.4 (SDD v0.1)
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
@@ -33,6 +34,48 @@ class SherlockAgent:
         call_type = "validacao_inicial"
         hb = self._heartbeat.get_section(call_type)
         user = injetar_heartbeat(hb, pacote_sherlock)
+        resp = self._llm.complete(self._montar_call(call_type, user))
+        return self._parsear_output(resp.content)
+
+    def validacao_planilha_rn_sherlock(
+        self,
+        pacote_sherlock: str,
+        watson_planilha_rn: str,
+    ) -> SherlockOutput:
+        """
+        Fase opcional: percorre a Planilha de Verificação já preenchida por Watson
+        sob perspectiva metodológica (call_type validacao_planilha_rn_sherlock).
+        Acionado apenas quando a planilha está listada no manifesto.
+        """
+        call_type = "validacao_planilha_rn_sherlock"
+        hb = self._heartbeat.get_section(call_type)
+        user_base = (
+            f"## Pacote de Contexto Sherlock\n\n{pacote_sherlock}\n\n"
+            f"---\n\n## Planilha de Verificação preenchida por Watson\n\n{watson_planilha_rn}"
+        )
+        user = injetar_heartbeat(hb, user_base)
+        resp = self._llm.complete(self._montar_call(call_type, user))
+        return self._parsear_output(resp.content)
+
+    def consolidar(
+        self,
+        pontos_output: SherlockOutput,
+        planilha_output: SherlockOutput | None = None,
+    ) -> SherlockOutput:
+        """
+        Fase 2 de Sherlock: consolida todos os sherlock_ponto_*.md e, quando
+        disponível, o sherlock_planilha_rn.md (call_type consolidar_sherlock).
+        Inclui: analise_impacto_entre_modulos, identificacao_pendencias_para_simulador_completo,
+        relatorio_estruturado (11 seções), insumo_json_dashboard.
+        """
+        call_type = "consolidar_sherlock"
+        hb = self._heartbeat.get_section(call_type)
+        partes: list[str] = [f"## Verificações de Pontos Metodológicos\n\n{pontos_output.texto}"]
+        if planilha_output:
+            partes.append(
+                f"\n\n---\n\n## Validação da Planilha de Verificação\n\n{planilha_output.texto}"
+            )
+        user = injetar_heartbeat(hb, "\n\n".join(partes))
         resp = self._llm.complete(self._montar_call(call_type, user))
         return self._parsear_output(resp.content)
 
@@ -83,9 +126,17 @@ class SherlockAgent:
             "DIVERGÊNCIA" in v.upper() or "DIVERGENCIA" in v.upper()
             for v in secoes.values()
         )
+        nota_metodologica = _extrair_bool_campo(
+            content, "Nota metodológica com alteração verificada neste ponto"
+        )
+        notas_count = _extrair_int_campo(content, "Notas metodológicas com alteração")
+        pendencias_count = _extrair_int_campo(content, "Pendências para simulador completo")
         return SherlockOutput(
             texto=content, dilemmas_count=dilemmas_count,
             has_divergencias=divergencias, secoes=secoes,
+            nota_metodologica_com_alteracao=nota_metodologica,
+            notas_metodologicas_count=notas_count,
+            pendencias_simulador_count=pendencias_count,
         )
 
 
@@ -108,3 +159,31 @@ def _extrair_secoes(content: str) -> dict:
 
 def _contar_dilemas(secao: str) -> int:
     return sum(1 for linha in secao.splitlines() if linha.startswith("### Dilema"))
+
+
+def _extrair_bool_campo(content: str, campo: str) -> bool:
+    """
+    Extrai campo booleano de cabeçalho no formato `**campo:** Sim | Não | Não aplicável`.
+    Retorna False por default quando ausente.
+    """
+    m = re.search(
+        r'\*\*\s*' + re.escape(campo) + r'\s*:?\s*\*{0,2}\s*:?\s*(Sim|Não)',
+        content, re.IGNORECASE,
+    )
+    if m:
+        return m.group(1).strip().lower().startswith("sim")
+    return False
+
+
+def _extrair_int_campo(content: str, campo: str) -> int:
+    """
+    Extrai campo numérico de cabeçalho no formato `**campo:** n | 0`.
+    Retorna 0 por default quando ausente ou não parseável.
+    """
+    m = re.search(
+        r'\*\*\s*' + re.escape(campo) + r'\s*:?\s*\*{0,2}\s*:?\s*(\d+)',
+        content, re.IGNORECASE,
+    )
+    if m:
+        return int(m.group(1))
+    return 0

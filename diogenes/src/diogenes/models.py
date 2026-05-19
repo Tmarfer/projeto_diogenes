@@ -83,6 +83,8 @@ class WatsonOutput:
     has_unanalyzable_files: bool
     secoes: dict
     ultimo_id_alerta: str = ""   # ex: "W010-003" — propagado entre chamadas per-file
+    # cabeçalho watson_consolidado.md — lido pelo orquestrador para acionar Sherlock com prioridade
+    nota_metodologica_com_alteracao: bool = False
 
 
 @dataclass(frozen=True)
@@ -191,12 +193,27 @@ class SherlockOutput:
     dilemmas_count: int
     has_divergencias: bool
     secoes: dict
+    # campos do cabeçalho dos templates de Sherlock — extraídos pelo parser
+    nota_metodologica_com_alteracao: bool = False  # sherlock_ponto_*.md: campo "verificada neste ponto"
+    notas_metodologicas_count: int = 0             # sherlock_consolidado.md seção 7
+    pendencias_simulador_count: int = 0            # sherlock_consolidado.md seção 9
 
 
 @dataclass(frozen=True)
 class RelatorioOutput:
     """Output final de Mycroft.consolidar() — corpo do relatório preliminar/final."""
     texto: str
+    # campos de rastreabilidade extraídos do MC_consolidado.md
+    overrule_watson: bool = False
+    overrule_sherlock: bool = False
+
+
+@dataclass(frozen=True)
+class DefinirTasksResult:
+    """Resultado de Mycroft.definir_tasks_watson() — separa tasks do flag de planilha."""
+    tasks_text: str
+    # flag lido do cabeçalho MC_tasks_watson.md — controla call_types condicionais
+    planilha_verificacao_no_pacote: bool = False
 
 
 # ---------------------------------------------------------------------------

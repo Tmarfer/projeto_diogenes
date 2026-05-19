@@ -17,7 +17,7 @@ from diogenes.agents.watson import WatsonAgent
 from diogenes.config import get_config
 from diogenes.llm.base import get_llm_client
 from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
-from diogenes.models import CycleManifest, DecisaoFinal, WatsonOutput
+from diogenes.models import CycleManifest, DecisaoFinal, DefinirTasksResult, WatsonOutput
 from diogenes.orchestrator.events import EventLogger
 from diogenes.orchestrator.exceptions import CorruptedStateError, OrchestratorError
 from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, InvalidTransitionError
@@ -61,7 +61,9 @@ class Orchestrator:
         """Executa o ciclo completo. Retorna caminho do output ou "" se pausado."""
         self._events.log("CYCLE_STARTED", details={"cycle_id": manifest.cycle_id})
         try:
-            decisao_watson = self._executar_fase_watson(manifest)
+            decisao_watson, tasks_result, output_watson, _ = (
+                self._executar_fase_watson(manifest)
+            )
 
             if decisao_watson.has_critical_alert:
                 self._transicionar(CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA)
@@ -69,7 +71,9 @@ class Orchestrator:
                                  details={"count": decisao_watson.critical_alerts_count})
                 return ""   # CLI notifica Lestrade e aguarda proceed/pause
 
-            return self._executar_fase_sherlock_e_consolidar(manifest)
+            return self._executar_fase_sherlock_e_consolidar(
+                manifest, tasks_result, output_watson
+            )
 
         except LLMCostLimitError as exc:
             self._events.log("COST_LIMIT_REACHED", details={"error": str(exc)})
@@ -82,7 +86,12 @@ class Orchestrator:
         """Chamado por `diogenes proceed` após alerta crítico de Watson."""
         self._transicionar(CycleState.EM_EXECUCAO_SHERLOCK)
         self._events.log("LESTRADE_PROCEED_AUTHORIZED")
-        return self._executar_fase_sherlock_e_consolidar(manifest)
+        # Ao retomar após alerta, não temos tasks_result/output_watson em memória.
+        # Usamos defaults seguros: sem planilha de verificação, sem nota metodológica.
+        from diogenes.models import DefinirTasksResult as _DTR
+        return self._executar_fase_sherlock_e_consolidar(
+            manifest, _DTR(tasks_text="", planilha_verificacao_no_pacote=False), None
+        )
 
     def abortar(self, razao: str) -> None:
         """Aborta o ciclo por decisão de Lestrade."""
@@ -91,12 +100,22 @@ class Orchestrator:
 
     # ── Fase Watson ──────────────────────────────────────────
 
-    def _executar_fase_watson(self, manifest: CycleManifest) -> DecisaoFinal:
+    def _executar_fase_watson(
+        self, manifest: CycleManifest
+    ) -> tuple[DecisaoFinal, DefinirTasksResult, WatsonOutput, list[WatsonOutput]]:
+        """
+        Retorna (decisao_final, tasks_result, output_watson_consolidado, analises_por_arquivo).
+        tasks_result carrega planilha_verificacao_no_pacote para uso na fase Sherlock.
+        output_watson_consolidado carrega nota_metodologica_com_alteracao para propagação.
+        analises_por_arquivo é necessário para validacao_planilha_rn (Frente 1/3).
+        """
         fase = "watson_integridade"
         self._transicionar(CycleState.EM_EXECUCAO_WATSON)
         self._events.log("PHASE_STARTED", phase=fase, agent="watson")
 
-        tasks = self._mycroft.definir_tasks_watson(manifest)
+        # definir_tasks_watson agora retorna DefinirTasksResult com flag de planilha
+        tasks_result = self._mycroft.definir_tasks_watson(manifest)
+        tasks = tasks_result.tasks_text
         inputs_dir = self._cycle_dir / "inputs"
 
         # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
@@ -124,6 +143,22 @@ class Orchestrator:
         self._sr.escrever_apresentacao(fase=fase, author="watson",
                                         content=output_watson.texto)
         proximo_id = _avancar_id_alerta(proximo_id, output_watson)
+
+        # Fase opcional: validacao_planilha_rn — acionado condicionalmente quando a
+        # Planilha de Verificação do Motor de Regras está listada no manifesto (Frente 1/3a)
+        if tasks_result.planilha_verificacao_no_pacote:
+            planilha_path = _localizar_planilha_verificacao(manifest, inputs_dir)
+            if planilha_path:
+                output_planilha_rn = self._watson.validacao_planilha_rn(
+                    planilha_path=planilha_path,
+                    analises_watson=analises_watson,
+                    tasks_mycroft=tasks,
+                )
+                # Persiste o output na pasta _runtime para ingestão por Sherlock
+                (self._runtime_dir / "watson_planilha_rn.md").write_text(
+                    output_planilha_rn.texto, encoding="utf-8"
+                )
+                self._events.log("WATSON_PLANILHA_RN_CONCLUIDA", phase=fase)
 
         rodada = 0
         while rodada < self.MAX_RODADAS:
@@ -162,26 +197,61 @@ class Orchestrator:
         )
         self._sr.validar_fase_completa(fase)
         self._events.log("PHASE_ENDED", phase=fase)
-        return decisao
+        return decisao, tasks_result, output_watson, analises_watson
 
     # ── Fase Sherlock + consolidação ─────────────────────────
 
-    def _executar_fase_sherlock_e_consolidar(self, manifest: CycleManifest) -> str:
+    def _executar_fase_sherlock_e_consolidar(
+        self,
+        manifest: CycleManifest,
+        tasks_result: DefinirTasksResult,
+        output_watson_consolidado: WatsonOutput | None,
+    ) -> str:
         fase = "sherlock_validacao"
 
         # Mycroft monta o pacote para Sherlock a partir da decisão de Watson
         decisao_watson = self._sr.ler_decisao_final("watson_integridade")
         inputs_dir = self._cycle_dir / "inputs"
-        # Ler análise completa de Watson para enriquecer o pacote de Sherlock
         watson_apresentacao = self._sr.ler_apresentacao("watson_integridade")
+
+        # Frente 3b: propagar nota metodológica quando Watson a sinalizou.
+        # A nota é incluída no pacote de contexto de Sherlock como Premissa 3
+        # do skills.md — Sherlock a trata com prioridade antes dos pontos individuais.
+        nota_metodologica_detalhes = ""
+        if output_watson_consolidado and output_watson_consolidado.nota_metodologica_com_alteracao:
+            # Extrair o conteúdo da seção 2 (Notas Metodológicas) do consolidado Watson
+            nota_metodologica_detalhes = (
+                output_watson_consolidado.secoes.get("2. Notas Metodológicas com Alteração", "")
+                or output_watson_consolidado.secoes.get("Notas Metodológicas com Alteração", "")
+                or "[Nota metodológica com alteração identificada — ver watson_consolidado.md seção 2]"
+            )
+
         pacote = self._mycroft.montar_pacote_sherlock(
-            manifest, inputs_dir, decisao_watson, watson_apresentacao
+            manifest, inputs_dir, decisao_watson, watson_apresentacao,
+            nota_metodologica_detalhes=nota_metodologica_detalhes,
         )
 
         self._transicionar(CycleState.EM_EXECUCAO_SHERLOCK)
         self._events.log("PHASE_STARTED", phase=fase, agent="sherlock")
 
         output_sherlock = self._sherlock.validar(pacote)
+
+        # Frente 3a: validacao_planilha_rn_sherlock — acionado condicionalmente quando
+        # a Planilha de Verificação está no manifesto e Watson já a validou.
+        # Executado após verificar_ponto (embutido em validar()) e antes da avaliação
+        # de Mycroft, para que Sherlock tenha perspectiva metodológica da planilha.
+        watson_planilha_rn_path = self._runtime_dir / "watson_planilha_rn.md"
+        if tasks_result.planilha_verificacao_no_pacote and watson_planilha_rn_path.exists():
+            watson_planilha_rn_texto = watson_planilha_rn_path.read_text(encoding="utf-8")
+            output_planilha_sherlock = self._sherlock.validacao_planilha_rn_sherlock(
+                pacote_sherlock=pacote,
+                watson_planilha_rn=watson_planilha_rn_texto,
+            )
+            (self._runtime_dir / "sherlock_planilha_rn.md").write_text(
+                output_planilha_sherlock.texto, encoding="utf-8"
+            )
+            self._events.log("SHERLOCK_PLANILHA_RN_CONCLUIDA", phase=fase)
+
         self._sr.escrever_apresentacao(fase=fase, author="sherlock",
                                         content=output_sherlock.texto)
 
@@ -208,6 +278,16 @@ class Orchestrator:
         record = self._audit.get_cycle(self._cycle_id)
         if record and record["status"] == CycleState.EM_EXECUCAO_SHERLOCK.value:
             self._transicionar(CycleState.AGUARDANDO_REVISAO_MYCROFT_SHERLOCK)
+
+        # Frente 3c: verificar completude das 11 seções do Relatório Estruturado (10.1–10.11)
+        # e do JSON de ocorrências (seção 11) antes de acionar Mycroft.consolidar().
+        # Se incompleto: estado AGUARDANDO_COMPLETUDE e Lestrade notificado.
+        secoes_faltando = _verificar_completude_sherlock(output_sherlock.texto)
+        if secoes_faltando:
+            self._transicionar(CycleState.AGUARDANDO_COMPLETUDE)
+            self._events.log("SHERLOCK_COMPLETUDE_INSUFICIENTE", phase=fase,
+                             details={"secoes_faltando": secoes_faltando})
+            return ""   # CLI notifica Lestrade; retomada via comando futuro
 
         decisao_sherlock = self._mycroft.fixar_decisao_sherlock(output_sherlock, rodada)
         self._sr.escrever_decisao_final(fase=fase, author="mycroft", decisao=decisao_sherlock)
@@ -278,7 +358,42 @@ class Orchestrator:
                          details={"fase": fase, "erro": str(exc)})
 
 
-# ── Helpers de módulo ─────────────────────────────────────────────────────────
+# ── Helpers de módulo ────────────────────────────────────────────────────────
+
+def _localizar_planilha_verificacao(
+    manifest: CycleManifest, inputs_dir: Path
+) -> Path | None:
+    """
+    Busca no manifesto um arquivo cujo nome contenha 'verificacao' (case-insensitive).
+    Retorna o Path do arquivo ou None se não encontrado.
+    Usado para acionar watson.validacao_planilha_rn condicionalmente (Frente 3a).
+    """
+    for fi in manifest.input_files:
+        if "verificacao" in fi.name.lower():
+            candidate = inputs_dir / fi.rel_path
+            if candidate.exists():
+                return candidate
+    return None
+
+
+_SECOES_RELATORIO_OBRIGATORIAS = [
+    "### 10.1", "### 10.2", "### 10.3", "### 10.4", "### 10.5",
+    "### 10.6", "### 10.7", "### 10.8", "### 10.9", "### 10.10", "### 10.11",
+]
+
+
+def _verificar_completude_sherlock(texto_sherlock: str) -> list[str]:
+    """
+    Verifica a presença das 11 subseções obrigatórias do Relatório Estruturado
+    (10.1 a 10.11) no sherlock_consolidado.md.
+    Retorna lista de seções faltando (vazia = completo).
+    Usado pela Frente 3c antes de acionar Mycroft.consolidar().
+    """
+    return [s for s in _SECOES_RELATORIO_OBRIGATORIAS if s not in texto_sherlock]
+
+
+# ── Helpers de ID de alerta ──────────────────────────────────────────────────
+
 
 def _avancar_id_alerta(proximo_id_atual: str, output: WatsonOutput) -> str:
     """
