@@ -8,7 +8,9 @@ Referência normativa: RF-OR-01 a RF-OR-11 (PRD v0.1), Bloco 8 (SDD v0.1)
 """
 from __future__ import annotations
 
+import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 from diogenes.agents.mycroft import MycrooftAgent
@@ -25,6 +27,54 @@ from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, Invalid
 from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.workspace import WorkspaceManager
+
+_TASKS_CACHE_MAX_DIAS = 30
+_TASKS_CACHE_NOME = "mycroft_tasks_watson.json"
+
+
+def _carregar_tasks_cache(
+    module_id: str, workspace_path: Path
+) -> DefinirTasksResult | None:
+    """Carrega tasks de Watson cacheadas em workspace/<module_id>/mycroft_tasks_watson.json.
+
+    Retorna None se o cache não existe, está corrompido ou ultrapassou _TASKS_CACHE_MAX_DIAS.
+    """
+    cache_path = workspace_path / module_id / _TASKS_CACHE_NOME
+    if not cache_path.exists():
+        return None
+    try:
+        dados = json.loads(cache_path.read_text(encoding="utf-8"))
+        criado_em = datetime.fromisoformat(dados["criado_em"])
+        if criado_em.tzinfo is None:
+            criado_em = criado_em.replace(tzinfo=timezone.utc)
+        idade_dias = (datetime.now(timezone.utc) - criado_em).days
+        if idade_dias > _TASKS_CACHE_MAX_DIAS:
+            return None
+        if dados.get("module_id") != module_id:
+            return None
+        return DefinirTasksResult(
+            tasks_text=dados["tasks_text"],
+            planilha_verificacao_no_pacote=dados.get("planilha_verificacao_no_pacote", False),
+        )
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _salvar_tasks_cache(
+    result: DefinirTasksResult, module_id: str, workspace_path: Path
+) -> None:
+    """Persiste tasks de Watson em workspace/<module_id>/mycroft_tasks_watson.json."""
+    cache_dir = workspace_path / module_id
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    dados = {
+        "module_id": module_id,
+        "tasks_text": result.tasks_text,
+        "planilha_verificacao_no_pacote": result.planilha_verificacao_no_pacote,
+        "criado_em": datetime.now(timezone.utc).isoformat(),
+    }
+    (cache_dir / _TASKS_CACHE_NOME).write_text(
+        json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 class Orchestrator:
@@ -214,8 +264,18 @@ class Orchestrator:
         self._transicionar(CycleState.EM_EXECUCAO_WATSON)
         self._events.log("PHASE_STARTED", phase=fase, agent="watson")
 
-        # definir_tasks_watson agora retorna DefinirTasksResult com flag de planilha
-        tasks_result = self._mycroft.definir_tasks_watson(manifest)
+        # Cache de tasks — evita chamada LLM cara quando Mycroft está saturado.
+        # O cache é válido por _TASKS_CACHE_MAX_DIAS dias (mesmo manifesto/módulo).
+        ws_path = self._cfg.workspace.path
+        tasks_result = _carregar_tasks_cache(manifest.module_id, ws_path)
+        if tasks_result is not None:
+            self._events.log("TASKS_WATSON_CACHE_HIT",
+                             details={"module_id": manifest.module_id})
+        else:
+            tasks_result = self._mycroft.definir_tasks_watson(manifest)
+            _salvar_tasks_cache(tasks_result, manifest.module_id, ws_path)
+            self._events.log("TASKS_WATSON_CACHE_SAVED",
+                             details={"module_id": manifest.module_id})
         tasks = tasks_result.tasks_text
         inputs_dir = self._cycle_dir / "inputs"
 
