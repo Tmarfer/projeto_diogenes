@@ -15,6 +15,7 @@ from diogenes.agents.mycroft import MycrooftAgent
 from diogenes.agents.sherlock import SherlockAgent
 from diogenes.agents.watson import WatsonAgent
 from diogenes.config import get_config
+from diogenes.irene import executar_irene, verificar_catalogo_existente, _derivar_manifesto_irene, copiar_catalogo_para_ciclo
 from diogenes.llm.base import get_llm_client
 from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
 from diogenes.models import CycleManifest, DecisaoFinal, DefinirTasksResult, WatsonOutput
@@ -45,6 +46,7 @@ class Orchestrator:
         self._mycroft = MycrooftAgent(
             llm=self._llm, agent_spec=self._cfg.agentes.mycroft,
             cycle_id=cycle_id, docs_dir=docs / "mycroft",
+            cycle_dir=self._cycle_dir,
         )
         self._watson = WatsonAgent(
             llm=self._llm, agent_spec=self._cfg.agentes.watson,
@@ -61,6 +63,10 @@ class Orchestrator:
         """Executa o ciclo completo. Retorna caminho do output ou "" se pausado."""
         self._events.log("CYCLE_STARTED", details={"cycle_id": manifest.cycle_id})
         try:
+            # Fase Irene — catalogação semântica antes de Watson (requer DIOGENES_IRENE_HABILITADO=true)
+            if self._cfg.irene_habilitado:
+                self._executar_fase_irene(manifest)
+
             decisao_watson, tasks_result, output_watson, _ = (
                 self._executar_fase_watson(manifest)
             )
@@ -97,6 +103,89 @@ class Orchestrator:
         """Aborta o ciclo por decisão de Lestrade."""
         self._transicionar(CycleState.ABORTADO_LESTRADE)
         self._events.log("CYCLE_ABORTED", details={"razao": razao})
+
+    # ── Fase Irene ───────────────────────────────────────────
+
+    def _executar_fase_irene(self, manifest: CycleManifest) -> None:
+        """
+        Executa a fase de catalogação semântica (Irene v1.3.1).
+
+        Fluxo:
+          1. VERIFICANDO_EXISTENCIA: verifica se catálogo reutilizável existe.
+             Se sim, pula para EM_EXECUCAO_WATSON diretamente.
+          2. AGUARDANDO_IRENE: executa pipeline C1-C5.
+          3. IRENE_CONCLUIDA: persiste métricas no audit_index e avança.
+
+        Em caso de IRENE_ERRO_FATAL, transiciona para ABORTADO_FALHA_AGENTE
+        e levanta OrchestratorError para interromper o ciclo.
+
+        IRENE_BLOQUEADO não é tratado como fatal aqui — Watson recebe o catálogo
+        e decide como ponderar a recomendação (conforme INTEGRACAO_DIOGENES.md §5.1).
+        """
+        from datetime import datetime, timezone
+
+        # ── VERIFICANDO_EXISTENCIA ────────────────────────────────────────────
+        self._transicionar(CycleState.VERIFICANDO_EXISTENCIA)
+        self._events.log("IRENE_VERIFICACAO_INICIO", details={"modulo": manifest.module_id})
+
+        existe, caminho_catalogo = verificar_catalogo_existente(
+            manifest.module_id, self._cfg.workspace.path
+        )
+
+        if existe:
+            self._events.log("IRENE_CATALOGO_REUTILIZADO",
+                             details={"catalogo": caminho_catalogo, "modulo": manifest.module_id})
+            # Fica em VERIFICANDO_EXISTENCIA — _executar_fase_watson() transitará para
+            # EM_EXECUCAO_WATSON, e VERIFICANDO_EXISTENCIA → EM_EXECUCAO_WATSON é válida.
+            return
+
+        # ── AGUARDANDO_IRENE ──────────────────────────────────────────────────
+        self._transicionar(CycleState.AGUARDANDO_IRENE)
+        invocada_at_utc = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self._events.log("IRENE_INICIO", details={"modulo": manifest.module_id})
+
+        # Derivar manifesto do Irene a partir do workspace
+        manifest_path = _derivar_manifesto_irene(
+            manifest.cycle_id, self._cfg.workspace.path
+        )
+
+        estado, metricas = executar_irene(
+            caminho_manifesto=manifest_path,
+            modulo=manifest.module_id,
+            dir_saida=self._cfg.workspace.path,
+        )
+
+        self._events.log("IRENE_FIM", details={"estado": estado, **{
+            k: str(v) for k, v in metricas.items() if k != "artefatos"
+        }})
+
+        if estado == "IRENE_ERRO_FATAL":
+            self._transicionar(CycleState.ABORTADO_FALHA_AGENTE)
+            self._events.log("IRENE_ERRO_FATAL_REGISTRADO", details={"modulo": manifest.module_id})
+            raise OrchestratorError(
+                f"Irene falhou com ERRO_FATAL para o módulo '{manifest.module_id}'. "
+                f"Verifique os logs em {metricas.get('dir_saida', '?')}."
+            )
+
+        # ── IRENE_CONCLUIDA ───────────────────────────────────────────────────
+        self._transicionar(CycleState.IRENE_CONCLUIDA)
+        self._audit.update_irene(
+            self._cycle_id,
+            resultado=estado,
+            score=metricas.get("score_consolidado", 0.0),
+            dir_saida=metricas.get("dir_saida", ""),
+            invocada_at_utc=invocada_at_utc,
+        )
+        self._events.log("IRENE_CONCLUIDA_REGISTRADA",
+                         details={"estado": estado,
+                                  "score": metricas.get("score_consolidado", 0.0)})
+
+        # Copiar catálogo para o diretório do ciclo (consumido por definir_tasks_watson)
+        copiar_catalogo_para_ciclo(metricas, self._cycle_id, self._cfg.workspace.path)
+
+        # Avança para Watson — transição IRENE_CONCLUIDA → EM_EXECUCAO_WATSON
+        # feita implicitamente: _executar_fase_watson chama _transicionar(EM_EXECUCAO_WATSON).
+        # IRENE_BLOQUEADO: Watson recebe catálogo com flag de bloqueio e decide.
 
     # ── Fase Watson ──────────────────────────────────────────
 

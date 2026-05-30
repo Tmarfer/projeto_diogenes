@@ -8,25 +8,34 @@
 #   Comentar as linhas `modelo` da fase atual e descomentar as da próxima.
 #   Atualizar `fase_ativa` e `teto_custo_ciclo_usd`. Fazer commit.
 #
+# TROCA DE PROVIDER:
+#   Alterar DIOGENES_LLM_PROVIDER no .env.
+#   openrouter → usar modelos com prefixo de organização (ex: anthropic/claude-sonnet-4-6)
+#   chattcu    → usar nomes de modelo exatamente como listados na plataforma ChatTCU
+#
 # REGRAS:
 #   - Segredos (API keys) ficam exclusivamente em .env
+#   - Provider fica em .env (DIOGENES_LLM_PROVIDER)
 #   - Caminhos de workspace ficam em runtime.yaml
-#   - Parâmetros operacionais (timeouts, retry) ficam em runtime.yaml
+#   - Parâmetros operacionais (timeouts, retry) ficam neste arquivo
 #
 # Referência normativa: RNF-PORT-03, RNF-PORT-04 (PRD v0.1), Bloco 4.3 (SDD v0.1)
 
-# Fase ativa do piloto: A (free) | B (baratos) | D (MOD_010)
+# Fase ativa do piloto: A (free) | B (baratos/ChatTCU-piloto) | D (MOD_010 produção)
 fase_ativa: B
 
 agentes:
 
   mycroft:
     # Auditor Chefe — síntese, delegação, decisão, consolidação
-    modelo: meta-llama/llama-4-maverick             # Fase B — síntese e orquestração
-    # modelo: z-ai/glm-4.5-air:free                 # Fase A (free)
-    # modelo: anthropic/claude-sonnet-4-6            # Fase D
+    # ChatTCU (piloto de teste):
+    modelo: "Claude 4.6 Sonnet"
+    # OpenRouter Fase B (fallback):
+    # modelo: meta-llama/llama-4-maverick
+    # OpenRouter Fase D:
+    # modelo: anthropic/claude-sonnet-4-6
     temperatura: 0.0  # 0.0 = determinístico; elimina alucinações na síntese
-    max_tokens: 16384  # outputs legítimos observados ≤ 8.5k tok; teto contém loops degenerados
+    max_tokens: 8000  # ChatTCU: teto conservador para piloto; escalar em Fase D
     max_tokens_ciclo: 131072
     timeout_segundos: 300
     max_tentativas_retry: 2
@@ -35,11 +44,14 @@ agentes:
   watson:
     # Auditor de Integridade Técnica — análise documental, tradução SQL/Python
     # Exige contexto longo (>128k) para ingerir os ~95k tokens do pacote de arquivos.
-    modelo: google/gemini-2.5-flash-lite            # Fase B — 1M ctx, ideal para carga massiva
-    # modelo: google/gemma-4-31b-it:free            # Fase A (rate-limit em requests grandes)
-    # modelo: google/gemini-2.5-flash               # Fase D
+    # ChatTCU (piloto de teste):
+    modelo: "gemini-3.1-flash-lite"
+    # OpenRouter Fase B (fallback):
+    # modelo: google/gemini-2.5-flash-lite
+    # OpenRouter Fase D:
+    # modelo: google/gemini-2.5-flash
     temperatura: 0.0    # máximo determinismo — Watson não especula
-    max_tokens: 16384   # outputs legítimos observados ≤ 6k tok; teto contém loops degenerados de whitespace
+    max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ≤ 6k tok
     max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 2
@@ -48,11 +60,14 @@ agentes:
   sherlock:
     # Auditor de Validação Metodológica CBS — análise normativa, classificação
     # Exige raciocínio dedutivo sobre metodologia jurídico-tributária.
-    modelo: deepseek/deepseek-v4-flash              # Fase B — raciocínio + custo baixo
-    # modelo: minimax/minimax-m2.5:free             # Fase A (free)
-    # modelo: anthropic/claude-opus-4-6             # Fase D
+    # ChatTCU (piloto de teste):
+    modelo: "gpt-5.4-thinking"
+    # OpenRouter Fase B (fallback):
+    # modelo: deepseek/deepseek-v4-flash
+    # OpenRouter Fase D:
+    # modelo: anthropic/claude-opus-4-6
     temperatura: 0.1
-    max_tokens: 24576   # validacao_inicial legítima observada ~16.4k tok — headroom maior que os demais
+    max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ~16.4k tok
     max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 2
@@ -60,7 +75,8 @@ agentes:
 
 # Teto de custo global por ciclo em USD (RNF-CUST-02)
 # Fase A: 0.00 (free); Fase B: 5.00; Fase D: 10.00
-teto_custo_ciclo_usd: 5.00
+# ChatTCU: custo institucional — mantido como 0.00 (sem cobrança por chamada)
+teto_custo_ciclo_usd: 0.00
 
 # Seed base para reprodutibilidade (RNF-REPR-02)
 # Seed efetiva por chamada: seed_base + hash(cycle_id + fase + n_chamada) % 10000

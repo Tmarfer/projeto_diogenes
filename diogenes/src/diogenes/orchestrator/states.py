@@ -19,6 +19,11 @@ class CycleState(StrEnum):
     # Progressão normal
     PREPARADO                              = "PREPARADO"
     AGUARDANDO_CONFIRMACAO_MANIFESTO       = "AGUARDANDO_CONFIRMACAO_MANIFESTO"
+    # Estados do Irene (SDD Bloco 15 / INTEGRACAO_DIOGENES.md seção 6)
+    # Inseridos entre AGUARDANDO_CONFIRMACAO_MANIFESTO e EM_EXECUCAO_WATSON.
+    VERIFICANDO_EXISTENCIA                 = "VERIFICANDO_EXISTENCIA"   # Mycroft decide se Irene precisa rodar
+    AGUARDANDO_IRENE                       = "AGUARDANDO_IRENE"          # pipeline Irene em execução (C1-C5)
+    IRENE_CONCLUIDA                        = "IRENE_CONCLUIDA"           # catálogo disponível; Orquestrador retoma
     EM_EXECUCAO_WATSON                     = "EM_EXECUCAO_WATSON"
     AGUARDANDO_REVISAO_MYCROFT_WATSON      = "AGUARDANDO_REVISAO_MYCROFT_WATSON"
     AGUARDANDO_DECISAO_LESTRADE_ALERTA     = "AGUARDANDO_DECISAO_LESTRADE_ALERTA_CRITICO"
@@ -42,7 +47,23 @@ TRANSICOES_VALIDAS: dict[CycleState, set[CycleState]] = {
         CycleState.ABORTADO_LESTRADE,
     },
     CycleState.AGUARDANDO_CONFIRMACAO_MANIFESTO: {
-        CycleState.EM_EXECUCAO_WATSON,
+        CycleState.VERIFICANDO_EXISTENCIA,  # novo fluxo via Irene
+        CycleState.EM_EXECUCAO_WATSON,      # fluxo legado / bypass Irene
+        CycleState.ABORTADO_LESTRADE,
+    },
+    CycleState.VERIFICANDO_EXISTENCIA: {
+        CycleState.AGUARDANDO_IRENE,         # manifesto válido → executa Irene
+        CycleState.EM_EXECUCAO_WATSON,       # catálogo existente reutilizável → pula Irene
+        CycleState.ABORTADO_LESTRADE,
+    },
+    CycleState.AGUARDANDO_IRENE: {
+        CycleState.IRENE_CONCLUIDA,          # IRENE_APROVADO ou IRENE_ALERTA ou IRENE_BLOQUEADO
+        CycleState.ABORTADO_FALHA_AGENTE,    # IRENE_ERRO_FATAL
+        CycleState.ABORTADO_LESTRADE,
+    },
+    CycleState.IRENE_CONCLUIDA: {
+        CycleState.EM_EXECUCAO_WATSON,       # fluxo normal (APROVADO, ALERTA ou BLOQUEADO — Watson pondera)
+        CycleState.ABORTADO_FALHA_AGENTE,    # fallback para erros não tratados
         CycleState.ABORTADO_LESTRADE,
     },
     CycleState.EM_EXECUCAO_WATSON: {

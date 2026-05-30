@@ -77,6 +77,23 @@ class AuditIndex:
     def count_cycles_for_module(self, module_id: str) -> int:
         return sum(1 for r in self._read_all() if r["module_id"] == module_id)
 
+    def update_irene(
+        self,
+        cycle_id: str,
+        resultado: str,
+        score: float,
+        dir_saida: str,
+        invocada_at_utc: str = "",
+    ) -> None:
+        """Registra métricas da fase Irene no audit_index."""
+        self.update_status(
+            cycle_id, self.get_cycle(cycle_id)["status"],
+            irene_invocada_at_utc=invocada_at_utc,
+            irene_resultado=resultado,
+            irene_score=f"{score:.4f}",
+            irene_dir_saida=dir_saida,
+        )
+
     def update_motor_saida(self, cycle_id: str, invocado_at_utc: str,
                             occurrences: int, output_hash: str) -> None:
         self.update_status(

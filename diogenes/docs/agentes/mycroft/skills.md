@@ -40,6 +40,22 @@ após a segunda rodada, o call_type é `fixar_decisao`.
 **Planilha de Verificação no pacote:** [Sim | Não]
 <!-- /SECAO: cabecalho_tasks_watson -->
 
+<!-- SECAO: catalogo_irene -->
+## Catálogo do Irene — Classificação Semântica
+
+**Catálogo disponível:** [Sim | Não]
+**Score consolidado Irene:** [0.0000 | N/A]
+**Recomendação Irene:** [APROVADO | ALERTA | BLOQUEADO | N/A]
+
+| Arquivo | Papel Irene | Confiança | Flags | Rev. Humana |
+|---|---|---|---|---|
+| [nome_original] | [papel] | [0.00] | [flags ou —] | [Sim | Não] |
+
+**Orientação de profundidade para Watson:**
+[gerada por Mycroft com base nos papéis: quais arquivos recebem análise
+completa, quais recebem verificação básica, quais têm flags a verificar]
+<!-- /SECAO: catalogo_irene -->
+
 <!-- SECAO: contexto_do_ciclo -->
 ## Contexto do Ciclo
 

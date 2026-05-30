@@ -8,8 +8,11 @@ Referência normativa: Bloco 9.2 (SDD v0.1)
 """
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
+
+import yaml
 
 from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
 from diogenes.config import AgentSpec
@@ -28,17 +31,21 @@ from diogenes.models import (
     WatsonOutput,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class MycrooftAgent:
     FASE_WATSON  = "watson_integridade"
     FASE_SHERLOCK = "sherlock_validacao"
 
     def __init__(self, llm: LLMClient, agent_spec: AgentSpec,
-                 cycle_id: str, docs_dir: Path) -> None:
+                 cycle_id: str, docs_dir: Path,
+                 cycle_dir: Path | None = None) -> None:
         self._llm = llm
         self._spec = agent_spec
         self._cycle_id = cycle_id
         self._docs_dir = docs_dir
+        self._cycle_dir = cycle_dir
         self._system_prompt = self._construir_system_prompt()
         self._heartbeat = HeartbeatLoader(docs_dir / "heartbeat.md")
 
@@ -50,6 +57,11 @@ class MycrooftAgent:
             f"- {fi.name} ({fi.extension}, {fi.size_bytes} bytes)"
             for fi in manifest.input_files
         )
+
+        # Ler catálogo do Irene (se disponível no diretório do ciclo)
+        catalogo_irene = self._ler_catalogo_irene(self._cycle_dir) if self._cycle_dir else None
+        secao_catalogo = self._formatar_secao_catalogo_irene(catalogo_irene)
+
         user_base = (
             f"## Manifesto do Ciclo\n\n"
             f"Módulo: {manifest.module_id}\n"
@@ -57,6 +69,7 @@ class MycrooftAgent:
             f"Sala de Sigilo: {'Sim' if manifest.is_sigilo_module else 'Não'}\n"
             f"Prioridades definidas por Lestrade: "
             f"{manifest.prioridades_analise or '[não preenchido — aplicar ordem padrão]'}\n\n"
+            f"{secao_catalogo}\n\n"
             f"## Arquivos do Pacote\n\n{arquivos}\n\n"
             f"Defina as tasks ordenadas para Watson. Produza a seção "
             f"'## Tasks para Watson' com lista numerada e a seção "
@@ -232,6 +245,98 @@ class MycrooftAgent:
         return RelatorioOutput(texto=resp.content,
                                overrule_watson=overrule_w,
                                overrule_sherlock=overrule_s)
+
+    # ── Catálogo do Irene ────────────────────────────────────
+
+    def _ler_catalogo_irene(self, cycle_dir: Path | None) -> dict | None:
+        """
+        Lê irene_catalog.yaml do diretório do ciclo.
+        Retorna dict com o catálogo ou None se não existir.
+        """
+        if cycle_dir is None:
+            return None
+        catalogo_path = cycle_dir / "irene_catalog.yaml"
+        if not catalogo_path.exists():
+            return None
+        try:
+            return yaml.safe_load(catalogo_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            logger.warning("Falha ao ler irene_catalog.yaml: %s", exc)
+            return None
+
+    def _formatar_secao_catalogo_irene(self, catalogo: dict | None) -> str:
+        """
+        Formata a seção <!-- SECAO: catalogo_irene --> para o MC_tasks_watson.md.
+        """
+        if catalogo is None:
+            return (
+                "<!-- SECAO: catalogo_irene -->\n"
+                "## Catálogo do Irene — Classificação Semântica\n\n"
+                "**Catálogo disponível:** Não\n"
+                "<!-- /SECAO: catalogo_irene -->"
+            )
+
+        linhas_tabela = []
+        orientacoes = []
+
+        for arq in catalogo.get("arquivos", []):
+            nome = arq.get("nome_original", "")
+            papel = arq.get("papel", "nao_classificado")
+            confianca = arq.get("confianca_papel", 0.0)
+            flags = ", ".join(arq.get("flags_atencao", [])) or "—"
+            rev_hum = "Sim" if arq.get("requer_revisao_humana") else "Não"
+            linhas_tabela.append(
+                f"| {nome} | {papel} | {confianca:.2f} | {flags} | {rev_hum} |"
+            )
+
+            # Orientação de profundidade
+            if papel in ("resultado_final", "resultado_intermediario"):
+                orientacoes.append(
+                    f"- `{nome}` ({papel}): análise completa — todas as varreduras "
+                    f"transversais obrigatórias, fórmulas e totalizadores exaustivos."
+                )
+            elif papel in ("aba_auxiliar", "tabela_mapeamento", "matriz_parametrica"):
+                orientacoes.append(
+                    f"- `{nome}` ({papel}): verificação de integridade básica — "
+                    f"sem aprofundamento de cadeia de produção."
+                )
+            elif papel == "nao_classificado":
+                orientacoes.append(
+                    f"- `{nome}` (não classificado pelo Irene): análise completa — "
+                    f"Watson determina o papel durante a análise."
+                )
+            else:
+                orientacoes.append(
+                    f"- `{nome}` ({papel}): análise padrão com foco em rastreabilidade."
+                )
+
+            if arq.get("flags_atencao"):
+                orientacoes.append(
+                    f"  ⚠ Flags do Irene a verificar: {flags}"
+                )
+            if arq.get("requer_revisao_humana"):
+                orientacoes.append(
+                    f"  [ATENÇÃO LESTRADE] Irene sinalizou necessidade de revisão humana."
+                )
+
+        tabela_header = (
+            "| Arquivo | Papel Irene | Confiança | Flags | Rev. Humana |\n"
+            "|---|---|---|---|---|"
+        )
+        tabela = tabela_header + "\n" + "\n".join(linhas_tabela)
+        orientacao_str = "\n".join(orientacoes) if orientacoes else "N/A"
+
+        return (
+            "<!-- SECAO: catalogo_irene -->\n"
+            "## Catálogo do Irene — Classificação Semântica\n\n"
+            f"**Catálogo disponível:** Sim\n"
+            f"**Score consolidado Irene:** {catalogo.get('score_consolidado', 0):.4f}\n"
+            f"**Recomendação Irene:** {catalogo.get('recomendacao', 'N/A')}\n\n"
+            f"{tabela}\n\n"
+            f"**Orientação de profundidade para Watson:**\n"
+            f"{orientacao_str}\n"
+            "<!-- /SECAO: catalogo_irene -->"
+        )
 
     # ── Internos ─────────────────────────────────────────────
 

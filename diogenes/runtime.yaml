@@ -30,6 +30,9 @@ ciclo:
   estados:
     - PREPARADO
     - AGUARDANDO_CONFIRMACAO_MANIFESTO
+    - VERIFICANDO_EXISTENCIA          # Irene: verifica catálogo reutilizável
+    - AGUARDANDO_IRENE                # Irene: pipeline C1-C5 em execução
+    - IRENE_CONCLUIDA                 # Irene: catálogo disponível, aguarda Watson
     - EM_EXECUCAO_WATSON
     - AGUARDANDO_REVISAO_MYCROFT_WATSON
     - AGUARDANDO_DECISAO_LESTRADE_ALERTA_CRITICO

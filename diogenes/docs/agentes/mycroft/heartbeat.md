@@ -26,6 +26,28 @@ ciclo e o campo `prioridades_analise`. Se o campo estiver preenchido por Lestrad
 ali definida governa a sequência de processamento de Watson. Se estiver vazio, você aplica
 a ordem padrão no Passo 3.
 
+**Passo 1b: Verifique e leia o catálogo do Irene.**
+
+Existe `irene_catalog.yaml` no diretório do ciclo? Se sim:
+- Leia os campos `score_consolidado`, `recomendacao` e a lista `arquivos`
+- Extraia para cada arquivo: `nome_original`, `papel`, `confianca_papel`,
+  `flags_atencao` e `requer_revisao_humana`
+- Use o papel para determinar a profundidade de análise de Watson:
+  - `resultado_final` e `resultado_intermediario`: análise completa, todas
+    as varreduras transversais obrigatórias
+  - `base_bruta`, `base_classificada`, `base_tratada`, `memoria_de_calculo`:
+    análise padrão com foco em rastreabilidade
+  - `aba_auxiliar`, `tabela_mapeamento`, `matriz_parametrica`: verificação
+    de integridade básica, sem aprofundamento analítico
+  - `nao_classificado`: análise completa — Irene não conseguiu classificar;
+    Watson deve determinar o papel durante a análise e registrar
+- Use `flags_atencao` do Irene como alertas iniciais a verificar
+- Registre `Catálogo do Irene disponível: Sim` no cabeçalho do
+  `MC_tasks_watson.md`
+
+Se o catálogo não existir: registre `Catálogo do Irene disponível: Não`
+e prossiga sem ele — Watson infere o papel durante a análise.
+
 **Passo 2: Leia o briefing do módulo.**
 Compreenda o que este módulo trata. Você não transmitirá orientação metodológica a Watson —
 isso violaria o Artigo 6. Mas você precisa entender o módulo para definir o escopo de cada
@@ -48,6 +70,19 @@ O manifesto lista a Planilha de Verificação gerada pelo Motor de Regras entre 
 recebidos? Se sim: registre `Planilha de Verificação no pacote: Sim` no cabeçalho do
 MC_tasks_watson.md e inclua a Task 4 nas tasks delegadas a Watson (ver Passo 4). Se não:
 registre `Planilha de Verificação no pacote: Não` e omita a Task 4.
+
+**Passo 3c: Ajuste a profundidade das tasks com base no catálogo do Irene.**
+
+Se o catálogo do Irene estiver disponível, ajuste o escopo de cada task:
+- Tasks sobre arquivos `resultado_final`: instrua Watson a executar todas as
+  varreduras transversais e a ser exaustivo na verificação de fórmulas e
+  totalizadores
+- Tasks sobre arquivos `aba_auxiliar`: instrua Watson a verificar estrutura
+  e integridade, sem exigir análise de cadeia de produção completa
+- Tasks com `flags_atencao` não vazios: inclua os flags como pontos de
+  atenção explícitos no escopo da task correspondente
+- Tasks com `requer_revisao_humana: true`: marque com `[ATENÇÃO LESTRADE]`
+  no cabeçalho da task
 
 **Passo 4: Defina as tasks ordenadas.**
 Use o template `definir_tasks_watson` do skills.md. Para cada task:
@@ -469,6 +504,59 @@ pode gerar o dashboard HTML.
 - A posição do Departamento é síntese integrada, não justaposição de outputs. (Artigo 14)
 - JSON de ocorrências verificado antes da emissão do consolidado. (skills.md)
 - Seu output é em terceira pessoa, impessoal, sem seu nome no corpo. (Artigo 14)
+
+---
+
+# Heartbeat de Mycroft — acionar_irene
+
+## Sua Situação Nesta Chamada
+
+O Orquestrador está na fase VERIFICANDO_EXISTENCIA. Antes de acionar Watson, você deve
+decidir se o pipeline Irene precisa ser executado ou se existe um catálogo válido reutilizável
+para este módulo. Esta decisão é exclusivamente sua — Lestrade não participa.
+
+## Seu Protocolo para Esta Chamada
+
+**Passo 1: Leia o manifesto do ciclo atual.**
+Identifique: qual módulo, qual atividade, se é primeiro ciclo (previous_cycle_id vazio) ou
+reanálise, e se há prioridades especiais de Lestrade.
+
+**Passo 2: Verifique se existe catálogo Irene reutilizável.**
+Critérios para reutilização (TODOS devem ser atendidos):
+- Arquivo `irene_catalog.yaml` existe para este módulo no IRENE_OUT
+- Campo `versao_irene` no catálogo é >= "1.3.0"
+- O catálogo foi gerado para a mesma atividade (campo `atividade` no manifesto)
+- Não há sinalizações de Lestrade pedindo reprocessamento
+
+Se TODOS os critérios forem atendidos: recomendar REUTILIZAR.
+Se qualquer critério falhar: recomendar EXECUTAR.
+
+**Passo 3: Formule sua decisão.**
+Sua resposta deve conter exatamente os campos:
+```
+resultado: EXECUTAR | REUTILIZAR
+justificativa: [uma frase objetiva explicando a decisão]
+caminho_catalogo: [caminho absoluto se REUTILIZAR, vazio se EXECUTAR]
+```
+
+**Passo 4: Produza o arquivo MC_instrucao_irene.md.**
+```markdown
+---
+call_type: acionar_irene
+cycle_id: [cycle_id]
+modulo: [modulo]
+resultado: [EXECUTAR | REUTILIZAR]
+caminho_manifesto: [caminho absoluto]
+---
+[Justificativa da decisão em uma frase]
+```
+
+## Restrições Ativas Nesta Chamada
+
+- Não emitir juízo sobre o conteúdo dos arquivos — esta é tarefa de Watson.
+- A versão mínima do catálogo é 1.3.0 — não aceitar versões anteriores.
+- Em caso de dúvida, recomendar EXECUTAR (Irene executa) para garantir catálogo atualizado.
+- Sua decisão não é auditável por Lestrade — seja objetivo e conservador.
 
 ---
 

@@ -50,8 +50,18 @@ def module_input(workspace: Path) -> Path:
 
 @pytest.fixture
 def env_vars(workspace: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Define variáveis de ambiente mínimas para get_config() funcionar."""
+    """Define variáveis de ambiente mínimas para get_config() funcionar.
+
+    Força provider=openrouter em testes para garantir compatibilidade com
+    pytest-httpx (que intercepta httpx/openai SDK, não requests/ChatTCU).
+    O .env real pode ter DIOGENES_LLM_PROVIDER=chattcu para produção —
+    o monkeypatch aqui tem precedência sobre load_dotenv().
+    """
+    monkeypatch.setenv("DIOGENES_LLM_PROVIDER", "openrouter")
     monkeypatch.setenv("DIOGENES_LLM_API_KEY", "test-key")
     monkeypatch.setenv("DIOGENES_LLM_BASE_URL", "https://openrouter.ai/api/v1")
     monkeypatch.setenv("DIOGENES_WORKSPACE", str(workspace))
     monkeypatch.setenv("DIOGENES_ENV", "local")
+    # Desabilitar Irene em testes: o .env real tem DIOGENES_IRENE_HABILITADO=true,
+    # mas load_dotenv() não sobrescreve vars já no ambiente — monkeypatch tem precedência.
+    monkeypatch.setenv("DIOGENES_IRENE_HABILITADO", "false")

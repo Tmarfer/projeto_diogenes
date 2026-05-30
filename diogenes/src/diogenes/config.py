@@ -29,8 +29,10 @@ from diogenes.models import AgentSpec
 # ---------------------------------------------------------------------------
 
 class LLMConfig(BaseModel):
-    api_key: str
-    base_url: str
+    provider: str = "chattcu"     # único valor permitido em produção: "chattcu"
+    api_key: str = ""             # não utilizado pelo ChatTCU; mantido para compat. com testes
+    base_url: str = ""            # usada pelo OpenRouter em testes; ignorada pelo ChatTCU
+    chattcu_base_url: str = ""    # URL do ChatTCU (infraestrutura interna do TCU)
     env: str = "local"
     openrouter_site_url: str = ""
     openrouter_app_name: str = ""
@@ -91,6 +93,12 @@ class DiogenesConfig(BaseModel):
     persistencia: PersistenciaConfig
     observabilidade: ObservabilidadeConfig
     agentes: AgentesConfig
+    irene_habilitado: bool = False  # True ativa fase de catalogação Irene antes de Watson
+
+    @property
+    def llm_provider(self) -> str:
+        """Atalho para cfg.llm.provider — usado em validações de governança."""
+        return self.llm.provider
 
 
 # ---------------------------------------------------------------------------
@@ -172,10 +180,21 @@ def get_config() -> DiogenesConfig:
             stacklevel=2,
         )
 
+    # Provider: default chattcu — único valor permitido em produção.
+    # Validação de conformidade é feita por get_llm_client() em runtime.
+    provider = os.environ.get("DIOGENES_LLM_PROVIDER", "chattcu").strip().lower()
+
+    # API key: não utilizada pelo ChatTCU; mantida para compatibilidade com testes OpenRouter.
+    api_key = os.environ.get("DIOGENES_LLM_API_KEY", "").strip()
+
     return DiogenesConfig(
         llm=LLMConfig(
-            api_key=_require_env("DIOGENES_LLM_API_KEY"),
-            base_url=_require_env("DIOGENES_LLM_BASE_URL"),
+            provider=provider,
+            api_key=api_key,
+            base_url=os.environ.get("DIOGENES_LLM_BASE_URL", ""),
+            chattcu_base_url=os.environ.get(
+                "DIOGENES_CHATTCU_BASE_URL", "https://chat-tcu.apps.tcu.gov.br"
+            ),
             env=os.environ.get("DIOGENES_ENV", "local"),
             openrouter_site_url=os.environ.get("DIOGENES_OPENROUTER_SITE_URL", ""),
             openrouter_app_name=os.environ.get("DIOGENES_OPENROUTER_APP_NAME", ""),
@@ -197,4 +216,7 @@ def get_config() -> DiogenesConfig:
             seed_base=agents_raw["seed_base"],
             fase_ativa=agents_raw.get("fase_ativa", "A"),
         ),
+        irene_habilitado=os.environ.get(
+            "DIOGENES_IRENE_HABILITADO", "false"
+        ).lower() in ("true", "1"),
     )

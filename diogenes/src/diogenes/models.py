@@ -168,6 +168,11 @@ class CycleRecord:
     ambiente: str = "local"
     diogenes_version: str = ""
     git_commit: str = ""
+    # Irene — rastreamento da fase de catalogação (INTEGRACAO_DIOGENES.md seção 5)
+    irene_invocada_at_utc: str = ""
+    irene_resultado: str = ""   # IRENE_APROVADO | IRENE_ALERTA | IRENE_BLOQUEADO | IRENE_ERRO_FATAL
+    irene_score: str = ""       # score_consolidado como string (ex: "0.9737")
+    irene_dir_saida: str = ""   # caminho absoluto do IRENE_OUT/{modulo}
 
 
 AUDIT_INDEX_COLUMNS: list[str] = [
@@ -181,6 +186,7 @@ AUDIT_INDEX_COLUMNS: list[str] = [
     "lestrade_seal_at_utc", "output_filename", "output_hash",
     "custo_total_usd", "tokens_mycroft", "tokens_watson", "tokens_sherlock",
     "ambiente", "diogenes_version", "git_commit",
+    "irene_invocada_at_utc", "irene_resultado", "irene_score", "irene_dir_saida",
 ]
 
 

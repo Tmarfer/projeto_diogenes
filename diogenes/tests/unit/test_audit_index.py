@@ -28,7 +28,7 @@ class TestAuditIndex:
         with open(workspace / "audit_index.csv") as f:
             header = next(csv.reader(f))
         assert header == AUDIT_INDEX_COLUMNS
-        assert len(header) == 27  # 27 colunas conforme SDD Bloco 5.5
+        assert len(header) == len(AUDIT_INDEX_COLUMNS)  # colunas conforme models.py
 
     def test_idempotente(self, workspace: Path):
         audit = AuditIndex(workspace)

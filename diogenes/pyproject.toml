@@ -22,6 +22,8 @@ dependencies = [
     "sqlparse>=0.5,<1.0",             # parsing e formatação de scripts SQL da RFB
     "nbformat>=5.9,<6.0",             # leitura de notebooks Jupyter da RFB
     "pdfminer.six>=20221105",         # extração de texto de PDFs (adicionado Bloco 9 do SDD)
+    "msal>=1.28,<2.0",                # autenticação MSAL para ChatTCU (Bearer JWT)
+    "requests>=2.31,<3.0",            # cliente HTTP para API proprietária do ChatTCU
 ]
 
 [project.optional-dependencies]
