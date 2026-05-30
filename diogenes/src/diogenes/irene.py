@@ -67,11 +67,25 @@ def executar_irene(
         O Orquestrador é responsável por transicionar para ABORTADO_FALHA_AGENTE.
     """
     logger.info("[Irene] Iniciando pipeline — manifesto=%s módulo=%s", caminho_manifesto, modulo)
+    print(f"\n{'='*60}")
+    print(f"  INICIALIZANDO PIPELINE IRENE — {modulo}")
+    print(f"{'='*60}\n")
 
     try:
+        # ── Forçar desativação do Excel MCP Server ────────────────────────────
+        # Evita travamento: se mcp Python SDK estiver instalado mas o servidor
+        # npx não estiver disponível/configurado, o pipeline ficaria suspenso.
+        # Irene usará fallback openpyxl (leitura direta, sem dependência externa).
+        os.environ["IRENE_EXCEL_MCP_COMMAND"] = ""
+        logger.info("[Irene] MCP Excel forçadamente desabilitado — usando openpyxl")
+
         from irene import __version__ as versao_irene
         from irene.config import carregar_config as carregar_config_irene
         from irene import manifesto as c1, profiling as c2, amostragem as c3, artefatos as c5
+
+        # Resetar cache do MCP no módulo amostragem (evita estado stale)
+        if hasattr(c3, '_MCP_DISPONIVEL'):
+            c3._MCP_DISPONIVEL = None
 
         config = carregar_config_irene()
 
@@ -101,14 +115,44 @@ def executar_irene(
 
         # ── C3 — Amostragem ───────────────────────────────────────────────────
         logger.info("[Irene] C3 — Amostragem")
+        print("[Irene] C3 — Amostragem (openpyxl fallback, sem MCP)")
+
+        # Adicionar handler stdout temporário para ver progresso do C3
+        _c3_handler = logging.StreamHandler()
+        _c3_handler.setLevel(logging.WARNING)
+        _c3_handler.setFormatter(logging.Formatter("  %(message)s"))
+        _irene_c3_logger = logging.getLogger("irene.amostragem")
+        _irene_c3_logger.addHandler(_c3_handler)
+        _irene_c3_logger.setLevel(logging.WARNING)
+
+        import time as _time
+        _t0_c3 = _time.time()
         try:
             amostragens = c3.executar(perfis, config)
         except Exception as exc:
             logger.error("[Irene] C3 ERRO FATAL: %s", exc)
+            _irene_c3_logger.removeHandler(_c3_handler)
             return "IRENE_ERRO_FATAL", {}
+        _irene_c3_logger.removeHandler(_c3_handler)
+        _elapsed_c3 = _time.time() - _t0_c3
+        print(f"[Irene] C3 — Concluída em {_elapsed_c3:.1f}s ({len(amostragens)} abas processadas)")
+        logger.info("[Irene] C3 concluída em %.1fs", _elapsed_c3)
 
         # ── C4 — Semântica via LLM ────────────────────────────────────────────
         logger.info("[Irene] C4 — Semântica via LLM")
+        n_processaveis = sum(1 for p in perfis if p.processavel)
+        print(f"[Irene] C4 — Semântica via LLM (ChatTCU) — {n_processaveis} abas a classificar")
+        print(f"[Irene] C4 — Modelo: {config.model} | Timeout: 180s/chamada")
+
+        # Adicionar handler stdout temporário para ver progresso do C4
+        _c4_handler = logging.StreamHandler()
+        _c4_handler.setLevel(logging.INFO)
+        _c4_handler.setFormatter(logging.Formatter("  %(message)s"))
+        _irene_logger = logging.getLogger("irene")
+        _irene_logger.addHandler(_c4_handler)
+        _irene_logger.setLevel(logging.INFO)
+
+        _t0_c4 = _time.time()
         try:
             from irene import semantica as c4
             classificacoes = c4.executar(
@@ -118,10 +162,17 @@ def executar_irene(
             )
         except Exception as exc:
             logger.error("[Irene] C4 ERRO FATAL: %s", exc)
+            _irene_logger.removeHandler(_c4_handler)
             return "IRENE_ERRO_FATAL", {}
+
+        _irene_logger.removeHandler(_c4_handler)
+        _elapsed_c4 = _time.time() - _t0_c4
+        print(f"[Irene] C4 — Concluída em {_elapsed_c4:.1f}s ({len(classificacoes)} classificações)")
+        logger.info("[Irene] C4 concluída em %.1fs", _elapsed_c4)
 
         # ── C5 — Artefatos ────────────────────────────────────────────────────
         logger.info("[Irene] C5 — Artefatos")
+        print("[Irene] C5 — Artefatos (consolidação)")
         try:
             rec, gerados = c5.executar(
                 inventario=inventario, perfis=perfis,
@@ -243,7 +294,10 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
     csv_dir = input_dir / "CSV"
 
     arquivos_xlsx = sorted(xlsx_dir.glob("*.xlsx")) if xlsx_dir.exists() else []
-    catalogo_path = csv_dir / "_CATALOGO" / "CATALOGO.json"
+    # CATALOGO.json pode estar direto em CSV/ ou em CSV/_CATALOGO/
+    catalogo_path = csv_dir / "CATALOGO.json"
+    if not catalogo_path.exists():
+        catalogo_path = csv_dir / "_CATALOGO" / "CATALOGO.json"
 
     manifesto = {
         "modulo": module_id,
