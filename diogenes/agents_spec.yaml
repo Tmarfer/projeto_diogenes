@@ -54,8 +54,8 @@ agentes:
     max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ≤ 6k tok
     max_tokens_ciclo: 131072
     timeout_segundos: 600
-    max_tentativas_retry: 2
-    backoff_segundos: 10
+    max_tentativas_retry: 4   # aumentado de 2→4 para resistir a HTTP 500 transitório
+    backoff_segundos: 30      # aumentado de 10→30s
 
   sherlock:
     # Auditor de Validação Metodológica CBS — análise normativa, classificação
@@ -70,8 +70,8 @@ agentes:
     max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ~16.4k tok
     max_tokens_ciclo: 131072
     timeout_segundos: 600
-    max_tentativas_retry: 2
-    backoff_segundos: 10
+    max_tentativas_retry: 4   # aumentado de 2→4
+    backoff_segundos: 30      # aumentado de 10→30s
 
 # Teto de custo global por ciclo em USD (RNF-CUST-02)
 # Fase A: 0.00 (free); Fase B: 5.00; Fase D: 10.00
