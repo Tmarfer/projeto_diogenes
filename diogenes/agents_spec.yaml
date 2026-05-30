@@ -38,8 +38,8 @@ agentes:
     max_tokens: 8000  # ChatTCU: teto conservador para piloto; escalar em Fase D
     max_tokens_ciclo: 131072
     timeout_segundos: 300
-    max_tentativas_retry: 2
-    backoff_segundos: 10
+    max_tentativas_retry: 4   # aumentado de 2→4 para resistir a saturação pós-Irene
+    backoff_segundos: 60      # aumentado de 10→60 para dar tempo ao ChatTCU recuperar
 
   watson:
     # Auditor de Integridade Técnica — análise documental, tradução SQL/Python

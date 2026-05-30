@@ -65,7 +65,15 @@ class Orchestrator:
         try:
             # Fase Irene — catalogação semântica antes de Watson (requer DIOGENES_IRENE_HABILITADO=true)
             if self._cfg.irene_habilitado:
-                self._executar_fase_irene(manifest)
+                irene_executou = self._executar_fase_irene(manifest)
+                if irene_executou and self._cfg.post_irene_cooldown_s > 0:
+                    import time as _time
+                    cooldown = self._cfg.post_irene_cooldown_s
+                    self._events.log("POST_IRENE_COOLDOWN_INICIO",
+                                     details={"segundos": cooldown})
+                    _time.sleep(cooldown)
+                    self._events.log("POST_IRENE_COOLDOWN_FIM",
+                                     details={"segundos": cooldown})
 
             decisao_watson, tasks_result, output_watson, _ = (
                 self._executar_fase_watson(manifest)
@@ -106,9 +114,12 @@ class Orchestrator:
 
     # ── Fase Irene ───────────────────────────────────────────
 
-    def _executar_fase_irene(self, manifest: CycleManifest) -> None:
+    def _executar_fase_irene(self, manifest: CycleManifest) -> bool:
         """
         Executa a fase de catalogação semântica (Irene v1.3.1).
+
+        Retorna True se o pipeline Irene foi executado, False se o catálogo
+        existente foi reutilizado (sem chamadas LLM ao ChatTCU).
 
         Fluxo:
           1. VERIFICANDO_EXISTENCIA: verifica se catálogo reutilizável existe.
@@ -137,7 +148,7 @@ class Orchestrator:
                              details={"catalogo": caminho_catalogo, "modulo": manifest.module_id})
             # Fica em VERIFICANDO_EXISTENCIA — _executar_fase_watson() transitará para
             # EM_EXECUCAO_WATSON, e VERIFICANDO_EXISTENCIA → EM_EXECUCAO_WATSON é válida.
-            return
+            return False
 
         # ── AGUARDANDO_IRENE ──────────────────────────────────────────────────
         self._transicionar(CycleState.AGUARDANDO_IRENE)
@@ -186,6 +197,7 @@ class Orchestrator:
         # Avança para Watson — transição IRENE_CONCLUIDA → EM_EXECUCAO_WATSON
         # feita implicitamente: _executar_fase_watson chama _transicionar(EM_EXECUCAO_WATSON).
         # IRENE_BLOQUEADO: Watson recebe catálogo com flag de bloqueio e decide.
+        return True
 
     # ── Fase Watson ──────────────────────────────────────────
 

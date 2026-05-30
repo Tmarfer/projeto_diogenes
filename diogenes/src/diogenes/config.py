@@ -94,6 +94,7 @@ class DiogenesConfig(BaseModel):
     observabilidade: ObservabilidadeConfig
     agentes: AgentesConfig
     irene_habilitado: bool = False  # True ativa fase de catalogação Irene antes de Watson
+    post_irene_cooldown_s: int = 0  # Pausa (segundos) após Irene antes de Mycroft/Watson
 
     @property
     def llm_provider(self) -> str:
@@ -219,4 +220,7 @@ def get_config() -> DiogenesConfig:
         irene_habilitado=os.environ.get(
             "DIOGENES_IRENE_HABILITADO", "false"
         ).lower() in ("true", "1"),
+        post_irene_cooldown_s=int(
+            os.environ.get("DIOGENES_POST_IRENE_COOLDOWN_S", "0") or "0"
+        ),
     )

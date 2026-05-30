@@ -235,8 +235,12 @@ def verificar_catalogo_existente(
         (existe_valido: bool, caminho_catalogo: str)
         Se não existe ou está desatualizado: (False, "")
     """
-    # Procura IRENE_OUT no workspace e um nível acima
+    # Procura o catálogo nos diretórios de saída possíveis.
+    # O orquestrador chama executar_irene(dir_saida=workspace_path), então
+    # dir_saida_efetivo = workspace_path / module_id — esse é o caminho real.
+    # Os candidatos IRENE_OUT são mantidos para compatibilidade retroativa.
     candidatos = [
+        workspace_path / module_id / "irene_catalog.yaml",
         workspace_path / "IRENE_OUT" / module_id / "irene_catalog.yaml",
         workspace_path.parent / "IRENE_OUT" / module_id / "irene_catalog.yaml",
     ]
@@ -283,7 +287,7 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
 
     Estrutura esperada no workspace:
         input/MOD_010/XLSX/   → arquivos .xlsx
-        input/MOD_010/CSV/    → arquivos .csv
+        input/MOD_010/CSV/    → arquivos .csv (listados em arquivos_csv para C2/C3)
 
     O CATALOGO.json é opcional — se não existir, C3 opera em modo degradado.
     """
@@ -294,6 +298,7 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
     csv_dir = input_dir / "CSV"
 
     arquivos_xlsx = sorted(xlsx_dir.glob("*.xlsx")) if xlsx_dir.exists() else []
+    arquivos_csv = sorted(csv_dir.glob("*.csv")) if csv_dir.exists() else []
     # CATALOGO.json pode estar direto em CSV/ ou em CSV/_CATALOGO/
     catalogo_path = csv_dir / "CATALOGO.json"
     if not catalogo_path.exists():
@@ -309,6 +314,13 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
                 "caminho_relativo": str(f.relative_to(workspace_path)),
             }
             for f in arquivos_xlsx
+        ],
+        "arquivos_csv": [
+            {
+                "nome": f.name,
+                "caminho_relativo": str(f.relative_to(workspace_path)),
+            }
+            for f in arquivos_csv
         ],
     }
 
