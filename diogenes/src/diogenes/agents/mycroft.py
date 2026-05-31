@@ -147,7 +147,7 @@ class MycrooftAgent:
                     "### Notas para Sherlock\n[Decisão sem revisão LLM — ChatTCU timeout]"
                 ),
                 mycroft_overruled=False,
-                has_critical_alert=output_final.has_critical_alert,
+                has_critical_alert=output_final.critical_alerts_count > 0,
                 critical_alerts_count=output_final.critical_alerts_count,
                 has_dilemma=False,
                 dilemmas_count=0,
