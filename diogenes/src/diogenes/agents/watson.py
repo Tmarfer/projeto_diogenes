@@ -114,39 +114,67 @@ class WatsonAgent:
         for i, a in enumerate(analises, 1):
             partes.append(f"[ANÁLISE DO ARQUIVO #{i}]\n{a.texto}")
 
+        import logging as _logging
         user = injetar_heartbeat(hb, "\n\n---\n\n".join(partes))
-        resp = self._llm.complete(LLMCall(
-            call_id=gerar_call_id("watson", call_type),
-            cycle_id=self._cycle_id, phase=self.FASE,
-            agent="watson", call_type=call_type,
-            model=self._spec.modelo, temperature=self._spec.temperatura,
-            max_tokens=self._spec.max_tokens,
-            seed=calcular_seed(42, self._cycle_id, self.FASE, call_type),
-            messages=[
-                LLMMessage(role="system", content=self._system_prompt),
-                LLMMessage(role="user", content=user),
-            ],
-            timeout_segundos=self._spec.timeout_segundos,
-            max_tentativas_retry=self._spec.max_tentativas_retry,
-            backoff_segundos=self._spec.backoff_segundos,
-        ))
-        consolidado = self._parsear_output(resp.content)
-        # Garantir contagem de críticos: máximo entre o que o LLM reportou
-        # e a soma das análises individuais (defesa contra omissão na síntese)
-        total_criticos = max(
-            consolidado.critical_alerts_count,
-            sum(a.critical_alerts_count for a in analises),
-        )
-        has_nao_analisavel = consolidado.has_unanalyzable_files or any(
-            a.has_unanalyzable_files for a in analises
-        )
-        return WatsonOutput(
-            texto=consolidado.texto,
-            critical_alerts_count=total_criticos,
-            has_unanalyzable_files=has_nao_analisavel,
-            secoes=consolidado.secoes,
-            ultimo_id_alerta=consolidado.ultimo_id_alerta,
-        )
+        try:
+            resp = self._llm.complete(LLMCall(
+                call_id=gerar_call_id("watson", call_type),
+                cycle_id=self._cycle_id, phase=self.FASE,
+                agent="watson", call_type=call_type,
+                model=self._spec.modelo, temperature=self._spec.temperatura,
+                max_tokens=self._spec.max_tokens,
+                seed=calcular_seed(42, self._cycle_id, self.FASE, call_type),
+                messages=[
+                    LLMMessage(role="system", content=self._system_prompt),
+                    LLMMessage(role="user", content=user),
+                ],
+                timeout_segundos=self._spec.timeout_segundos,
+                max_tentativas_retry=self._spec.max_tentativas_retry,
+                backoff_segundos=self._spec.backoff_segundos,
+            ))
+            consolidado = self._parsear_output(resp.content)
+            # Garantir contagem de críticos: máximo entre o que o LLM reportou
+            # e a soma das análises individuais (defesa contra omissão na síntese)
+            total_criticos = max(
+                consolidado.critical_alerts_count,
+                sum(a.critical_alerts_count for a in analises),
+            )
+            has_nao_analisavel = consolidado.has_unanalyzable_files or any(
+                a.has_unanalyzable_files for a in analises
+            )
+            return WatsonOutput(
+                texto=consolidado.texto,
+                critical_alerts_count=total_criticos,
+                has_unanalyzable_files=has_nao_analisavel,
+                secoes=consolidado.secoes,
+                ultimo_id_alerta=consolidado.ultimo_id_alerta,
+            )
+        except (LLMCallError, LLMTimeoutError) as exc:
+            _logging.getLogger(__name__).warning(
+                "[Watson] consolidar indisponível — fallback determinístico: %s", exc
+            )
+            total_criticos = sum(a.critical_alerts_count for a in analises)
+            has_nao_analisavel = any(a.has_unanalyzable_files for a in analises)
+            nao_analisaveis = sum(1 for a in analises if a.has_unanalyzable_files)
+            return WatsonOutput(
+                texto=(
+                    "## 1. Síntese Executiva\n\n"
+                    f"[Consolidação automática — Watson LLM indisponível: {exc}]\n\n"
+                    f"Total de arquivos analisados: {len(analises)}\n"
+                    f"Arquivos não analisáveis: {nao_analisaveis}\n"
+                    f"Total de alertas críticos: {total_criticos}\n\n"
+                    "## 2. Padrões Identificados\n\n"
+                    "[Não disponível — consolidação sem LLM]\n\n"
+                    "## 3. Alertas Consolidados\n\n"
+                    f"CONTAGEM: {total_criticos}\n\n"
+                    "## 4. Recomendações\n\n"
+                    "[Não disponível — consolidação sem LLM]"
+                ),
+                critical_alerts_count=total_criticos,
+                has_unanalyzable_files=has_nao_analisavel,
+                secoes={},
+                ultimo_id_alerta="",
+            )
 
     def validacao_planilha_rn(
         self,
