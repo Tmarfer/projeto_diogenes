@@ -241,22 +241,40 @@ class WatsonAgent:
         user_base = "\n\n".join(preamble_partes + [conteudo_base])
         user = injetar_heartbeat(hb, user_base)
 
-        resp = self._llm.complete(LLMCall(
-            call_id=gerar_call_id("watson", call_type),
-            cycle_id=self._cycle_id, phase=self.FASE,
-            agent="watson", call_type=call_type,
-            model=self._spec.modelo, temperature=self._spec.temperatura,
-            max_tokens=self._spec.max_tokens,
-            seed=calcular_seed(42, self._cycle_id, self.FASE, call_type, rodada),
-            messages=[
-                LLMMessage(role="system", content=self._system_prompt),
-                LLMMessage(role="user", content=user),
-            ],
-            timeout_segundos=self._spec.timeout_segundos,
-            max_tentativas_retry=self._spec.max_tentativas_retry,
-            backoff_segundos=self._spec.backoff_segundos,
-        ))
-        return self._parsear_output(resp.content)
+        import logging as _logging
+        try:
+            resp = self._llm.complete(LLMCall(
+                call_id=gerar_call_id("watson", call_type),
+                cycle_id=self._cycle_id, phase=self.FASE,
+                agent="watson", call_type=call_type,
+                model=self._spec.modelo, temperature=self._spec.temperatura,
+                max_tokens=self._spec.max_tokens,
+                seed=calcular_seed(42, self._cycle_id, self.FASE, call_type, rodada),
+                messages=[
+                    LLMMessage(role="system", content=self._system_prompt),
+                    LLMMessage(role="user", content=user),
+                ],
+                timeout_segundos=self._spec.timeout_segundos,
+                max_tentativas_retry=self._spec.max_tentativas_retry,
+                backoff_segundos=self._spec.backoff_segundos,
+            ))
+            return self._parsear_output(resp.content)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            _logging.getLogger(__name__).warning(
+                "[Watson] responder_critica r%d indisponível — mantendo output anterior: %s",
+                rodada, exc,
+            )
+            return WatsonOutput(
+                texto=(
+                    f"{output_anterior.texto}\n\n"
+                    f"---\n\n**[Resposta automática r{rodada} — Watson LLM indisponível: {exc}]**\n\n"
+                    "Crítica registrada. Output anterior mantido sem alteração."
+                ),
+                critical_alerts_count=output_anterior.critical_alerts_count,
+                has_unanalyzable_files=output_anterior.has_unanalyzable_files,
+                secoes=output_anterior.secoes,
+                ultimo_id_alerta=output_anterior.ultimo_id_alerta,
+            )
 
     # ── Internos ─────────────────────────────────────────────
 
