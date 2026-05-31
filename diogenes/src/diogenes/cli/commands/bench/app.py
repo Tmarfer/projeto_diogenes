@@ -149,6 +149,55 @@ def validate_models() -> None:
     console.print("[green]Todos os modelos validados.[/green]")
 
 
+@bench_app.command(name="pipeline")
+def pipeline(
+    module: str = typer.Argument(..., help="Nome do módulo em workspace/input/ (ex: MOD010MCP3)"),
+    model_override: str | None = typer.Option(None, "--model", "-m", help="Modelo alternativo para todos os agentes"),
+    timeout: int = typer.Option(120, "--timeout", "-t", help="Timeout por chamada em segundos"),
+    output_dir: str | None = typer.Option(None, "--output", "-o", help="Diretório de output (default: workspace/_bench/pipeline_<ts>)"),
+) -> None:
+    """Pipeline ponta a ponta com prompts reduzidos. Encadeia Irene→Mycroft→Watson→Sherlock."""
+    from diogenes.bench.pipeline import BenchPipeline
+
+    def _console_log(msg: str):
+        console.print(msg)
+
+    out_path = Path(output_dir).expanduser().resolve() if output_dir else None
+    try:
+        pipe = BenchPipeline(
+            module=module,
+            model_override=model_override,
+            timeout=timeout,
+            output_dir=out_path,
+        )
+    except FileNotFoundError as e:
+        console.print(f"[red]Erro:[/red] {e}")
+        raise typer.Exit(1) from e
+
+    console.print(Panel(
+        f"[bold]Pipeline de Bancada[/bold]\n"
+        f"Módulo: {module}\n"
+        f"Modelo override: {model_override or '(agents_spec.yaml)'}\n"
+        f"Timeout: {timeout}s por chamada",
+        title="diogenes bench pipeline",
+    ))
+
+    result = pipe.run(console_callback=_console_log)
+
+    # Summary
+    ok = sum(1 for s in result.steps if s.success)
+    fail = len(result.steps) - ok
+    status = "[green]✅ SUCESSO[/green]" if result.success else f"[red]⚠ {fail} erro(s)[/red]"
+    console.print(Panel(
+        f"Status: {status}\n"
+        f"Passos: {ok}/{len(result.steps)} OK\n"
+        f"Duração: {result.total_duration_s:.1f}s\n"
+        f"Tokens: {result.total_prompt_tokens:,} input + {result.total_completion_tokens:,} output\n"
+        f"Output: {result.output_dir}",
+        title="Resultado",
+    ))
+
+
 @bench_app.command(name="smoke")
 def smoke(
     timeout: int = typer.Option(60, "--timeout", "-t", help="Timeout por chamada"),
