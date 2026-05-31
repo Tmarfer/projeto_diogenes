@@ -18,6 +18,7 @@ from rich.panel import Panel
 from diogenes.cli import display
 from diogenes.cli.commands import (
     abort,
+    complete_sherlock,
     confirm_manifest,
     init,
     list_cycles,
@@ -63,3 +64,4 @@ app.command(name="abort")(abort.abort)
 app.command(name="verify-output")(verify_output.verify_output)
 app.command(name="seal")(seal.seal)
 app.command(name="show")(show.show)
+app.command(name="complete-sherlock")(complete_sherlock.complete_sherlock)

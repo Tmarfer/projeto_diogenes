@@ -1,0 +1,12 @@
+{
+  "arquivo": "CSV/produtor_rural_pf__2023__base_debitos_2023__base_nfe.csv",
+  "proximo_id_apos": "W010-124",
+  "output": {
+    "texto": "",
+    "critical_alerts_count": 0,
+    "has_unanalyzable_files": false,
+    "secoes": {},
+    "ultimo_id_alerta": "",
+    "nota_metodologica_com_alteracao": false
+  }
+}

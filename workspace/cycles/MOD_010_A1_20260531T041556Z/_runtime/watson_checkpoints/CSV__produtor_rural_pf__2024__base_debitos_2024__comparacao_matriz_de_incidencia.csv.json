@@ -1,0 +1,12 @@
+{
+  "arquivo": "CSV/produtor_rural_pf__2024__base_debitos_2024__comparacao_matriz_de_incidencia.csv",
+  "proximo_id_apos": "W010-173",
+  "output": {
+    "texto": "## Análise de produtor_rural_pf__2024__base_debitos_2024__comparacao_matriz_de_incidencia.csv\n\n**Status:** NÃO ANALISÁVEL\n**Causa:** Falha persistente de comunicação com o LLM: ChatTCU: HTTP 500 persistente após 4 tentativas (call_id=20260531T091449Z_watson_analise_inicial).\n\nEste arquivo não foi analisado neste ciclo. Registrado como não analisável para consolidação por Watson.",
+    "critical_alerts_count": 0,
+    "has_unanalyzable_files": true,
+    "secoes": {},
+    "ultimo_id_alerta": "W010-172",
+    "nota_metodologica_com_alteracao": false
+  }
+}

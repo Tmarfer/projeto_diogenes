@@ -1,0 +1,12 @@
+{
+  "arquivo": "CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__de_para.csv",
+  "proximo_id_apos": "W010-035",
+  "output": {
+    "texto": "",
+    "critical_alerts_count": 0,
+    "has_unanalyzable_files": false,
+    "secoes": {},
+    "ultimo_id_alerta": "",
+    "nota_metodologica_com_alteracao": false
+  }
+}

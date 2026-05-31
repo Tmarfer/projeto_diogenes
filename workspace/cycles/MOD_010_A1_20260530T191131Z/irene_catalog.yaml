@@ -1,0 +1,2227 @@
+modulo: MOD_010
+gerado_em: '2026-05-30T19:42:03'
+versao_irene: 1.3.1
+score_consolidado: 0.0
+recomendacao: ALERTA
+arquivos:
+- nome_xlsx: AUX_MOD_10 PF - execução.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/AUX_MOD_10 PF - execução.xlsx
+  abas:
+  - nome_original: AUX_MOD_10
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 97
+    colunas: 11
+    papel: aba_auxiliar
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - Prefixo AUX no nome da aba confirma papel auxiliar; aba provavelmente serve
+      de suporte estrutural para MOD_010
+    - vinculos_externos igual a 97 coincide com total de linhas; praticamente todas
+      as células dependem de fontes externas
+    - 'vinculos_quebrados: 1 — há referência externa inválida que pode comprometer
+      integridade dos cálculos'
+    - amostragem CSV_AUSENTE impossibilitou classificação semântica das colunas; revisão
+      manual recomendada
+    - estatisticas_colunas vazio e candidatos_totalizadores zero reforçam ausência
+      de conteúdo analítico direto nesta aba
+    colunas_detalhadas:
+    - nome: col_0
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: 10. MÓDULO PESSOA FÍSICA
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.62
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna com rótulo estrutural de módulo; provável uso como cabeçalho ou identificador
+        de seção
+    - nome: col_2
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_3
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_4
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_5
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_6
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_7
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_8
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_9
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+    - nome: col_10
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostragem impede classificação
+  - nome_original: AUX_MOD_10.1
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 80
+    colunas: 4
+    papel: aba_auxiliar
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: AUX_MOD_10.2
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 48
+    colunas: 6
+    papel: aba_auxiliar
+    confianca_papel: 0.72
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: AUX_MOD_10.3
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 46
+    colunas: 4
+    papel: aba_auxiliar
+    confianca_papel: 0.68
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: AUX_MOD_10.4
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 35
+    colunas: 6
+    papel: aba_auxiliar
+    confianca_papel: 0.72
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Base Créditos 2023.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Base Créditos 2023.xlsx
+  abas:
+  - nome_original: Base Créditos - Classificada
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 22
+    colunas: 3
+    papel: base_classificada
+    confianca_papel: 0.88
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Créditos Combustíveis
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 14
+    colunas: 4
+    papel: base_classificada
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: &id001
+    - 'Amostragem ausente (CSV_AUSENTE): impossível validar valores NCM ou consistência
+      monetária sem dados brutos'
+    - 'Volume reduzido (14 linhas): verifique se a cobertura de NCMs de combustíveis
+      está completa conforme escopo do MOD_010'
+    - 'Ausência de fórmulas: base_cbs pode ser valor importado externamente; rastrear
+      origem para garantir auditabilidade'
+    - Contexto de créditos de combustíveis exige atenção à legislação específica de
+      PIS/COFINS monofásico e CBS na transição tributária
+    colunas_detalhadas:
+    - nome: ncm
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: valor_produtos_servicos
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: tributos_nfe
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.93
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Verificar se representa tributos destacados na NF-e ou valor apurado; impacta
+        base de crédito CBS
+    - nome: base_cbs
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.9
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sugere base de cálculo CBS já apurada; avaliar se é insumo ou resultado
+        intermediário
+  - nome_original: Detalhamento Base Créditos
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 8
+    colunas: 2
+    papel: resultado_intermediario
+    confianca_papel: 0.67
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Base NFE
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 16028
+    colunas: 4
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Base NFE - Geral
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 16009
+    colunas: 3
+    papel: base_bruta
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 10
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 8
+    papel: matriz_parametrica
+    confianca_papel: 0.9
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Resultado Intermediário
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 11
+    papel: resultado_intermediario
+    confianca_papel: 0.93
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Base Créditos 2024.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Base Créditos 2024.xlsx
+  abas:
+  - nome_original: Base Créditos - Classificada
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 22
+    colunas: 3
+    papel: base_classificada
+    confianca_papel: 0.88
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Créditos Combustíveis
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 14
+    colunas: 4
+    papel: base_classificada
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: *id001
+    colunas_detalhadas:
+    - nome: ncm
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: valor_produtos_servicos
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: tributos_nfe
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.93
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Verificar se representa tributos destacados na NF-e ou valor apurado; impacta
+        base de crédito CBS
+    - nome: base_cbs
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.9
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sugere base de cálculo CBS já apurada; avaliar se é insumo ou resultado
+        intermediário
+  - nome_original: Detalhamento Base Créditos
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 8
+    colunas: 2
+    papel: resultado_intermediario
+    confianca_papel: 0.67
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Base NFE
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 15783
+    colunas: 4
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Base NFE - Geral
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 15762
+    colunas: 3
+    papel: base_bruta
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 10
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 8
+    papel: matriz_parametrica
+    confianca_papel: 0.9
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Resultado Intermediário
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 11
+    papel: resultado_intermediario
+    confianca_papel: 0.93
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Base Débitos 2023.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Base Débitos 2023.xlsx
+  abas:
+  - nome_original: Base Débitos - Classificada
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 22
+    colunas: 5
+    papel: base_classificada
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Base Débitos Combustíveis
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 9
+    colunas: 5
+    papel: base_classificada
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Detalhamento Base Débitos
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 8
+    colunas: 2
+    papel: resultado_intermediario
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Base NFE
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 2172
+    colunas: 4
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Base NFE
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 5239
+    colunas: 9
+    papel: base_bruta
+    confianca_papel: 0.88
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 10
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 8
+    papel: matriz_parametrica
+    confianca_papel: 0.9
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Resultado Intermediário
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 9
+    papel: resultado_intermediario
+    confianca_papel: 0.93
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Base Débitos 2024.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Base Débitos 2024.xlsx
+  abas:
+  - nome_original: Base Débitos - Classificada
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 22
+    colunas: 5
+    papel: base_classificada
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Base Débitos Combustíveis
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 6
+    colunas: 5
+    papel: base_classificada
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Detalhamento Base Débitos
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 8
+    colunas: 2
+    papel: resultado_intermediario
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Base NFE
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 2364
+    colunas: 4
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Base NFE
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 5505
+    colunas: 9
+    papel: base_bruta
+    confianca_papel: 0.88
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Comparação Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 10
+    papel: validacao_comparativa
+    confianca_papel: 0.91
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Matriz de Incidência
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 8
+    papel: matriz_parametrica
+    confianca_papel: 0.9
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Resultado Intermediário
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 9
+    papel: resultado_intermediario
+    confianca_papel: 0.93
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Consumo Final Contas Nacionais.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Consumo Final Contas Nacionais.xlsx
+  abas:
+  - nome_original: CI
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 142
+    colunas: 72
+    papel: matriz_parametrica
+    confianca_papel: 0.52
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: demanda
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 136
+    colunas: 17
+    papel: base_tratada
+    confianca_papel: 0.58
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: VA
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 32
+    colunas: 70
+    papel: resultado_intermediario
+    confianca_papel: 0.51
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: demanda (2)
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 139
+    colunas: 29
+    papel: base_classificada
+    confianca_papel: 0.48
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'Alto volume de vínculos externos (258): dependência crítica de arquivos externos;
+      risco de quebra de integridade referencial caso fontes sejam movidas ou renomeadas'
+    - 'Amostragem ausente (CSV_AUSENTE): classificação semântica de 27 das 29 colunas
+      inviabilizada; recomenda-se inspeção manual prioritária'
+    - '27 de 29 colunas com nomes genéricos (col_N): estrutura provavelmente originada
+      de tabela pivotada ou importação sem linha de cabeçalho reconhecida'
+    - Sufixo '(2)' no nome da aba indica possível duplicata ou versão paralela; verificar
+      consistência e eventual sobreposição com aba 'demanda'
+    - Coluna 'critérios módulo central' (posição 16) é o único sinalizador semântico
+      estrutural da aba e deve ser preservada no extrato para o Watson
+    colunas_detalhadas:
+    - nome: Tabela 2 - Usos de bens e serviços - 2021
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.65
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome de coluna sugere título de tabela transposto como cabeçalho; provável
+        coluna de descrição de produtos ou serviços das Contas Nacionais
+    - nome: col_1
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_2
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_3
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_4
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_5
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_6
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_7
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_8
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_9
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_10
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_11
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_12
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_13
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_14
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: critérios módulo central
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_classificacao
+      confianca_tipo: 0.68
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Único campo nomeado semanticamente além do cabeçalho; indica critérios de
+        classificação do módulo central — relevante para rastreabilidade metodológica
+        do MOD_010
+    - nome: col_16
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_17
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_18
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_19
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_20
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_21
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_22
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_23
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_24
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_25
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_26
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_27
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+    - nome: col_28
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico; ausência de amostra impede inferência semântica
+  - nome_original: tab16
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 60
+    colunas: 23
+    papel: matriz_parametrica
+    confianca_papel: 0.52
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: demanda 2021-2019
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 139
+    colunas: 36
+    papel: base_bruta
+    confianca_papel: 0.52
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'CRÍTICO: 518 de 776 vínculos externos estão quebrados (66,8%); integridade
+      dos dados severamente comprometida'
+    - 'CSV_AUSENTE: ausência de amostragem impede classificação semântica das colunas
+      genéricas (col_0 a col_29)'
+    - 'Discrepância estrutural: metadados declaram 36 colunas, mas apenas 30 nomes
+      foram listados em nomes_colunas'
+    - 'Cabeçalho atípico: nome de tabela de Contas Nacionais (IBGE) reutilizado como
+      nome de coluna, sugerindo importação não normalizada'
+    - 'Mistura de responsabilidades na aba: dados brutos de demanda (2019-2021), critérios
+      de módulo e fontes coexistem na mesma aba'
+    - 'Origem externa (Contas Nacionais/IBGE): validar compatibilidade de periodicidade
+      e metodologia com os demais módulos do arquivo'
+    colunas_detalhadas:
+    - nome: col_0
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.25
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Nome genérico sem estatísticas disponíveis; possível coluna de índice ou rótulo
+        de linha
+    - nome: Tabela 2 - Usos de bens e serviços - 2021
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.6
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Título de tabela de Contas Nacionais reutilizado como cabeçalho de coluna;
+        estrutura atípica
+    - nome: col_2
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_3
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_4
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_5
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_6
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_7
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_8
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_9
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_10
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_11
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_12
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_13
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_14
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_15
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_16
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_17
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_18
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_19
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_20
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_21
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: critérios módulo central
+      tipo_fisico: desconhecido
+      tipo_semantico: categoria
+      confianca_tipo: 0.58
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Indício de critério parametrico mesclado à base bruta; avaliar separação em
+        aba própria
+    - nome: col_23
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_24
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_25
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_26
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: col_27
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+    - nome: 'fontes:'
+      tipo_fisico: desconhecido
+      tipo_semantico: fundamento_legal
+      confianca_tipo: 0.55
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna de referência bibliográfica/fonte; presença atípica em aba de dados;
+        pode conter metadados documentais
+    - nome: col_29
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.2
+      nulos: null
+      distintos: null
+  - nome_original: Prod-CNAE-CF
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 133
+    colunas: 9
+    papel: matriz_parametrica
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Tab ibge 1
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 11876
+    colunas: 4
+    papel: tabela_mapeamento
+    confianca_papel: 0.88
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - Amostragem classificada como CSV_AUSENTE — validação semântica do conteúdo das
+      células não foi possível; confiança das tipagens baseada exclusivamente nos
+      nomes das colunas
+    - 'Aba de correspondência NCM x Produto IBGE (Contas Nacionais): caracteriza-se
+      como tabela de mapeamento de referência para DE-PARA entre nomenclatura fiscal
+      (NCM/RFB) e classificação de produto nacional (SCN/IBGE)'
+    - Volume expressivo de linhas (11.876) para apenas 4 colunas — coerente com tabela
+      de referência de NCM completa; ausência de fórmulas e vínculos externos reforça
+      papel de base estática parametrizadora
+    colunas_detalhadas:
+    - nome: Código NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: Nome NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: Código Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_classificacao
+      confianca_tipo: 0.85
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Código de produto IBGE/Contas Nacionais — verificar se segue tabela de referência
+        SCN/IBGE
+    - nome: Descrição Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+  - nome_original: Tab ibge 2
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 702
+    colunas: 4
+    papel: tabela_mapeamento
+    confianca_papel: 0.82
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: DE-PARA
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 11905
+    colunas: 9
+    papel: tabela_mapeamento
+    confianca_papel: 0.95
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'CRÍTICO: 100% dos vínculos externos estão quebrados (47.608 de 47.608), comprometendo
+      integridade total das fórmulas dependentes de fontes externas'
+    - A presença de fórmulas com vínculos externos totalmente quebrados indica risco
+      elevado de valores nulos, zerados ou incorretos em células calculadas
+    - Aba DE-PARA é insumo estrutural para mapeamento NCM→CNAE; falha nos vínculos
+      pode propagar erros para módulos downstream
+    - Recomenda-se reconstituição dos vínculos externos ou conversão dos valores para
+      estático (colar como valor) antes do processamento no pipeline Watson
+    colunas_detalhadas:
+    - nome: Código NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.98
+      nulos: null
+      distintos: null
+    - nome: Nome NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: Código Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.82
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Código intermediário sem tipologia padronizada reconhecida; verificar se corresponde
+        a tabela SCN/IBGE
+    - nome: Descrição Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.96
+      nulos: null
+      distintos: null
+    - nome: Cod Atividade
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_classificacao
+      confianca_tipo: 0.84
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Pode representar código SCN 2010; verificar granularidade e correspondência
+        com CNAE
+    - nome: Atividade de Divulgação - SCN 2010
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: Desc. Ativ
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.93
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Possível redundância com coluna 'Atividade de Divulgação - SCN 2010'; avaliar
+        deduplicação
+    - nome: Classe Cnae 2.0 (4 dígitos)
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_cnae
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: Desc. CNAE
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.96
+      nulos: null
+      distintos: null
+  - nome_original: 2m02
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 59
+    colunas: 7
+    papel: base_bruta
+    confianca_papel: 0.55
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: 2n02
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 59
+    colunas: 7
+    papel: base_bruta
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'CSV_AUSENTE: ausência de amostra de dados impede classificação semântica precisa
+      das colunas col_1 a col_6.'
+    - Seis colunas com nomes genéricos (col_1…col_6) indicam que os cabeçalhos reais
+      provavelmente estão na primeira linha de dados da planilha, exigindo promoção
+      de linha de cabeçalho antes de qualquer processamento.
+    - Contexto macroeconômico (Contas Nacionais / IBGE) — dado de referência externo,
+      não originado de apuração fiscal direta; uso como insumo paramétrico deve ser
+      documentado.
+    - Ausência de fórmulas e vínculos externos é coerente com base bruta importada/estática.
+    - Zero candidatos totalizadores reforça ausência de cálculos internos, confirmando
+      perfil de dado bruto.
+    colunas_detalhadas:
+    - nome: Tabela 2 - Usos de bens e serviços - 2001
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.8
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Possível coluna de rótulos/categorias das linhas da tabela de Contas Nacionais;
+        nome da coluna incorpora ano de referência (2001), sugerindo que o cabeçalho
+        real pode estar embutido na primeira linha de dados.
+    - nome: col_1
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.5
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome explícito; provavelmente série temporal ou categoria de uso
+        de bens e serviços. Tipo inferido por contexto de Contas Nacionais sem amostra
+        disponível (CSV_AUSENTE).
+    - nome: col_2
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.5
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome explícito; mesma situação de col_1.
+    - nome: col_3
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.5
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome explícito; mesma situação de col_1.
+    - nome: col_4
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.5
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome explícito; mesma situação de col_1.
+    - nome: col_5
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.5
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome explícito; mesma situação de col_1.
+    - nome: col_6
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.5
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome explícito; mesma situação de col_1.
+  - nome_original: 2o02
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 60
+    colunas: 7
+    papel: base_bruta
+    confianca_papel: 0.52
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Estimativa Valor Créditos.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Estimativa Valor Créditos.xlsx
+  abas:
+  - nome_original: Metodologia
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 14
+    colunas: 3
+    papel: documentacao
+    confianca_papel: 0.87
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Números
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 18
+    colunas: 4
+    papel: memoria_de_calculo
+    confianca_papel: 0.5
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: true
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Valor Livro Caixa - DIRPF
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 273
+    colunas: 8
+    papel: base_tratada
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Dados Amostra
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 29638
+    colunas: 11
+    papel: base_classificada
+    confianca_papel: 0.72
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Critérios
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 25
+    colunas: 5
+    papel: matriz_parametrica
+    confianca_papel: 0.62
+    score_fidedignidade: 0.0
+    requer_revisao_humana: true
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: estim bc créditos
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 145
+    colunas: 12
+    papel: memoria_de_calculo
+    confianca_papel: 0.72
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: Matriz de Incidência.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Matriz de Incidência.xlsx
+  abas:
+  - nome_original: Tabela Completa
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 19396
+    colunas: 7
+    papel: matriz_parametrica
+    confianca_papel: 0.88
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'Amostragem ausente (CSV_AUSENTE): toda a classificação foi inferida exclusivamente
+      por nomenclatura de colunas e metadados estruturais, sem validação por conteúdo
+      real'
+    - 'Volume elevado de linhas (19.396): recomenda-se validação de integridade referencial
+      dos Códigos NCM e consistência dos valores de proporção'
+    - 'Coluna ''Item'' com semântica ambígua: dependendo do conteúdo pode ser reclassificada
+      para codigo_classificacao ou categoria'
+    colunas_detalhadas:
+    - nome: REF
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.72
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - 'Semântica ambígua: pode ser referência sequencial ou chave composta; validar
+        conteúdo real'
+    - nome: Fundam_Legal
+      tipo_fisico: desconhecido
+      tipo_semantico: fundamento_legal
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: Beneficio
+      tipo_fisico: desconhecido
+      tipo_semantico: categoria
+      confianca_tipo: 0.83
+      nulos: null
+      distintos: null
+    - nome: Item
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.68
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - 'Semântica ambígua: pode representar subitem normativo ou categoria de produto;
+        confirmar granularidade'
+    - nome: Código NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.99
+      nulos: null
+      distintos: null
+    - nome: Descr_Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: proporcao
+      tipo_fisico: desconhecido
+      tipo_semantico: proporcao
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+  - nome_original: Apenas entradas duplicadas
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 3989
+    colunas: 7
+    papel: aba_auxiliar
+    confianca_papel: 0.74
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - Aba nomeada 'Apenas entradas duplicadas' indica subconjunto filtrado da matriz
+      principal para controle de qualidade; 3989 linhas de registros duplicados é
+      volume expressivo e exige investigação
+    - 'amostragem.classificacao = CSV_AUSENTE: ausência de amostragem impede validação
+      semântica dos dados reais'
+    - Duplicidades em Matriz de Incidência podem impactar diretamente o cálculo de
+      contribuições tributárias se não forem tratadas antes do processamento
+    colunas_detalhadas:
+    - nome: REF
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.82
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Possível chave de referência cruzada com aba principal da matriz
+    - nome: Fundam_Legal
+      tipo_fisico: desconhecido
+      tipo_semantico: fundamento_legal
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: Beneficio
+      tipo_fisico: desconhecido
+      tipo_semantico: categoria
+      confianca_tipo: 0.8
+      nulos: null
+      distintos: null
+    - nome: Item
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.75
+      nulos: null
+      distintos: null
+    - nome: Código NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.98
+      nulos: null
+      distintos: null
+    - nome: Descr_Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: proporcao
+      tipo_fisico: desconhecido
+      tipo_semantico: proporcao
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+  - nome_original: Apenas entradas únicas
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 12213
+    colunas: 7
+    papel: matriz_parametrica
+    confianca_papel: 0.87
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+- nome_xlsx: NCM.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/NCM.xlsx
+  abas:
+  - nome_original: Sheet
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 13868
+    colunas: 2
+    papel: tabela_mapeamento
+    confianca_papel: 0.97
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'Nome da aba genérico (''Sheet''): considerar renomear para refletir o conteúdo
+      (ex: ''NCM_Referencia'').'
+    - 'Amostragem classificada como CSV_AUSENTE: validação de conteúdo por amostra
+      não foi executada; integridade dos dados NCM não pôde ser verificada automaticamente.'
+    - 'Volume elevado de linhas (13.868): compatível com a tabela completa de NCM
+      vigente; recomenda-se confirmar a versão/vigência da tabela frente à TEC (Tarifa
+      Externa Comum) atualizada.'
+    colunas_detalhadas:
+    - nome: código ncm
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.99
+      nulos: null
+      distintos: null
+    - nome: descrição ncm
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.98
+      nulos: null
+      distintos: null
+- nome_xlsx: Regras_lei_complementar.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Regras_lei_complementar.xlsx
+  abas:
+  - nome_original: Planilha1
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 750
+    colunas: 9
+    papel: tabela_mapeamento
+    confianca_papel: 0.82
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 'Amostragem classificada como CSV_AUSENTE: impossível validar conteúdo real
+      das colunas — classificação baseada exclusivamente em metadados estruturais
+      e nominais'
+    - Duas colunas com nomes genéricos (col_7, col_8) sem contexto semântico identificável;
+      recomenda-se inspeção manual antes de uso em cálculos
+    - Arquivo nomeado 'Regras_lei_complementar' sugere tabela normativa de referência;
+      confirmar se representa versão vigente da legislação aplicável
+    colunas_detalhadas:
+    - nome: REF
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.78
+      nulos: null
+      distintos: null
+    - nome: Fundam_Legal
+      tipo_fisico: desconhecido
+      tipo_semantico: fundamento_legal
+      confianca_tipo: 0.95
+      nulos: null
+      distintos: null
+    - nome: Beneficio
+      tipo_fisico: desconhecido
+      tipo_semantico: categoria
+      confianca_tipo: 0.88
+      nulos: null
+      distintos: null
+    - nome: Item
+      tipo_fisico: desconhecido
+      tipo_semantico: identificador
+      confianca_tipo: 0.8
+      nulos: null
+      distintos: null
+    - nome: Descr_Produto
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.93
+      nulos: null
+      distintos: null
+    - nome: OPER
+      tipo_fisico: desconhecido
+      tipo_semantico: categoria
+      confianca_tipo: 0.75
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Abreviação ambígua; pode representar tipo de operação fiscal ou código operacional
+        — validar com especialista
+    - nome: NCM
+      tipo_fisico: desconhecido
+      tipo_semantico: codigo_ncm
+      confianca_tipo: 0.97
+      nulos: null
+      distintos: null
+    - nome: col_7
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.1
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome semântico; amostragem ausente impede inferência de conteúdo
+    - nome: col_8
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.1
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome semântico; amostragem ausente impede inferência de conteúdo
+- nome_xlsx: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx
+  caminho_xlsx: input/MOD_010/XLSX/Rendimentos Trabalho Não Assalariado - DIRPF.xlsx
+  abas:
+  - nome_original: Leia-me
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 6
+    colunas: 3
+    papel: documentacao
+    confianca_papel: 0.97
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - Aba 'Leia-me' tipicamente contém instruções, glossário ou metadados editoriais;
+      classificada como documentacao com alta confiança
+    - 'Amostragem ausente (CSV_AUSENTE): impossível validar conteúdo real das colunas;
+      tipos semânticos inferidos exclusivamente pelo nome da aba'
+    - Nomes de colunas genéricos (col_0, col_1, col_2) indicam ausência de cabeçalho
+      estruturado ou cabeçalho em linha não-padrão
+    - Volume reduzido (6 linhas × 3 colunas) e ausência de fórmulas reforçam caráter
+      puramente documental da aba
+    colunas_detalhadas:
+    - nome: col_0
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.6
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome original identificado; inferência baseada em padrão de aba
+        'Leia-me'
+    - nome: col_1
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.6
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome original identificado; inferência baseada em padrão de aba
+        'Leia-me'
+    - nome: col_2
+      tipo_fisico: desconhecido
+      tipo_semantico: descricao_textual
+      confianca_tipo: 0.55
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome original identificado; inferência baseada em padrão de aba
+        'Leia-me'
+  - nome_original: Rend Trab Não Assalariado
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 273
+    colunas: 8
+    papel: resultado_intermediario
+    confianca_papel: 0.72
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: false
+    candidata_totalizador: false
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Correção Ocup Não Determinadas
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 143
+    colunas: 7
+    papel: memoria_de_calculo
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: Totais Rend TNA por Categoria
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 142
+    colunas: 15
+    papel: resultado_intermediario
+    confianca_papel: 0.7
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao: []
+    colunas_detalhadas: []
+  - nome_original: estimativa bc débitos
+    csv_correspondente: null
+    caminho_csv: null
+    linhas: 26
+    colunas: 20
+    papel: memoria_de_calculo
+    confianca_papel: 0.78
+    score_fidedignidade: 0.0
+    requer_revisao_humana: false
+    tem_formulas: true
+    candidata_totalizador: true
+    extrato_gerado: false
+    caminho_extrato: null
+    flags_atencao:
+    - 14 de 20 colunas sem nome identificável (col_0–col_3, col_5–col_7, col_9, col_11,
+      col_12, col_14, col_15, col_17, col_19) — estrutura posicional de difícil rastreamento
+      e auditoria
+    - 52 vínculos externos presentes — alto grau de dependência de fontes externas;
+      risco relevante de inconsistência na reprodutibilidade do cálculo
+    - 3 pares de colunas com variante 'COM ALTERAÇÃO COMPORTAMENTO' sem documentação
+      explícita do parâmetro alterado — impede rastreabilidade do cenário alternativo
+    - Contexto DIRPF (Rendimentos Trabalho Não Assalariado) combinado com CBS (reforma
+      tributária) — requer verificação de aderência ao marco legal vigente
+    - Volume reduzido de linhas (26) com apenas 2 candidatos a totalizadores — adequado
+      para memória de cálculo, porém limita representatividade da base estimada
+    colunas_detalhadas:
+    - nome: col_0
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_1
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_2
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_3
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: Base de Cálculo Débitos (total)
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.9
+      nulos: null
+      distintos: null
+    - nome: col_5
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_6
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_7
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: "Base de Cálculo Débitos (total) \nCOM ALTERAÇÃO COMPORTAMENTO"
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.88
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Variante de cenário — parâmetro de alteração de comportamento não documentado
+        explicitamente
+    - nome: col_9
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: Parcela Consumo Intermediário (ajuste mod. Central)
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.85
+      nulos: null
+      distintos: null
+    - nome: col_11
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_12
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: 'Parcela Consumo Intermediário (ajuste mod. Central)
+
+        COM ALTERAÇÃO COMPORTAMENTO'
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.85
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Variante de cenário — parâmetro de alteração de comportamento não documentado
+        explicitamente
+    - nome: col_14
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: col_15
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: Base de Cálculo dos Créditos CBS
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.9
+      nulos: null
+      distintos: null
+    - nome: col_17
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+    - nome: 'Base de Cálculo dos Créditos CBS
+
+        COM ALTERAÇÃO COMPORTAMENTO'
+      tipo_fisico: desconhecido
+      tipo_semantico: valor_monetario
+      confianca_tipo: 0.88
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Variante de cenário — parâmetro de alteração de comportamento não documentado
+        explicitamente
+    - nome: col_19
+      tipo_fisico: desconhecido
+      tipo_semantico: nao_classificado
+      confianca_tipo: 0.0
+      nulos: null
+      distintos: null
+      flags_atencao:
+      - Coluna sem nome identificável
+notas_gerais:
+- Score consolidado calculado com pesos diferenciados por papel (resultado_final,
+  resultado_intermediario).
+- Score consolidado 0.0000 abaixo do limiar 0.95

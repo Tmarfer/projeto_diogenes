@@ -1,0 +1,69 @@
+﻿atividade_de_divulgacao_scn_2010,desc_ativ,exportacao_de_bens_e_servicos_1,variacao_de_estoque,demanda_total,demanda_total_export_variacao_estoque,consumo_intermediario_total,consumo_final_proxy_debitos_cbs_2021
+0191,"Agricultura, inclusive o apoio à agricultura e a pós-colheita",296792,47994,903093,558307,389392,0.3025485978144641
+0192,"Pecuária, inclusive o apoio à pecuária",3732,-1004,281610,278882,210047,0.24682482196771394
+0280,Produção florestal; pesca e aquicultura,7193,-1156,78847,72810,33927,0.5340337865677791
+0580,Extração de carvão mineral e de minerais não-metálicos,3870,1186,63624,58568,58568,0
+0680,"Extração de petróleo e gás, inclusive as atividades de apoio",165133,-12672,406473,254012,237579,0.06469379399398453
+0791,"Extração de minério de ferro, inclusive beneficiamentos e a aglomeração",239133,-7701,309554,78122,78122,0
+0792,"Extração de minerais metálicos não-ferrosos, inclusive beneficiamentos",21903,-3347,40273,21717,21717,0
+1091,"Abate e produtos de carne, inclusive os produtos do laticínio e da pesca",117607,2121,661295,541567,130536,0.7589661113029412
+1092,Fabricação e refino de açúcar,49456,981,83821,33384,21550,0.3544811885933381
+1093,Outros produtos alimentares,84565,10480,799295,704250,259998,0.6308157614483493
+1100,Fabricação de bebidas,4193,1699,189520,183628,73582,0.5992876903304507
+1200,Fabricação de produtos do fumo,7758,-81,51078,43401,1991,0.954125480979701
+1300,Fabricação de produtos têxteis,3819,9055,158914,146040,86305,0.40903177211722813
+1400,Confecção de artefatos do vestuário e acessórios,2435,-1467,180698,179730,16000,0.9109775774773271
+1500,Fabricação de calçados e de artefatos de couro,13382,-833,96833,84284,12764,0.8485596317213231
+1600,Fabricação de produtos da madeira,22992,1940,76026,51094,46864,0.08278858574392296
+1700,"Fabricação de celulose, papel e produtos de papel",46918,-2550,207724,163356,139165,0.14808761233134993
+1800,Impressão e reprodução de gravações,224,17,39300,39059,38229,0.021249903991397628
+1991,Refino de petróleo e coquerias,41049,1655,1020479,977775,707004,0.27692567308429855
+1992,Fabricação de biocombustíveis,5755,-1335,178587,174167,103382,0.40642027479373244
+2091,"Fabricação de químicos orgânicos e inorgânicos, resinas e elastômeros",35707,9648,672468,627113,627076,5.9000531004779045e-05
+2092,"Fabricação de defensivos, desinfestantes, tintas e químicos diversos",14103,8561,232504,209840,207533,0.010994090735798703
+2093,"Fabricação de produtos de limpeza, cosméticos/perfumaria e higiene pessoal",7011,-2696,149682,145367,28541,0.8036624543397057
+2100,Fabricação de produtos farmoquímicos e farmacêuticos,6058,3483,280596,271055,94266,0.6522255630776042
+2200,Fabricação de produtos de borracha e de material plástico,14350,10645,273057,248062,221787,0.10592110037006877
+2300,Fabricação de produtos de minerais não-metálicos,13102,10982,197694,173610,168060,0.03196820459650942
+2491,"Produção de ferro-gusa/ferroligas, siderurgia e tubos de aço sem costura",81180,8075,383454,294199,293413,0.0026716610185622655
+2492,Metalurgia de metais não-ferosos e a fundição de metais,61454,655,183801,121692,120895,0.006549321237221839
+2500,"Fabricação de produtos de metal, exceto máquinas e equipamentos",11330,6581,276739,258828,217236,0.1606935880198433
+2600,"Fabricação de equipamentos de informática, produtos eletrônicos e ópticos",5897,7474,403369,389998,158588,0.593362017241114
+2700,Fabricação de máquinas e equipamentos elétricos,15974,16273,278093,245846,129046,0.4750941646396525
+2800,Fabricação de máquinas e equipamentos mecânicos,45394,3066,463106,414646,161327,0.6109283581657606
+2991,"Fabricação de automóveis, caminhões e ônibus, exceto peças",38225,-153,389554,351482,14485,0.9587887857699683
+2992,Fabricação de peças e acessórios para veículos automotores,23221,-538,247553,224870,224870,0
+3000,"Fabricação de outros equipamentos de transporte, exceto veículos automotores",21944,16277,182120,143899,31220,0.7830422727051612
+3180,Fabricação de móveis e de produtos de indústrias diversas,10347,2029,258814,246438,72921,0.7041000170428262
+3300,"Manutenção, reparação e instalação de máquinas e equipamentos",3676,0,135360,131684,110897,0.15785516843352268
+3500,"Energia elétrica, gás natural e outras utilidades",115,0,545725,545610,378610,0.3060794340279687
+3680,"Água, esgoto e gestão de resíduos",3,54,120930,120873,72043,0.4039777286904437
+4180,Construção,3894,0,802827,798933,130794,0.8362891506546857
+4500,Comércio e reparação de veículos automotores e motocicletas,475,0,104925,104450,34630,0.6684538056486357
+4680,"Comércio por atacado e a varejo, exceto veículos automotores",4516,0,64373,59857,59857,0
+4900,Transporte terrestre,805,0,403427,402622,321513,0.2014519822563099
+5000,Transporte aquaviário,11493,0,47169,35676,34354,0.03705572373584483
+5100,Transporte aéreo,9120,0,41533,32413,26246,0.1902631660136365
+5280,"Armazenamento, atividades auxiliares dos transportes e correio",19601,0,211254,191653,151245,0.21083938159068732
+5500,Alojamento,5097,0,44768,39671,32808,0.1729979077915858
+5600,Alimentação,3208,0,327365,324157,54924,0.8305635849295249
+5800,Edição e edição integrada à impressão,1062,-855,32173,31966,18235,0.4295501470312207
+5980,"Atividades de televisão, rádio, cinema e  gravação/edição de som e imagem",2041,0,48729,46688,45432,0.026901987662782727
+6100,Telecomunicações,2850,0,231911,229061,86520,0.6222840204137763
+6280,Desenvolvimento de sistemas e outros serviços de informação,14988,15,313090,298087,153495,0.4850664403345332
+6480,"Intermediação financeira, seguros e previdência complementar",10944,0,860098,849154,450878,0.469026819634601
+6800,Atividades imobiliárias,5282,0,845320,840038,160017,0.8095121887343192
+6980,"Atividades jurídicas, contábeis, consultoria e sedes de empresas ",22883,0,320554,297671,274615,0.07745463951812571
+7180,"Serviços de arquitetura, engenharia, testes/análises técnicas e P & D",28042,0,157881,129839,75653,0.41733223453661844
+7380,"Outras atividades profissionais, científicas e técnicas",7028,0,189327,182299,179134,0.01736158728243161
+7700,Aluguéis não-imobiliários e gestão de ativos de propriedade intelectual,8979,0,147943,138964,133080,0.04234190149966898
+7880,Outras atividades administrativas e serviços complementares,9524,0,342973,333449,282017,0.15424247786018253
+8000,"Atividades de vigilância, segurança e investigação",0,0,48457,48457,47918,0.01112326392471676
+8400,"Administração pública, defesa e seguridade social",0,0,933173,933173,0,1
+8591,Educação pública,0,0,388877,388877,0,1
+8592,Educação privada,36,0,158307,158271,21819,0.8621415167655477
+8691,Saúde pública,0,0,273993,273993,0,1
+8692,Saúde privada,572,0,395274,394702,48660,0.8767171182309692
+9080,"Atividades artísticas, criativas e de espetáculos",2729,0,57203,54474,5839,0.8928112494033851
+9480,Organizações associativas e outros serviços pessoais,0,0,195531,195531,38655,0.8023075624836983
+9700,Serviços domésticos,0,0,61371,61371,0,1

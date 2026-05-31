@@ -1,0 +1,26 @@
+arquivos_xlsx:
+- caminho_relativo: input/MOD_010/XLSX/AUX_MOD_10 PF - execução.xlsx
+  nome: AUX_MOD_10 PF - execução.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Créditos 2023.xlsx
+  nome: Base Créditos 2023.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Créditos 2024.xlsx
+  nome: Base Créditos 2024.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Débitos 2023.xlsx
+  nome: Base Débitos 2023.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Débitos 2024.xlsx
+  nome: Base Débitos 2024.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Consumo Final Contas Nacionais.xlsx
+  nome: Consumo Final Contas Nacionais.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Estimativa Valor Créditos.xlsx
+  nome: Estimativa Valor Créditos.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Matriz de Incidência.xlsx
+  nome: Matriz de Incidência.xlsx
+- caminho_relativo: input/MOD_010/XLSX/NCM.xlsx
+  nome: NCM.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Regras_lei_complementar.xlsx
+  nome: Regras_lei_complementar.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Rendimentos Trabalho Não Assalariado - DIRPF.xlsx
+  nome: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx
+data_entrega: '2026-05-30'
+modulo: MOD_010
+raiz_projeto: /Users/tmarfer_mac/Documents/Projetos/projeto_diogenes/workspace

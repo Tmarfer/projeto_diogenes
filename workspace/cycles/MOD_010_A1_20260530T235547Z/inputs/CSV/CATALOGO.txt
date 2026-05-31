@@ -1,0 +1,1185 @@
+================================================================================
+CATALOGO DE DADOS TRANSFORMADOS (DVA-CBS / Projeto Diogenes)
+Modulo: MOD_010_Pessoa_Fisica
+Data de entrega: 2026_04_27
+Gerado em: 2026-05-17 18:39:21
+Versao do motor: 1.0.0
+================================================================================
+
+------------------------------------------------------------
+Arquivo: aux_mod_10_pf_execucao__aux_mod_10.csv
+Tipo: CSV
+Origem: AUX_MOD_10 PF - execução.xlsx | Aba: AUX_MOD_10
+Dimensoes: 77 linhas x 13 colunas
+Colunas: contribuinte_pessoa_fisica, debitos_apurados, debitos_apurados_1, creditos_apurados, creditos_apurados_1, arrecadacao_estimada, arrecadacao_estimada_1, debitos_apurados_2, debitos_apurados_3, creditos_apurados_2, creditos_apurados_3, arrecadacao_estimada_2, arrecadacao_estimada_3
+Tipos e exemplos:
+  - contribuinte_pessoa_fisica: str  (ex: 10.1 - Produtor Rural contribuinte CBS - Art. 164 e 165. (Fatur. >3,6 mi e não integrado) | 10.2 - Serviços Prestados por Pessoas Físicas Contribuintes da CBS)
+  - debitos_apurados: object  (ex: 15.742279502616977 | 4.313717208296095)
+  - debitos_apurados_1: object  (ex: 15.100023924302631 | 4.7927644107279885)
+  - creditos_apurados: object  (ex: 23.20939823737844 | 0.7866179897112667)
+  - creditos_apurados_1: object  (ex: 21.856826613678155 | 0.853587525753589)
+  - arrecadacao_estimada: object  (ex: -7.467118734761463 | 3.5270992185848278)
+  - arrecadacao_estimada_1: object  (ex: -6.756802689375524 | 3.9391768849743993)
+  - debitos_apurados_2: object  (ex: 15.742279502616977 | 4.313717208296095)
+  - debitos_apurados_3: object  (ex: 15.100023924302631 | 4.7927644107279885)
+  - creditos_apurados_2: object  (ex: 23.20939823737844 | 0.7866179897112667)
+  - creditos_apurados_3: object  (ex: 21.856826613678155 | 0.853587525753589)
+  - arrecadacao_estimada_2: object  (ex: -7.467118734761463 | 3.5270992185848278)
+  - arrecadacao_estimada_3: object  (ex: -6.756802689375524 | 3.9391768849743993)
+
+------------------------------------------------------------
+Arquivo: aux_mod_10_pf_execucao__aux_mod_10_1.csv
+Tipo: CSV
+Origem: AUX_MOD_10 PF - execução.xlsx | Aba: AUX_MOD_10.1
+Dimensoes: 64 linhas x 5 colunas
+Colunas: aliquotas, bc_da_producao_debitos, bc_da_producao_debitos_1, bc_da_producao_debitos_2, bc_da_producao_debitos_3
+Tipos e exemplos:
+  - aliquotas: str  (ex: TOTAL | Alíquota 0% - Cesta Básica - Anexo I - Art 125)
+  - bc_da_producao_debitos: object  (ex: 20.08734176813143 | 0.006288336199001605)
+  - bc_da_producao_debitos_1: object  (ex: 25.70666148459946 | 0.001692109688669586)
+  - bc_da_producao_debitos_2: object  (ex: 20.08734176813143 | 0.006288336199001605)
+  - bc_da_producao_debitos_3: object  (ex: 25.70666148459946 | 0.001692109688669586)
+
+------------------------------------------------------------
+Arquivo: aux_mod_10_pf_execucao__aux_mod_10_2.csv
+Tipo: CSV
+Origem: AUX_MOD_10 PF - execução.xlsx | Aba: AUX_MOD_10.2
+Dimensoes: 34 linhas x 5 colunas
+Colunas: aliquotas, bc_dos_servicos_debitos, bc_dos_servicos_debitos_1, bc_dos_servicos_debitos_2, bc_dos_servicos_debitos_3
+Tipos e exemplos:
+  - aliquotas: str  (ex: Alíq. Referência - Demais serviços e bens | Alíq. Referência - Titular de Cartório)
+  - bc_dos_servicos_debitos: object  (ex: 15.368780816471526 | 24.278582199870414)
+  - bc_dos_servicos_debitos_1: object  (ex: 16.56159308054097 | 28.075560143201034)
+  - bc_dos_servicos_debitos_2: object  (ex: 15.368780816471526 | 24.278582199870414)
+  - bc_dos_servicos_debitos_3: object  (ex: 16.56159308054097 | 28.075560143201034)
+
+------------------------------------------------------------
+Arquivo: aux_mod_10_pf_execucao__aux_mod_10_3.csv
+Tipo: CSV
+Origem: AUX_MOD_10 PF - execução.xlsx | Aba: AUX_MOD_10.3
+Dimensoes: 32 linhas x 5 colunas
+Colunas: aliquotas, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_1, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_2, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_3
+Tipos e exemplos:
+  - aliquotas: str  (ex: TOTAL | Alíquota 0% - Cesta Básica - Anexo I - Art 125)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren: object  (ex: 17.11891703613767 | 0.005359071744218329)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_1: object  (ex: 21.26395653339001 | 0.001399674045233526)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_2: object  (ex: 17.11891703613767 | 0.005359071744218329)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_3: object  (ex: 21.26395653339001 | 0.001399674045233526)
+
+------------------------------------------------------------
+Arquivo: aux_mod_10_pf_execucao__aux_mod_10_4.csv
+Tipo: CSV
+Origem: AUX_MOD_10 PF - execução.xlsx | Aba: AUX_MOD_10.4
+Dimensoes: 23 linhas x 5 colunas
+Colunas: aliquotas, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_1, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_2, produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_3
+Tipos e exemplos:
+  - aliquotas: str  (ex: Alíq. Referência - Demais serviços e bens | Alíq. Referência - Titular de Cartório)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren: object  (ex: 7.684390408235763 | 22.39809336756827)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_1: object  (ex: 8.280796540270485 | 25.90097775303994)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_2: object  (ex: 7.684390408235763 | 22.39809336756827)
+  - produtos_servicos_prestados_pela_pf_com_aproveitamento_de_creditos_pelo_adquiren_3: object  (ex: 8.280796540270485 | 25.90097775303994)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__ci.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: CI
+Dimensoes: 135 linhas x 70 colunas
+Colunas: 0191_agricultura_inclusive_o_apoio_a_agricultura_e_a_pos_colheita, 0192_pecuaria_inclusive_o_apoio_a_pecuaria, 0280_producao_florestal_pesca_e_aquicultura, 0580_extracao_de_carvao_mineral_e_de_minerais_nao_metalicos, 0680_extracao_de_petroleo_e_gas_inclusive_as_atividades_de_apoio, 0791_extracao_de_minerio_de_ferro_inclusive_beneficiamentos_e_a_aglomeracao, 0792_extracao_de_minerais_metalicos_nao_ferrosos_inclusive_beneficiamentos, 1091_abate_e_produtos_de_carne_inclusive_os_produtos_do_laticinio_e_da_pesca, 1092_fabricacao_e_refino_de_acucar, 1093_outros_produtos_alimentares, 1100_fabricacao_de_bebidas, 1200_fabricacao_de_produtos_do_fumo, 1300_fabricacao_de_produtos_texteis, 1400_confeccao_de_artefatos_do_vestuario_e_acessorios, 1500_fabricacao_de_calcados_e_de_artefatos_de_couro, 1600_fabricacao_de_produtos_da_madeira, 1700_fabricacao_de_celulose_papel_e_produtos_de_papel, 1800_impressao_e_reproducao_de_gravacoes, 1991_refino_de_petroleo_e_coquerias, 1992_fabricacao_de_biocombustiveis, 2091_fabricacao_de_quimicos_organicos_e_inorganicos_resinas_e_elastomeros, 2092_fabricacao_de_defensivos_desinfestantes_tintas_e_quimicos_diversos, 2093_fabricacao_de_produtos_de_limpeza_cosmeticos_perfumaria_e_higiene_pessoal, 2100_fabricacao_de_produtos_farmoquimicos_e_farmaceuticos, 2200_fabricacao_de_produtos_de_borracha_e_de_material_plastico, 2300_fabricacao_de_produtos_de_minerais_nao_metalicos, 2491_producao_de_ferro_gusa_ferroligas_siderurgia_e_tubos_de_aco_sem_costura, 2492_metalurgia_de_metais_nao_ferrosos_e_a_fundicao_de_metais, 2500_fabricacao_de_produtos_de_metal_exceto_maquinas_e_equipamentos, 2600_fabricacao_de_equipamentos_de_informatica_produtos_eletronicos_e_opticos, 2700_fabricacao_de_maquinas_e_equipamentos_eletricos, 2800_fabricacao_de_maquinas_e_equipamentos_mecanicos, 2991_fabricacao_de_automoveis_caminhoes_e_onibus_exceto_pecas, 2992_fabricacao_de_pecas_e_acessorios_para_veiculos_automotores, 3000_fabricacao_de_outros_equipamentos_de_transporte_exceto_veiculos_automotores, 3180_fabricacao_de_moveis_e_de_produtos_de_industrias_diversas, 3300_manutencao_reparacao_e_instalacao_de_maquinas_e_equipamentos, 3500_energia_eletrica_gas_natural_e_outras_utilidades, 3680_agua_esgoto_e_gestao_de_residuos, 4180_construcao, 4500_comercio_e_reparacao_de_veiculos_automotores_e_motocicletas, 4680_comercio_por_atacado_e_a_varejo_exceto_veiculos_automotores, 4900_transporte_terrestre, 5000_transporte_aquaviario, 5100_transporte_aereo, 5280_armazenamento_atividades_auxiliares_dos_transportes_e_correio, 5500_alojamento, 5600_alimentacao, 5800_edicao_e_edicao_integrada_a_impressao, 5980_atividades_de_televisao_radio_cinema_e_gravacao_edicao_de_som_e_imagem, 6100_telecomunicacoes, 6280_desenvolvimento_de_sistemas_e_outros_servicos_de_informacao, 6480_intermediacao_financeira_seguros_e_previdencia_complementar, 6800_atividades_imobiliarias, 6980_atividades_juridicas_contabeis_consultoria_e_sedes_de_empresas, 7180_servicos_de_arquitetura_engenharia_testes_analises_tecnicas_e_p_d, 7380_outras_atividades_profissionais_cientificas_e_tecnicas, 7700_alugueis_nao_imobiliarios_e_gestao_de_ativos_de_propriedade_intelectual, 7880_outras_atividades_administrativas_e_servicos_complementares, 8000_atividades_de_vigilancia_seguranca_e_investigacao, 8400_administracao_publica_defesa_e_seguridade_social, 8591_educacao_publica, 8592_educacao_privada, 8691_saude_publica, 8692_saude_privada, 9080_atividades_artisticas_criativas_e_de_espetaculos, 9480_organizacoes_associativas_e_outros_servicos_pessoais, 9700_servicos_domesticos, adm_publica, total_do_produto
+Tipos e exemplos:
+  - 0191_agricultura_inclusive_o_apoio_a_agricultura_e_a_pos_colheita: object  (ex: 810 | 4154)
+  - 0192_pecuaria_inclusive_o_apoio_a_pecuaria: object  (ex: 616 | 13921)
+  - 0280_producao_florestal_pesca_e_aquicultura: object  (ex: 1 | 45)
+  - 0580_extracao_de_carvao_mineral_e_de_minerais_nao_metalicos: object  (ex: 0 | 0)
+  - 0680_extracao_de_petroleo_e_gas_inclusive_as_atividades_de_apoio: object  (ex: 0 | 0)
+  - 0791_extracao_de_minerio_de_ferro_inclusive_beneficiamentos_e_a_aglomeracao: object  (ex: 0 | 0)
+  - 0792_extracao_de_minerais_metalicos_nao_ferrosos_inclusive_beneficiamentos: object  (ex: 0 | 0)
+  - 1091_abate_e_produtos_de_carne_inclusive_os_produtos_do_laticinio_e_da_pesca: object  (ex: 103 | 3009)
+  - 1092_fabricacao_e_refino_de_acucar: object  (ex: 0 | 0)
+  - 1093_outros_produtos_alimentares: object  (ex: 30748 | 38536)
+  - 1100_fabricacao_de_bebidas: object  (ex: 824 | 0)
+  - 1200_fabricacao_de_produtos_do_fumo: object  (ex: 0 | 0)
+  - 1300_fabricacao_de_produtos_texteis: object  (ex: 0 | 0)
+  - 1400_confeccao_de_artefatos_do_vestuario_e_acessorios: object  (ex: 0 | 0)
+  - 1500_fabricacao_de_calcados_e_de_artefatos_de_couro: object  (ex: 0 | 0)
+  - 1600_fabricacao_de_produtos_da_madeira: object  (ex: 0 | 0)
+  - 1700_fabricacao_de_celulose_papel_e_produtos_de_papel: object  (ex: 0 | 0)
+  - 1800_impressao_e_reproducao_de_gravacoes: object  (ex: 0 | 0)
+  - 1991_refino_de_petroleo_e_coquerias: object  (ex: 0 | 0)
+  - 1992_fabricacao_de_biocombustiveis: object  (ex: 0 | 816)
+  - 2091_fabricacao_de_quimicos_organicos_e_inorganicos_resinas_e_elastomeros: object  (ex: 0 | 0)
+  - 2092_fabricacao_de_defensivos_desinfestantes_tintas_e_quimicos_diversos: object  (ex: 0 | 0)
+  - 2093_fabricacao_de_produtos_de_limpeza_cosmeticos_perfumaria_e_higiene_pessoal: object  (ex: 0 | 0)
+  - 2100_fabricacao_de_produtos_farmoquimicos_e_farmaceuticos: object  (ex: 0 | 0)
+  - 2200_fabricacao_de_produtos_de_borracha_e_de_material_plastico: object  (ex: 0 | 0)
+  - 2300_fabricacao_de_produtos_de_minerais_nao_metalicos: object  (ex: 0 | 0)
+  - 2491_producao_de_ferro_gusa_ferroligas_siderurgia_e_tubos_de_aco_sem_costura: object  (ex: 0 | 0)
+  - 2492_metalurgia_de_metais_nao_ferrosos_e_a_fundicao_de_metais: object  (ex: 0 | 0)
+  - 2500_fabricacao_de_produtos_de_metal_exceto_maquinas_e_equipamentos: object  (ex: 0 | 0)
+  - 2600_fabricacao_de_equipamentos_de_informatica_produtos_eletronicos_e_opticos: object  (ex: 0 | 0)
+  - 2700_fabricacao_de_maquinas_e_equipamentos_eletricos: object  (ex: 0 | 0)
+  - 2800_fabricacao_de_maquinas_e_equipamentos_mecanicos: object  (ex: 0 | 0)
+  - 2991_fabricacao_de_automoveis_caminhoes_e_onibus_exceto_pecas: object  (ex: 0 | 0)
+  - 2992_fabricacao_de_pecas_e_acessorios_para_veiculos_automotores: object  (ex: 0 | 0)
+  - 3000_fabricacao_de_outros_equipamentos_de_transporte_exceto_veiculos_automotores: object  (ex: 0 | 0)
+  - 3180_fabricacao_de_moveis_e_de_produtos_de_industrias_diversas: object  (ex: 0 | 0)
+  - 3300_manutencao_reparacao_e_instalacao_de_maquinas_e_equipamentos: object  (ex: 0 | 0)
+  - 3500_energia_eletrica_gas_natural_e_outras_utilidades: object  (ex: 0 | 0)
+  - 3680_agua_esgoto_e_gestao_de_residuos: object  (ex: 0 | 0)
+  - 4180_construcao: object  (ex: 0 | 0)
+  - 4500_comercio_e_reparacao_de_veiculos_automotores_e_motocicletas: object  (ex: 0 | 0)
+  - 4680_comercio_por_atacado_e_a_varejo_exceto_veiculos_automotores: object  (ex: 1567 | 1982)
+  - 4900_transporte_terrestre: object  (ex: 0 | 0)
+  - 5000_transporte_aquaviario: object  (ex: 0 | 0)
+  - 5100_transporte_aereo: object  (ex: 0 | 0)
+  - 5280_armazenamento_atividades_auxiliares_dos_transportes_e_correio: object  (ex: 0 | 0)
+  - 5500_alojamento: object  (ex: 1 | 0)
+  - 5600_alimentacao: object  (ex: 0 | 563)
+  - 5800_edicao_e_edicao_integrada_a_impressao: object  (ex: 0 | 0)
+  - 5980_atividades_de_televisao_radio_cinema_e_gravacao_edicao_de_som_e_imagem: object  (ex: 0 | 0)
+  - 6100_telecomunicacoes: object  (ex: 0 | 0)
+  - 6280_desenvolvimento_de_sistemas_e_outros_servicos_de_informacao: object  (ex: 0 | 0)
+  - 6480_intermediacao_financeira_seguros_e_previdencia_complementar: object  (ex: 0 | 0)
+  - 6800_atividades_imobiliarias: object  (ex: 0 | 0)
+  - 6980_atividades_juridicas_contabeis_consultoria_e_sedes_de_empresas: object  (ex: 0 | 0)
+  - 7180_servicos_de_arquitetura_engenharia_testes_analises_tecnicas_e_p_d: object  (ex: 0 | 0)
+  - 7380_outras_atividades_profissionais_cientificas_e_tecnicas: object  (ex: 0 | 0)
+  - 7700_alugueis_nao_imobiliarios_e_gestao_de_ativos_de_propriedade_intelectual: object  (ex: 0 | 0)
+  - 7880_outras_atividades_administrativas_e_servicos_complementares: object  (ex: 0 | 0)
+  - 8000_atividades_de_vigilancia_seguranca_e_investigacao: object  (ex: 0 | 0)
+  - 8400_administracao_publica_defesa_e_seguridade_social: object  (ex: 216 | 284)
+  - 8591_educacao_publica: object  (ex: 0 | 2)
+  - 8592_educacao_privada: object  (ex: 0 | 0)
+  - 8691_saude_publica: object  (ex: 0 | 2)
+  - 8692_saude_privada: object  (ex: 0 | 7)
+  - 9080_atividades_artisticas_criativas_e_de_espetaculos: object  (ex: 0 | 0)
+  - 9480_organizacoes_associativas_e_outros_servicos_pessoais: object  (ex: 0 | 0)
+  - 9700_servicos_domesticos: object  (ex: 0 | 0)
+  - adm_publica: object  (ex: 216 | 288)
+  - total_do_produto: object  (ex: 34886 | 63321)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: demanda
+Dimensoes: 129 linhas x 8 colunas
+Colunas: exportacao_de_bens_e_servicos_1, consumo_do_governo, consumo_das_isflsf, consumo_das_familias, formacao_bruta_de_capital_fixo, variacao_de_estoque, demanda_final, demanda_total
+Tipos e exemplos:
+  - exportacao_de_bens_e_servicos_1: object  (ex: 1979 | 22656)
+  - consumo_do_governo: object  (ex: 70 | 53)
+  - consumo_das_isflsf: object  (ex: 0 | 0)
+  - consumo_das_familias: object  (ex: 1409 | 9779)
+  - formacao_bruta_de_capital_fixo: object  (ex: 0 | 0)
+  - variacao_de_estoque: object  (ex: 12245 | 30117)
+  - demanda_final: object  (ex: 15703 | 62605)
+  - demanda_total: object  (ex: 50589 | 125926)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__va.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: VA
+Dimensoes: 23 linhas x 69 colunas
+Colunas: 0191_agricultura_inclusive_o_apoio_a_agricultura_e_a_pos_colheita, 0192_pecuaria_inclusive_o_apoio_a_pecuaria, 0280_producao_florestal_pesca_e_aquicultura, 0580_extracao_de_carvao_mineral_e_de_minerais_nao_metalicos, 0680_extracao_de_petroleo_e_gas_inclusive_as_atividades_de_apoio, 0791_extracao_de_minerio_de_ferro_inclusive_beneficiamentos_e_a_aglomeracao, 0792_extracao_de_minerais_metalicos_nao_ferrosos_inclusive_beneficiamentos, 1091_abate_e_produtos_de_carne_inclusive_os_produtos_do_laticinio_e_da_pesca, 1092_fabricacao_e_refino_de_acucar, 1093_outros_produtos_alimentares, 1100_fabricacao_de_bebidas, 1200_fabricacao_de_produtos_do_fumo, 1300_fabricacao_de_produtos_texteis, 1400_confeccao_de_artefatos_do_vestuario_e_acessorios, 1500_fabricacao_de_calcados_e_de_artefatos_de_couro, 1600_fabricacao_de_produtos_da_madeira, 1700_fabricacao_de_celulose_papel_e_produtos_de_papel, 1800_impressao_e_reproducao_de_gravacoes, 1991_refino_de_petroleo_e_coquerias, 1992_fabricacao_de_biocombustiveis, 2091_fabricacao_de_quimicos_organicos_e_inorganicos_resinas_e_elastomeros, 2092_fabricacao_de_defensivos_desinfestantes_tintas_e_quimicos_diversos, 2093_fabricacao_de_produtos_de_limpeza_cosmeticos_perfumaria_e_higiene_pessoal, 2100_fabricacao_de_produtos_farmoquimicos_e_farmaceuticos, 2200_fabricacao_de_produtos_de_borracha_e_de_material_plastico, 2300_fabricacao_de_produtos_de_minerais_nao_metalicos, 2491_producao_de_ferro_gusa_ferroligas_siderurgia_e_tubos_de_aco_sem_costura, 2492_metalurgia_de_metais_nao_ferrosos_e_a_fundicao_de_metais, 2500_fabricacao_de_produtos_de_metal_exceto_maquinas_e_equipamentos, 2600_fabricacao_de_equipamentos_de_informatica_produtos_eletronicos_e_opticos, 2700_fabricacao_de_maquinas_e_equipamentos_eletricos, 2800_fabricacao_de_maquinas_e_equipamentos_mecanicos, 2991_fabricacao_de_automoveis_caminhoes_e_onibus_exceto_pecas, 2992_fabricacao_de_pecas_e_acessorios_para_veiculos_automotores, 3000_fabricacao_de_outros_equipamentos_de_transporte_exceto_veiculos_automotores, 3180_fabricacao_de_moveis_e_de_produtos_de_industrias_diversas, 3300_manutencao_reparacao_e_instalacao_de_maquinas_e_equipamentos, 3500_energia_eletrica_gas_natural_e_outras_utilidades, 3680_agua_esgoto_e_gestao_de_residuos, 4180_construcao, 4500_comercio_e_reparacao_de_veiculos_automotores_e_motocicletas, 4680_comercio_por_atacado_e_a_varejo_exceto_veiculos_automotores, 4900_transporte_terrestre, 5000_transporte_aquaviario, 5100_transporte_aereo, 5280_armazenamento_atividades_auxiliares_dos_transportes_e_correio, 5500_alojamento, 5600_alimentacao, 5800_edicao_e_edicao_integrada_a_impressao, 5980_atividades_de_televisao_radio_cinema_e_gravacao_edicao_de_som_e_imagem, 6100_telecomunicacoes, 6280_desenvolvimento_de_sistemas_e_outros_servicos_de_informacao, 6480_intermediacao_financeira_seguros_e_previdencia_complementar, 6800_atividades_imobiliarias, 6980_atividades_juridicas_contabeis_consultoria_e_sedes_de_empresas, 7180_servicos_de_arquitetura_engenharia_testes_analises_tecnicas_e_p_d, 7380_outras_atividades_profissionais_cientificas_e_tecnicas, 7700_alugueis_nao_imobiliarios_e_gestao_de_ativos_de_propriedade_intelectual, 7880_outras_atividades_administrativas_e_servicos_complementares, 8000_atividades_de_vigilancia_seguranca_e_investigacao, 8400_administracao_publica_defesa_e_seguridade_social, 8591_educacao_publica, 8592_educacao_privada, 8691_saude_publica, 8692_saude_privada, 9080_atividades_artisticas_criativas_e_de_espetaculos, 9480_organizacoes_associativas_e_outros_servicos_pessoais, 9700_servicos_domesticos, total_do_produto
+Tipos e exemplos:
+  - 0191_agricultura_inclusive_o_apoio_a_agricultura_e_a_pos_colheita: object  (ex: 421109 | 37950)
+  - 0192_pecuaria_inclusive_o_apoio_a_pecuaria: object  (ex: 130445 | 25160)
+  - 0280_producao_florestal_pesca_e_aquicultura: object  (ex: 39531 | 2882)
+  - 0580_extracao_de_carvao_mineral_e_de_minerais_nao_metalicos: object  (ex: 11561 | 4882)
+  - 0680_extracao_de_petroleo_e_gas_inclusive_as_atividades_de_apoio: object  (ex: 231887 | 21242)
+  - 0791_extracao_de_minerio_de_ferro_inclusive_beneficiamentos_e_a_aglomeracao: object  (ex: 167230 | 5777)
+  - 0792_extracao_de_minerais_metalicos_nao_ferrosos_inclusive_beneficiamentos: object  (ex: 14189 | 3331)
+  - 1091_abate_e_produtos_de_carne_inclusive_os_produtos_do_laticinio_e_da_pesca: object  (ex: 59950 | 40203)
+  - 1092_fabricacao_e_refino_de_acucar: object  (ex: 18988 | 9426)
+  - 1093_outros_produtos_alimentares: object  (ex: 78319 | 39201)
+  - 1100_fabricacao_de_bebidas: object  (ex: 26193 | 11397)
+  - 1200_fabricacao_de_produtos_do_fumo: object  (ex: 3106 | 1988)
+  - 1300_fabricacao_de_produtos_texteis: object  (ex: 19370 | 12601)
+  - 1400_confeccao_de_artefatos_do_vestuario_e_acessorios: object  (ex: 28809 | 19120)
+  - 1500_fabricacao_de_calcados_e_de_artefatos_de_couro: object  (ex: 16343 | 10928)
+  - 1600_fabricacao_de_produtos_da_madeira: object  (ex: 19564 | 8175)
+  - 1700_fabricacao_de_celulose_papel_e_produtos_de_papel: object  (ex: 29864 | 16184)
+  - 1800_impressao_e_reproducao_de_gravacoes: object  (ex: 8119 | 5338)
+  - 1991_refino_de_petroleo_e_coquerias: object  (ex: 90157 | 12103)
+  - 1992_fabricacao_de_biocombustiveis: object  (ex: 20994 | 8112)
+  - 2091_fabricacao_de_quimicos_organicos_e_inorganicos_resinas_e_elastomeros: object  (ex: 62229 | 15965)
+  - 2092_fabricacao_de_defensivos_desinfestantes_tintas_e_quimicos_diversos: object  (ex: 19572 | 11824)
+  - 2093_fabricacao_de_produtos_de_limpeza_cosmeticos_perfumaria_e_higiene_pessoal: object  (ex: 11340 | 7306)
+  - 2100_fabricacao_de_produtos_farmoquimicos_e_farmaceuticos: object  (ex: 45544 | 15775)
+  - 2200_fabricacao_de_produtos_de_borracha_e_de_material_plastico: object  (ex: 37300 | 25874)
+  - 2300_fabricacao_de_produtos_de_minerais_nao_metalicos: object  (ex: 42799 | 23721)
+  - 2491_producao_de_ferro_gusa_ferroligas_siderurgia_e_tubos_de_aco_sem_costura: object  (ex: 96011 | 14974)
+  - 2492_metalurgia_de_metais_nao_ferrosos_e_a_fundicao_de_metais: object  (ex: 29466 | 7744)
+  - 2500_fabricacao_de_produtos_de_metal_exceto_maquinas_e_equipamentos: object  (ex: 51610 | 27076)
+  - 2600_fabricacao_de_equipamentos_de_informatica_produtos_eletronicos_e_opticos: object  (ex: 19947 | 10741)
+  - 2700_fabricacao_de_maquinas_e_equipamentos_eletricos: object  (ex: 29515 | 18582)
+  - 2800_fabricacao_de_maquinas_e_equipamentos_mecanicos: object  (ex: 59125 | 35143)
+  - 2991_fabricacao_de_automoveis_caminhoes_e_onibus_exceto_pecas: object  (ex: 25538 | 20439)
+  - 2992_fabricacao_de_pecas_e_acessorios_para_veiculos_automotores: object  (ex: 32464 | 22668)
+  - 3000_fabricacao_de_outros_equipamentos_de_transporte_exceto_veiculos_automotores: object  (ex: 8912 | 8254)
+  - 3180_fabricacao_de_moveis_e_de_produtos_de_industrias_diversas: object  (ex: 44592 | 20315)
+  - 3300_manutencao_reparacao_e_instalacao_de_maquinas_e_equipamentos: object  (ex: 37099 | 18587)
+  - 3500_energia_eletrica_gas_natural_e_outras_utilidades: object  (ex: 157298 | 20258)
+  - 3680_agua_esgoto_e_gestao_de_residuos: object  (ex: 63684 | 25019)
+  - 4180_construcao: object  (ex: 275111 | 130162)
+  - 4500_comercio_e_reparacao_de_veiculos_automotores_e_motocicletas: object  (ex: 121904 | 58513)
+  - 4680_comercio_por_atacado_e_a_varejo_exceto_veiculos_automotores: object  (ex: 843798 | 413275)
+  - 4900_transporte_terrestre: object  (ex: 183535 | 96653)
+  - 5000_transporte_aquaviario: object  (ex: 14616 | 6472)
+  - 5100_transporte_aereo: object  (ex: 3073 | 6682)
+  - 5280_armazenamento_atividades_auxiliares_dos_transportes_e_correio: object  (ex: 102818 | 48512)
+  - 5500_alojamento: object  (ex: 16415 | 10988)
+  - 5600_alimentacao: object  (ex: 120712 | 57472)
+  - 5800_edicao_e_edicao_integrada_a_impressao: object  (ex: 7995 | 6183)
+  - 5980_atividades_de_televisao_radio_cinema_e_gravacao_edicao_de_som_e_imagem: object  (ex: 17533 | 12175)
+  - 6100_telecomunicacoes: object  (ex: 79011 | 23331)
+  - 6280_desenvolvimento_de_sistemas_e_outros_servicos_de_informacao: object  (ex: 159992 | 81702)
+  - 6480_intermediacao_financeira_seguros_e_previdencia_complementar: object  (ex: 447048 | 201153)
+  - 6800_atividades_imobiliarias: object  (ex: 699465 | 9646)
+  - 6980_atividades_juridicas_contabeis_consultoria_e_sedes_de_empresas: object  (ex: 195074 | 80109)
+  - 7180_servicos_de_arquitetura_engenharia_testes_analises_tecnicas_e_p_d: object  (ex: 50176 | 24050)
+  - 7380_outras_atividades_profissionais_cientificas_e_tecnicas: object  (ex: 53773 | 22628)
+  - 7700_alugueis_nao_imobiliarios_e_gestao_de_ativos_de_propriedade_intelectual: object  (ex: 49842 | 14950)
+  - 7880_outras_atividades_administrativas_e_servicos_complementares: object  (ex: 213521 | 145387)
+  - 8000_atividades_de_vigilancia_seguranca_e_investigacao: object  (ex: 36376 | 32583)
+  - 8400_administracao_publica_defesa_e_seguridade_social: object  (ex: 719944 | 603962)
+  - 8591_educacao_publica: object  (ex: 340323 | 323126)
+  - 8592_educacao_privada: object  (ex: 100728 | 87511)
+  - 8691_saude_publica: object  (ex: 158689 | 149825)
+  - 8692_saude_privada: object  (ex: 222222 | 122204)
+  - 9080_atividades_artisticas_criativas_e_de_espetaculos: object  (ex: 22891 | 13514)
+  - 9480_organizacoes_associativas_e_outros_servicos_pessoais: object  (ex: 86270 | 44244)
+  - 9700_servicos_domesticos: object  (ex: 61371 | 61371)
+  - total_do_produto: object  (ex: 7713999 | 3534648)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda_2.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: demanda (2)
+Dimensoes: 132 linhas x 14 colunas
+Colunas: exportacao_de_bens_e_servicos_1, consumo_do_governo, consumo_das_isflsf, consumo_das_familias, formacao_bruta_de_capital_fixo, variacao_de_estoque, demanda_final, demanda_total, consumo_intermediario_total, consumo_intermediario_adm_publica, demanda_total_export, compras_adm_publica, consumo_final_proxy_debitos_cbs, ajuste_variacao_de_estoques
+Tipos e exemplos:
+  - exportacao_de_bens_e_servicos_1: object  (ex: 1979 | 22656)
+  - consumo_do_governo: object  (ex: 70 | 53)
+  - consumo_das_isflsf: object  (ex: 0 | 0)
+  - consumo_das_familias: object  (ex: 1409 | 9779)
+  - formacao_bruta_de_capital_fixo: object  (ex: 0 | 0)
+  - variacao_de_estoque: object  (ex: 12245 | 30117)
+  - demanda_final: object  (ex: 15703 | 62605)
+  - demanda_total: object  (ex: 50589 | 125926)
+  - consumo_intermediario_total: object  (ex: 34886 | 63321)
+  - consumo_intermediario_adm_publica: object  (ex: 216 | 288)
+  - demanda_total_export: object  (ex: 48610 | 103270)
+  - compras_adm_publica: object  (ex: 0.004443530137831722 | 0.0027888060424130917)
+  - consumo_final_proxy_debitos_cbs: object  (ex: 0.2823287389426044 | 0.38684032148736325)
+  - ajuste_variacao_de_estoques: object  (ex: 0.24843090082865543)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__tab16.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: tab16
+Dimensoes: 52 linhas x 23 colunas
+Colunas: produto_interno_bruto_1, 1199092_111000002, 1315755_47899999, 1488787_2559999959, 1717950_4089999902, 1957751_2169999941, 2170584_5149999997, 2409449_882999989, 2720262_966000002, 3109803_093000006, 3333039_3110000165, 3885847_0, 4376382_0, 4814760_0, 5331619_0, 5778953_0, 5995787_0, 6269328_0, 6585479_0, 7004141_0, 7389131_0, 7609597_0, 9012142_0
+Tipos e exemplos:
+  - produto_interno_bruto_1: str  (ex: Valor adicionado bruto  |    Empresas não financeiras)
+  - 1199092_111000002: object  (ex: 1031326.4260000018 | 494237.92000000295)
+  - 1315755_47899999: float64  (ex: 1120421.88099999 | 541906.4870000038)
+  - 1488787_2559999959: float64  (ex: 1270214.646999996 | 610666.3839999991)
+  - 1717950_4089999902: float64  (ex: 1470717.2569999902 | 744166.8799999971)
+  - 1957751_2169999941: float64  (ex: 1661982.115999994 | 883952.5729999915)
+  - 2170584_5149999997: float64  (ex: 1842818.4139999996 | 973458.2349999927)
+  - 2409449_882999989: float64  (ex: 2049289.9449999891 | 1096789.4900000214)
+  - 2720262_966000002: float64  (ex: 2319528.296000002 | 1242342.2520000145)
+  - 3109803_093000006: float64  (ex: 2626477.712000006 | 1435594.1999999979)
+  - 3333039_3110000165: float64  (ex: 2849762.7940000165 | 1551806.9020000063)
+  - 3885847_0: float64  (ex: 3302840.0 | 1836976.0)
+  - 4376382_0: float64  (ex: 3720461.0 | 2102992.0)
+  - 4814760_0: float64  (ex: 4094259.0 | 2301347.0)
+  - 5331619_0: float64  (ex: 4553760.0 | 2530103.0)
+  - 5778953_0: float64  (ex: 4972734.0 | 2755684.0)
+  - 5995787_0: float64  (ex: 5155601.0 | 2777949.0)
+  - 6269328_0: float64  (ex: 5419822.0 | 2853045.0)
+  - 6585479_0: float64  (ex: 5671926.0 | 2992762.0)
+  - 7004141_0: float64  (ex: 6011150.0 | 3218885.0)
+  - 7389131_0: float64  (ex: 6356684.0 | 3400640.0)
+  - 7609597_0: float64  (ex: 6594937.0 | 3581664.0)
+  - 9012142_0: float64  (ex: 7713999.0 | 4512117.0)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda_2021_2019.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: demanda 2021-2019
+Dimensoes: 132 linhas x 19 colunas
+Colunas: exportacao_de_bens_e_servicos_1, consumo_do_governo, consumo_das_isflsf, consumo_das_familias, formacao_bruta_de_capital_fixo, variacao_de_estoque, demanda_final, demanda_total, consumo_intermediario_total, consumo_intermediario_adm_publica, demanda_total_export, compras_adm_publica_2021, compras_adm_publica_2020, compras_adm_publica_2019, compras_adm_publica_media_2021_2019, consumo_final_proxy_debitos_cbs_2021, consumo_final_proxy_debitos_cbs_2020, consumo_final_proxy_debitos_cbs_2019, consumo_final_proxy_debitos_cbs_media_2021_2019
+Tipos e exemplos:
+  - exportacao_de_bens_e_servicos_1: object  (ex: 1979 | 22656)
+  - consumo_do_governo: object  (ex: 70 | 53)
+  - consumo_das_isflsf: object  (ex: 0 | 0)
+  - consumo_das_familias: object  (ex: 1409 | 9779)
+  - formacao_bruta_de_capital_fixo: object  (ex: 0 | 0)
+  - variacao_de_estoque: object  (ex: 12245 | 30117)
+  - demanda_final: object  (ex: 15703 | 62605)
+  - demanda_total: object  (ex: 50589 | 125926)
+  - consumo_intermediario_total: object  (ex: 34886 | 63321)
+  - consumo_intermediario_adm_publica: object  (ex: 216 | 288)
+  - demanda_total_export: object  (ex: 48610 | 103270)
+  - compras_adm_publica_2021: object  (ex: 0.004443530137831722 | 0.0027888060424130917)
+  - compras_adm_publica_2020: object  (ex: 0.006027638929726551 | 0.004918032786885246)
+  - compras_adm_publica_2019: object  (ex: 0.008639842014317452 | 0.008924377642085486)
+  - compras_adm_publica_media_2021_2019: object  (ex: 0.0063703370272919085 | 0.005543738823794608)
+  - consumo_final_proxy_debitos_cbs_2021: object  (ex: 0.040670974838443556 | 0.13440323705111204)
+  - consumo_final_proxy_debitos_cbs_2020: object  (ex: 0.03976457077232271 | 0.1520760380190095)
+  - consumo_final_proxy_debitos_cbs_2019: object  (ex: 0.036072802326672294 | 0.16407415299382058)
+  - consumo_final_proxy_debitos_cbs_media_2021_2019: object  (ex: 0.038836115979146185 | 0.15018447602131405)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__prod_cnae_cf.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: Prod-CNAE-CF
+Dimensoes: 68 linhas x 8 colunas
+Colunas: atividade_de_divulgacao_scn_2010, desc_ativ, exportacao_de_bens_e_servicos_1, variacao_de_estoque, demanda_total, demanda_total_export_variacao_estoque, consumo_intermediario_total, consumo_final_proxy_debitos_cbs_2021
+Tipos e exemplos:
+  - atividade_de_divulgacao_scn_2010: str  (ex: 0191 | 0192)
+  - desc_ativ: str  (ex: Agricultura, inclusive o apoio à agricultura e a pós-colheita | Pecuária, inclusive o apoio à pecuária)
+  - exportacao_de_bens_e_servicos_1: object  (ex: 296792 | 3732)
+  - variacao_de_estoque: object  (ex: 47994 | -1004)
+  - demanda_total: object  (ex: 903093 | 281610)
+  - demanda_total_export_variacao_estoque: object  (ex: 558307 | 278882)
+  - consumo_intermediario_total: object  (ex: 389392 | 210047)
+  - consumo_final_proxy_debitos_cbs_2021: object  (ex: 0.3025485978144641 | 0.24682482196771394)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__tab_ibge_1.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: Tab ibge 1
+Dimensoes: 11875 linhas x 4 colunas
+Colunas: codigo_ncm, nome_ncm, codigo_produto, descricao_produto
+Tipos e exemplos:
+  - codigo_ncm: str  (ex: 01011010 | 01011090)
+  - nome_ncm: str  (ex: Cavalos reprodutores de raça pura | Animais da espécie asinina/muar, reprodutores, raça pura)
+  - codigo_produto: str  (ex: 01921 | 01921)
+  - descricao_produto: str  (ex: Bovinos e outros animais vivos, prods. animal, caça e serv. | Bovinos e outros animais vivos, prods. animal, caça e serv.)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__tab_ibge_2.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: Tab ibge 2
+Dimensoes: 698 linhas x 4 colunas
+Colunas: 0191, agricultura_inclusive_o_apoio_a_agricultura_e_a_pos_colheita, 0111, cultivo_de_cereais
+Tipos e exemplos:
+  - 0191: str  (ex: 0191 | 0191)
+  - agricultura_inclusive_o_apoio_a_agricultura_e_a_pos_colheita: str  (ex: Agricultura, inclusive o apoio à agricultura e a pós-colheita | Agricultura, inclusive o apoio à agricultura e a pós-colheita)
+  - 0111: str  (ex: 0112 | 0113)
+  - cultivo_de_cereais: str  (ex: Cultivo de algodão herbáceo e de outras fibras de lavoura temporária | Cultivo de cana-de-açúcar)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__de_para.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: DE-PARA
+Dimensoes: 11903 linhas x 9 colunas
+Colunas: codigo_ncm, nome_ncm, codigo_produto, descricao_produto, cod_atividade, atividade_de_divulgacao_scn_2010, desc_ativ, classe_cnae_2_0_4_digitos, desc_cnae
+Tipos e exemplos:
+  - codigo_ncm: str  (ex: 01011010 | 01011090)
+  - nome_ncm: str  (ex: Cavalos reprodutores de raça pura | Animais da espécie asinina/muar, reprodutores, raça pura)
+  - codigo_produto: str  (ex: 01921 | 01921)
+  - descricao_produto: str  (ex: Bovinos e outros animais vivos, prods. animal, caça e serv. | Bovinos e outros animais vivos, prods. animal, caça e serv.)
+  - cod_atividade: str  (ex: 0192 | 0192)
+  - atividade_de_divulgacao_scn_2010: str  (ex: 0192 | 0192)
+  - desc_ativ: str  (ex: Pecuária, inclusive o apoio à pecuária | Pecuária, inclusive o apoio à pecuária)
+  - classe_cnae_2_0_4_digitos: str  (ex: 0151 | 0151)
+  - desc_cnae: str  (ex: Criação de bovinos | Criação de bovinos)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__2m02.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: 2m02
+Dimensoes: 46 linhas x 5 colunas
+Colunas: 01_agropecuaria, 02_extrativa_mineral, 03_extracao_de_petroleo_e_gas, 04_minerais_nao_metalicos, 05_siderurgia
+Tipos e exemplos:
+  - 01_agropecuaria: object  (ex: 138190815 | 14247085.314200474)
+  - 02_extrativa_mineral: object  (ex: 8249472 | 1843642.4860833997)
+  - 03_extracao_de_petroleo_e_gas: object  (ex: 46638617 | 1859596.6827627386)
+  - 04_minerais_nao_metalicos: object  (ex: 13605771 | 3739013.9040696914)
+  - 05_siderurgia: object  (ex: 23042977 | 1144876.5348306699)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__2n02.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: 2n02
+Dimensoes: 46 linhas x 5 colunas
+Colunas: 17_elementos_quimicos, 18_refino_do_petroleo, 19_quimicos_diversos, 20_farmaceutica_e_de_perfumaria, 21_artigos_de_plastico
+Tipos e exemplos:
+  - 17_elementos_quimicos: object  (ex: 15588213 | 1572847.2235066108)
+  - 18_refino_do_petroleo: object  (ex: 59391246 | 1789230.5643479312)
+  - 19_quimicos_diversos: object  (ex: 14728792 | 3549992.9033294558)
+  - 20_farmaceutica_e_de_perfumaria: object  (ex: 8073320 | 2579383.877016311)
+  - 21_artigos_de_plastico: object  (ex: 5458822 | 2975496.948162793)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__consumo_final_contas_nacionais__2o02.csv
+Tipo: CSV
+Origem: Consumo Final Contas Nacionais.xlsx | Aba: 2o02
+Dimensoes: 47 linhas x 5 colunas
+Colunas: 32_industrias_diversas, 33_servicos_industriais_de_utilidade, 34_construcao_civil, 35_comercio, 36_transportes
+Tipos e exemplos:
+  - 32_industrias_diversas: object  (ex: 7536961 | 1441314.3157843673)
+  - 33_servicos_industriais_de_utilidade: object  (ex: 47594307 | 14228875.140270546)
+  - 34_construcao_civil: object  (ex: 100951217 | 12330982.203024708)
+  - 35_comercio: object  (ex: 107501248 | 49739660.4654411)
+  - 36_transportes: object  (ex: 34185740 | 20398259.946997765)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__estimativa_valor_creditos__metodologia.md
+Tipo: MD
+Origem: Estimativa Valor Créditos.xlsx | Aba: Metodologia
+Tamanho: 1541 caracteres
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__estimativa_valor_creditos__numeros.csv
+Tipo: CSV
+Origem: Estimativa Valor Créditos.xlsx | Aba: Números
+Dimensoes: 2 linhas x 3 colunas
+Colunas: ano, total_livro_caixa, creditos_estimados
+Tipos e exemplos:
+  - ano: object  (ex: 2023 | 2024)
+  - total_livro_caixa: object  (ex: 27643406390.380016 | 29874278979.430008)
+  - creditos_estimados: object  (ex: 10530087292.359095 | 11379884266.331253)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__estimativa_valor_creditos__valor_livro_caixa_dirpf.csv
+Tipo: CSV
+Origem: Estimativa Valor Créditos.xlsx | Aba: Valor Livro Caixa - DIRPF
+Dimensoes: 272 linhas x 3 colunas
+Colunas: ano_calendario, ocupacao, total_livro_caixa
+Tipos e exemplos:
+  - ano_calendario: object  (ex: 2023 | 2024)
+  - ocupacao: object  (ex: 0 | 0)
+  - total_livro_caixa: object  (ex: 1016223417.2 | 1078877184.79)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__estimativa_valor_creditos__dados_amostra.csv
+Tipo: CSV
+Origem: Estimativa Valor Créditos.xlsx | Aba: Dados Amostra
+Dimensoes: 29637 linhas x 7 colunas
+Colunas: ano_calendario, conteudo_codigo, conteudo_descricao, valor_total, total, acum, gera_credito
+Tipos e exemplos:
+  - ano_calendario: str  (ex: 2024 | 2023)
+  - conteudo_codigo: str  (ex: 10.01.00013 | 10.01.00013)
+  - conteudo_descricao: str  (ex: Remuneração paga a terceiros, com vínculo empregatício, INSS e FGTS | Remuneração paga a terceiros, com vínculo empregatício, INSS e FGTS)
+  - valor_total: object  (ex: 2183581468.32 | 1913595191.31)
+  - total: object  (ex: 9.883504121249114 | 8.661470265300492)
+  - acum: object  (ex: 9.883504121249114 | 18.544974386549605)
+  - gera_credito: str  (ex: N | N)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__estimativa_valor_creditos__criterios.csv
+Tipo: CSV
+Origem: Estimativa Valor Créditos.xlsx | Aba: Critérios
+Dimensoes: 24 linhas x 4 colunas
+Colunas: remuneracao, nao, aluguel, sim
+Tipos e exemplos:
+  - remuneracao: str  (ex: Emolumentos | Impostos)
+  - nao: str  (ex: Não | Não)
+  - aluguel: str  (ex: Água | Energia)
+  - sim: str  (ex: Sim | Sim)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__estimativa_valor_creditos__estim_bc_creditos.csv
+Tipo: CSV
+Origem: Estimativa Valor Créditos.xlsx | Aba: estim bc créditos
+Dimensoes: 143 linhas x 5 colunas
+Colunas: soma_de_total_livro_caixa, rotulos_de_coluna, distribuicao_das_ocupacoes_0_e_null, 0_3809258216463364, medio_das_despesas_do_livro_caixa_que_dao_direito_a_credito_de_cbs
+Tipos e exemplos:
+  - soma_de_total_livro_caixa: object  (ex: Rótulos de Linha | 0)
+  - rotulos_de_coluna: object  (ex: 2023 | 1016223417.2)
+  - distribuicao_das_ocupacoes_0_e_null: object  (ex: Ocupação | 10)
+  - 0_3809258216463364: object  (ex: Estimativa BC Crédito CBS | 2023)
+  - medio_das_despesas_do_livro_caixa_que_dao_direito_a_credito_de_cbs: object  (ex: 2024 | 2030681.2528310888)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__leia_me.md
+Tipo: MD
+Origem: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx | Aba: Leia-me
+Tamanho: 746 caracteres
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__rend_trab_nao_assalariado.csv
+Tipo: CSV
+Origem: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx | Aba: Rend Trab Não Assalariado
+Dimensoes: 272 linhas x 5 colunas
+Colunas: ano_calendario, ocupacao, total_rendimentos, soma_de_total_rendimentos, rotulos_de_coluna
+Tipos e exemplos:
+  - ano_calendario: object  (ex: 2023 | 2024)
+  - ocupacao: object  (ex: 0 | 0)
+  - total_rendimentos: object  (ex: 14055528373.71 | 15468314230.29)
+  - soma_de_total_rendimentos: object  (ex: Rótulos de Linha | 0)
+  - rotulos_de_coluna: object  (ex: 2023 | 14055528373.71)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__correcao_ocup_nao_determinadas.csv
+Tipo: CSV
+Origem: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx | Aba: Correção Ocup Não Determinadas
+Dimensoes: 284 linhas x 7 colunas
+Colunas: ocupacao, percentual_corrigido_2023, percentual_corrigido_2024, valor_corrigido_2023, valor_corrigido_2024, ano, valor
+Tipos e exemplos:
+  - ocupacao: object  (ex: 0 | 10)
+  - percentual_corrigido_2023: object  (ex: - | 0.00016112086552725125)
+  - percentual_corrigido_2024: object  (ex: - | 0.00015165268955906223)
+  - valor_corrigido_2023: object  (ex: - | 12149248.658796854)
+  - valor_corrigido_2024: object  (ex: - | 12490635.555462537)
+  - ano: str  (ex: 2023 | 2023)
+  - valor: float64  (ex: 14055528373.71 | 9338433.63)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__totais_rend_tna_por_categoria.csv
+Tipo: CSV
+Origem: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx | Aba: Totais Rend TNA por Categoria
+Dimensoes: 695 linhas x 14 colunas
+Colunas: codigo, descricao, categoria, valor_rend_tna_2023, valor_rend_tna_2024, atividade_de_divulgacao_scn_2010, classe_cnae_2_0_4_digitos, consumo_final_contas_nacionais, consumo_intermediaro, 2024_0_1, 2024_0_2, 2024_0_3, ano, valor
+Tipos e exemplos:
+  - codigo: object  (ex: 0 | 10)
+  - descricao: str  (ex: OUTRAS OCUPAÇÕES NÃO ESPECIFICADAS ANTERIORMENTE | MILITAR DA AERONÁUTICA)
+  - categoria: str  (ex: TITULAR DE CARTÓRIO | LC 214/2025, art 127)
+  - valor_rend_tna_2023: object  (ex: - | 12149248.658796854)
+  - valor_rend_tna_2024: object  (ex: - | 12490635.555462537)
+  - atividade_de_divulgacao_scn_2010: str  (ex: 6980 | 7380)
+  - classe_cnae_2_0_4_digitos: str  (ex: 6912 | 7490)
+  - consumo_final_contas_nacionais: object  (ex: 0.5 | 0.5)
+  - consumo_intermediaro: object  (ex: 0.5 | 0.5)
+  - 2024_0_1: float64  (ex: 0.0 | 2030681.2528310888)
+  - 2024_0_2: float64  (ex: 6245317.777731269 | 8755152.156921659)
+  - 2024_0_3: float64  (ex: 0.0 | 2030681.2528310888)
+  - ano: str  (ex: 2023 | 2023)
+  - valor: object  (ex: 6074624.329398427 | 8299190.108683721)
+
+------------------------------------------------------------
+Arquivo: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__estimativa_bc_debitos.csv
+Tipo: CSV
+Origem: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx | Aba: estimativa bc débitos
+Dimensoes: 12 linhas x 34 colunas
+Colunas: titular_de_cartorio, cartorio, aliq_referencia_titular_de_cartorio, aliquota_de_referencia, aliquota_de_referencia_1, 24278582199_870415, 24278582199_870415_1, 28075560143_201035, 28075560143_201035_1, 0_3219776208123986, 0_34087410425897896, 24278582199_870415_2, 24278582199_870415_3, 28075560143_201035_2, 28075560143_201035_3, 22398093367_568268, 22398093367_568268_1, 25900977753_03994, 25900977753_03994_1, 0_9225453604818743, 22398093367_568268_2, 22398093367_568268_3, 25900977753_03994_2, 25900977753_03994_3, aliquota_de_referencia_2, aliquota_de_referencia_3, 4248318848_6107416, 4248318848_6107416_1, 4794143012_8905, 4794143012_8905_1, 4248318848_6107416_2, 4248318848_6107416_3, 4794143012_8905_2, 4794143012_8905_3
+Tipos e exemplos:
+  - titular_de_cartorio: str  (ex: LC 214/2025, art 127 | Profissionais de saúde)
+  - cartorio: str  (ex: Profissional liberal | Profissionais de saúde)
+  - aliq_referencia_titular_de_cartorio: str  (ex: Alíq. Reduzida em 30% - Profissionais Liberais - Art. 127  | Alíq. reduzida em 60%  - Serviços de saúde - Art. 130 (Anexo III))
+  - aliquota_de_referencia: str  (ex: Redução de 30% | Redução de 60%)
+  - aliquota_de_referencia_1: str  (ex: Alíquota de referência | Alíquota de referência)
+  - 24278582199_870415: object  (ex: 5411569402.453108 | 24343716374.105022)
+  - 24278582199_870415_1: object  (ex: 4329255521.962486 | 19474973099.28402)
+  - 28075560143_201035: object  (ex: 5915483727.886847 | 25442833563.53313)
+  - 28075560143_201035_1: float64  (ex: 4732386982.309478 | 20354266850.826504)
+  - 0_3219776208123986: float64  (ex: 0.07176713313483046 | 0.3228414169880151)
+  - 0_34087410425897896: float64  (ex: 0.07182172703650608 | 0.30890935235284717)
+  - 24278582199_870415_2: object  (ex: 5411569402.453108 | 24343716374.105022)
+  - 24278582199_870415_3: object  (ex: 4329255521.962486 | 19474973099.28402)
+  - 28075560143_201035_2: object  (ex: 5915483727.886847 | 25442833563.53313)
+  - 28075560143_201035_3: float64  (ex: 4732386982.309478 | 20354266850.826504)
+  - 22398093367_568268: object  (ex: 4516215888.877887 | 3001163507.5676084)
+  - 22398093367_568268_1: object  (ex: 3612972711.1023097 | 2400930806.0540867)
+  - 25900977753_03994: float64  (ex: 4945110339.063906 | 3136665842.082185)
+  - 25900977753_03994_1: float64  (ex: 3956088271.251125 | 2509332673.665748)
+  - 0_9225453604818743: float64  (ex: 0.8359604330837063 | 0.12328288176903085)
+  - 22398093367_568268_2: object  (ex: 4516215888.877887 | 3001163507.5676084)
+  - 22398093367_568268_3: object  (ex: 3612972711.1023097 | 2400930806.0540867)
+  - 25900977753_03994_2: float64  (ex: 4945110339.063906 | 3136665842.082185)
+  - 25900977753_03994_3: float64  (ex: 3956088271.251125 | 2509332673.665748)
+  - aliquota_de_referencia_2: str  (ex: Redução de 30% | Redução de 60%)
+  - aliquota_de_referencia_3: str  (ex: Alíquota de referência | Alíquota de referência)
+  - 4248318848_6107416: object  (ex: 392809354.1742075 | 4881546786.421443)
+  - 4248318848_6107416_1: object  (ex: 314247483.339366 | 3905237429.1371546)
+  - 4794143012_8905: float64  (ex: 417738657.1497284 | 5108431052.787443)
+  - 4794143012_8905_1: float64  (ex: 334190925.71978277 | 4086744842.2299547)
+  - 4248318848_6107416_2: object  (ex: 392809354.1742075 | 4881546786.421443)
+  - 4248318848_6107416_3: object  (ex: 314247483.339366 | 3905237429.1371546)
+  - 4794143012_8905_2: float64  (ex: 417738657.1497284 | 5108431052.787443)
+  - 4794143012_8905_3: float64  (ex: 334190925.71978277 | 4086744842.2299547)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__base_creditos_classificada.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Base Créditos - Classificada
+Dimensoes: 21 linhas x 3 colunas
+Colunas: ref, valor_nfe, base_cbs
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota 0% - Automoveis Deficientes, Taxi - Art 149 | Alíquota 0% - Cesta Básica - Anexo I - Art 125)
+  - valor_nfe: object  (ex: 0 | 1427301685.48)
+  - base_cbs: object  (ex: 0 | 1828982022.424505)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__creditos_combustiveis.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Créditos Combustíveis
+Dimensoes: 13 linhas x 4 colunas
+Colunas: ncm, valor_produtos_servicos, tributos_nfe, base_cbs
+Tipos e exemplos:
+  - ncm: str  (ex: 22071010 | 22071090)
+  - valor_produtos_servicos: object  (ex: 12442015.69 | 86283987.18000013)
+  - tributos_nfe: object  (ex: 140550.19 | 109708223.41)
+  - base_cbs: object  (ex: 15943527.04213387 | 110566576.7656224)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__detalhamento_base_creditos.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Detalhamento Base Créditos
+Dimensoes: 7 linhas x 2 colunas
+Colunas: base, valor
+Tipos e exemplos:
+  - base: str  (ex: Despesa Total DIRPF | Esocial)
+  - valor: object  (ex: 529450996842.76 | 22511449706.96841)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__comparacao_base_nfe.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Comparação Base NFE
+Dimensoes: 16027 linhas x 4 colunas
+Colunas: ncm, valor_antes_tratamento, valor_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000001)
+  - valor_antes_tratamento: object  (ex: 4737193051.059999 | 900111.04)
+  - valor_apos_tratamento: object  (ex: 0 | 0)
+  - diferenca: object  (ex: -4737193051.059999 | -900111.04)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__base_nfe_geral.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Base NFE - Geral
+Dimensoes: 16008 linhas x 3 colunas
+Colunas: ncm, valor_produtos_servicos, tributos_nfe
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000001)
+  - valor_produtos_servicos: object  (ex: 0 | 0)
+  - tributos_nfe: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__comparacao_matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Comparação Matriz de Incidência
+Dimensoes: 19395 linhas x 10 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao_antes_tratamento, proporcao_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao_antes_tratamento: object  (ex: 0 | 1)
+  - proporcao_apos_tratamento: object  (ex: 0 | 1)
+  - diferenca: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Matriz de Incidência
+Dimensoes: 19395 linhas x 8 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_creditos_2023__resultado_intermediario.csv
+Tipo: CSV
+Origem: Base Créditos 2023.xlsx | Aba: Resultado Intermediário
+Dimensoes: 19395 linhas x 11 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao, ncm, tributos_nfe, valor_nfe
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+  - ncm: str  (ex: 01011010 | 01011010)
+  - tributos_nfe: object  (ex: 11069.87 | 11069.87)
+  - valor_nfe: object  (ex: 0 | 1951154.9)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__base_debitos_classificada.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Base Débitos - Classificada
+Dimensoes: 21 linhas x 5 colunas
+Colunas: ref, valor_nfe, base_cbs, valor_nfe_destinatario_pj, base_cbs_destinatario_pj
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota 0% - Automoveis Deficientes, Taxi - Art 149 | Alíquota 0% - Cesta Básica - Anexo I - Art 125)
+  - valor_nfe: object  (ex: 0 | 13371904642.49)
+  - base_cbs: object  (ex: 0 | 20087341768.13143)
+  - valor_nfe_destinatario_pj: object  (ex: 0 | 11395859583.2277)
+  - base_cbs_destinatario_pj: object  (ex: 0 | 17118917036.13767)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__base_debitos_combustiveis.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Base Débitos Combustíveis
+Dimensoes: 8 linhas x 5 colunas
+Colunas: ncm, valor_produtos_servicos, base_cbs, valor_nfe_destinatario_pj, base_cbs_destinatario_pj
+Tipos e exemplos:
+  - ncm: str  (ex: 22071090 | 27101251)
+  - valor_produtos_servicos: object  (ex: 436.24 | 31061.66)
+  - base_cbs: object  (ex: 655.3219011961113 | 46660.98039039796)
+  - valor_nfe_destinatario_pj: object  (ex: 371.774247386611 | 26471.49566541078)
+  - base_cbs_destinatario_pj: object  (ex: 558.4811264742971 | 39765.61266037414)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__detalhamento_base_debitos.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Detalhamento Base Débitos
+Dimensoes: 7 linhas x 2 colunas
+Colunas: base, valor
+Tipos e exemplos:
+  - base: str  (ex: Receita Bruta DIRPF | Tributos NFE)
+  - valor: object  (ex: 547304753188.28 | 2403463369.2642)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__comparacao_base_nfe.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Comparação Base NFE
+Dimensoes: 2171 linhas x 4 colunas
+Colunas: ncm, valor_antes_tratamento, valor_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000006)
+  - valor_antes_tratamento: object  (ex: 4312618802.57 | 7040)
+  - valor_apos_tratamento: object  (ex: 0 | 0)
+  - diferenca: object  (ex: -4312618802.57 | -7040)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__base_nfe.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Base NFE
+Dimensoes: 5238 linhas x 9 colunas
+Colunas: ncm, tipo_emitente, tipo_destinatario, cfop_receitabruta, cfop_compra, numero_indicador_mei, numero_indicador_simples, valor_produtos_servicos, tributos_nfe
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000000)
+  - tipo_emitente: str  (ex: PF | PF)
+  - tipo_destinatario: str  (ex: PF | PJ)
+  - cfop_receitabruta: object  (ex: True | True)
+  - cfop_compra: object  (ex: False | False)
+  - numero_indicador_mei: object  (ex: - | 1)
+  - numero_indicador_simples: object  (ex: - | 1)
+  - valor_produtos_servicos: object  (ex: 0 | 0)
+  - tributos_nfe: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__comparacao_matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Comparação Matriz de Incidência
+Dimensoes: 19395 linhas x 10 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao_antes_tratamento, proporcao_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao_antes_tratamento: object  (ex: 0 | 1)
+  - proporcao_apos_tratamento: object  (ex: 0 | 1)
+  - diferenca: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Matriz de Incidência
+Dimensoes: 19395 linhas x 8 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__base_debitos_2023__resultado_intermediario.csv
+Tipo: CSV
+Origem: Base Débitos 2023.xlsx | Aba: Resultado Intermediário
+Dimensoes: 19395 linhas x 9 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao, valor_nfe
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+  - valor_nfe: object  (ex: - | -)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__notebook__matriz_de_incidencia__tabela_completa.csv
+Tipo: CSV
+Origem: Matriz de Incidência.xlsx | Aba: Tabela Completa
+Dimensoes: 19395 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__notebook__matriz_de_incidencia__apenas_entradas_duplicadas.csv
+Tipo: CSV
+Origem: Matriz de Incidência.xlsx | Aba: Apenas entradas duplicadas
+Dimensoes: 3988 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota reduzida 60%  -Insumos agropecuários - Anexo IX - art 138 | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: Redução de 60% | Redução de 60%)
+  - item: str  (ex: 15 | 1)
+  - codigo_ncm: str  (ex: 01021010 | 01021010)
+  - descr_produto: str  (ex: Reprodutores de raça pura, inclusive matrizes de animais puros de origem com registro genealógico; e... | Animais vivos)
+  - proporcao: object  (ex: 0.5 | 0.5)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__notebook__matriz_de_incidencia__apenas_entradas_unicas.csv
+Tipo: CSV
+Origem: Matriz de Incidência.xlsx | Aba: Apenas entradas únicas
+Dimensoes: 12212 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137 | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: Redução de 60% | Redução de 60%)
+  - item: str  (ex: 1 | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011090)
+  - descr_produto: str  (ex: Animais vivos | Animais vivos)
+  - proporcao: object  (ex: 1 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2023__notebook__ncm__sheet.csv
+Tipo: CSV
+Origem: NCM.xlsx | Aba: Sheet
+Dimensoes: 13867 linhas x 2 colunas
+Colunas: codigo_ncm, descricao_ncm
+Tipos e exemplos:
+  - codigo_ncm: str  (ex: 61041200 | 81123100)
+  - descricao_ncm: str  (ex: Matérias têxteis e suas obras - Vestuário e seus acessórios, de malha. - Tailleurs(Fatos de saia-cas... | Metais comuns e suas obras - Outros metais comuns; cermets; obras dessas matérias. - Berílio, cromo,...)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__base_creditos_classificada.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Base Créditos - Classificada
+Dimensoes: 21 linhas x 3 colunas
+Colunas: ref, valor_nfe, base_cbs
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota 0% - Automoveis Deficientes, Taxi - Art 149 | Alíquota 0% - Cesta Básica - Anexo I - Art 125)
+  - valor_nfe: object  (ex: 0 | 1584601672.67)
+  - base_cbs: object  (ex: 0 | 2043708903.014985)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__creditos_combustiveis.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Créditos Combustíveis
+Dimensoes: 13 linhas x 4 colunas
+Colunas: ncm, valor_produtos_servicos, tributos_nfe, base_cbs
+Tipos e exemplos:
+  - ncm: str  (ex: 22071010 | 22071090)
+  - valor_produtos_servicos: object  (ex: 12543500.92 | 98648068.28000012)
+  - tributos_nfe: object  (ex: 244183.9400000002 | 4764657.28)
+  - base_cbs: object  (ex: 16177734.093885 | 127229409.6909313)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__detalhamento_base_creditos.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Detalhamento Base Créditos
+Dimensoes: 7 linhas x 2 colunas
+Colunas: base, valor
+Tipos e exemplos:
+  - base: str  (ex: Despesa Total DIRPF | Esocial)
+  - valor: object  (ex: 519042160229.96 | 24869040117.40939)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__comparacao_base_nfe.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Comparação Base NFE
+Dimensoes: 15782 linhas x 4 colunas
+Colunas: ncm, valor_antes_tratamento, valor_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000001)
+  - valor_antes_tratamento: object  (ex: 6095425124.799997 | 1292524.92)
+  - valor_apos_tratamento: object  (ex: 0 | 0)
+  - diferenca: object  (ex: -6095425124.799997 | -1292524.92)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__base_nfe_geral.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Base NFE - Geral
+Dimensoes: 15761 linhas x 3 colunas
+Colunas: ncm, valor_produtos_servicos, tributos_nfe
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000001)
+  - valor_produtos_servicos: object  (ex: 0 | 0)
+  - tributos_nfe: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__comparacao_matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Comparação Matriz de Incidência
+Dimensoes: 19395 linhas x 10 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao_antes_tratamento, proporcao_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao_antes_tratamento: object  (ex: 0 | 1)
+  - proporcao_apos_tratamento: object  (ex: 0 | 1)
+  - diferenca: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Matriz de Incidência
+Dimensoes: 19395 linhas x 8 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_creditos_2024__resultado_intermediario.csv
+Tipo: CSV
+Origem: Base Créditos 2024.xlsx | Aba: Resultado Intermediário
+Dimensoes: 19395 linhas x 11 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao, ncm, tributos_nfe, valor_nfe
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+  - ncm: str  (ex: 01011010 | 01011010)
+  - tributos_nfe: object  (ex: 0 | 0)
+  - valor_nfe: object  (ex: 0 | 185397.04)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__base_debitos_classificada.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Base Débitos - Classificada
+Dimensoes: 21 linhas x 5 colunas
+Colunas: ref, valor_nfe, base_cbs, valor_nfe_destinatario_pj, base_cbs_destinatario_pj
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota 0% - Automoveis Deficientes, Taxi - Art 149 | Alíquota 0% - Cesta Básica - Anexo I - Art 125)
+  - valor_nfe: object  (ex: 0 | 17261922525.09)
+  - base_cbs: object  (ex: 0 | 25706661484.59946)
+  - valor_nfe_destinatario_pj: object  (ex: 0 | 14278663547.04048)
+  - base_cbs_destinatario_pj: object  (ex: 0 | 21263956533.39001)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__base_debitos_combustiveis.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Base Débitos Combustíveis
+Dimensoes: 5 linhas x 5 colunas
+Colunas: ncm, valor_produtos_servicos, base_cbs, valor_nfe_destinatario_pj, base_cbs_destinatario_pj
+Tipos e exemplos:
+  - ncm: str  (ex: 22071090 | 27101259)
+  - valor_produtos_servicos: object  (ex: 0 | 18002.06)
+  - base_cbs: object  (ex: 0 | 26808.88306460729)
+  - valor_nfe_destinatario_pj: object  (ex: 0 | 14890.88816845418)
+  - base_cbs_destinatario_pj: object  (ex: 0 | 22175.68876207681)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__detalhamento_base_debitos.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Detalhamento Base Débitos
+Dimensoes: 7 linhas x 2 colunas
+Colunas: base, valor
+Tipos e exemplos:
+  - base: str  (ex: Receita Bruta DIRPF | Tributos NFE)
+  - valor: object  (ex: 536465745890.03 | 2547418124.226)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__comparacao_base_nfe.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Comparação Base NFE
+Dimensoes: 2363 linhas x 4 colunas
+Colunas: ncm, valor_antes_tratamento, valor_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00201201)
+  - valor_antes_tratamento: object  (ex: 5351569238.47 | 50203.98)
+  - valor_apos_tratamento: object  (ex: 0 | 0)
+  - diferenca: object  (ex: -5351569238.47 | -50203.98)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__base_nfe.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Base NFE
+Dimensoes: 5504 linhas x 9 colunas
+Colunas: ncm, tipo_emitente, tipo_destinatario, cfop_receitabruta, cfop_compra, numero_indicador_mei, numero_indicador_simples, valor_produtos_servicos, tributos_nfe
+Tipos e exemplos:
+  - ncm: str  (ex: 00000000 | 00000000)
+  - tipo_emitente: str  (ex: PF | PF)
+  - tipo_destinatario: str  (ex: PF | PJ)
+  - cfop_receitabruta: object  (ex: True | True)
+  - cfop_compra: object  (ex: False | False)
+  - numero_indicador_mei: object  (ex: - | 1)
+  - numero_indicador_simples: object  (ex: - | 1)
+  - valor_produtos_servicos: object  (ex: 0 | 0)
+  - tributos_nfe: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__comparacao_matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Comparação Matriz de Incidência
+Dimensoes: 19395 linhas x 10 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao_antes_tratamento, proporcao_apos_tratamento, diferenca
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao_antes_tratamento: object  (ex: 0 | 1)
+  - proporcao_apos_tratamento: object  (ex: 0 | 1)
+  - diferenca: object  (ex: 0 | 0)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__matriz_de_incidencia.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Matriz de Incidência
+Dimensoes: 19395 linhas x 8 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__base_debitos_2024__resultado_intermediario.csv
+Tipo: CSV
+Origem: Base Débitos 2024.xlsx | Aba: Resultado Intermediário
+Dimensoes: 19395 linhas x 9 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descricao_ncm, descr_produto, proporcao, valor_nfe
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descricao_ncm: str  (ex: Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav... | Animais vivos e produtos do reino animal - Animais vivos. - Cavalos, asininos e muares, vivos. - Cav...)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+  - valor_nfe: object  (ex: - | -)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__notebook__matriz_de_incidencia__tabela_completa.csv
+Tipo: CSV
+Origem: Matriz de Incidência.xlsx | Aba: Tabela Completa
+Dimensoes: 19395 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota de Referência - Demais Produtos | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: - | Redução de 60%)
+  - item: str  (ex: - | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011010)
+  - descr_produto: str  (ex: - | Animais vivos)
+  - proporcao: object  (ex: 0 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__notebook__matriz_de_incidencia__apenas_entradas_duplicadas.csv
+Tipo: CSV
+Origem: Matriz de Incidência.xlsx | Aba: Apenas entradas duplicadas
+Dimensoes: 3988 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota reduzida 60%  -Insumos agropecuários - Anexo IX - art 138 | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: Redução de 60% | Redução de 60%)
+  - item: str  (ex: 15 | 1)
+  - codigo_ncm: str  (ex: 01021010 | 01021010)
+  - descr_produto: str  (ex: Reprodutores de raça pura, inclusive matrizes de animais puros de origem com registro genealógico; e... | Animais vivos)
+  - proporcao: object  (ex: 0.5 | 0.5)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__notebook__matriz_de_incidencia__apenas_entradas_unicas.csv
+Tipo: CSV
+Origem: Matriz de Incidência.xlsx | Aba: Apenas entradas únicas
+Dimensoes: 12212 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, codigo_ncm, descr_produto, proporcao
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137 | Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: Redução de 60% | Redução de 60%)
+  - item: str  (ex: 1 | 1)
+  - codigo_ncm: str  (ex: 01011010 | 01011090)
+  - descr_produto: str  (ex: Animais vivos | Animais vivos)
+  - proporcao: object  (ex: 1 | 1)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__2024__notebook__ncm__sheet.csv
+Tipo: CSV
+Origem: NCM.xlsx | Aba: Sheet
+Dimensoes: 13867 linhas x 2 colunas
+Colunas: codigo_ncm, descricao_ncm
+Tipos e exemplos:
+  - codigo_ncm: str  (ex: 61041200 | 81123100)
+  - descricao_ncm: str  (ex: Matérias têxteis e suas obras - Vestuário e seus acessórios, de malha. - Tailleurs(Fatos de saia-cas... | Metais comuns e suas obras - Outros metais comuns; cermets; obras dessas matérias. - Berílio, cromo,...)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__matriz_de_incidencia__ncm__sheet.csv
+Tipo: CSV
+Origem: NCM.xlsx | Aba: Sheet
+Dimensoes: 13867 linhas x 2 colunas
+Colunas: codigo_ncm, descricao_ncm
+Tipos e exemplos:
+  - codigo_ncm: str  (ex: 61041200 | 81123100)
+  - descricao_ncm: str  (ex: Matérias têxteis e suas obras - Vestuário e seus acessórios, de malha. - Tailleurs(Fatos de saia-cas... | Metais comuns e suas obras - Outros metais comuns; cermets; obras dessas matérias. - Berílio, cromo,...)
+
+------------------------------------------------------------
+Arquivo: produtor_rural_pf__matriz_de_incidencia__regras_lei_complementar__planilha1.csv
+Tipo: CSV
+Origem: Regras_lei_complementar.xlsx | Aba: Planilha1
+Dimensoes: 749 linhas x 7 colunas
+Colunas: ref, fundam_legal, beneficio, item, descr_produto, oper, ncm
+Tipos e exemplos:
+  - ref: str  (ex: Alíquota 0% - Automoveis Deficientes, Taxi - Art 149 | Alíquota 0% - Automoveis Deficientes, Taxi - Art 149)
+  - fundam_legal: str  (ex: GERAL | GERAL)
+  - beneficio: str  (ex: Alíquota 0% | Alíquota 0%)
+  - item: object  (ex: I | II)
+  - descr_produto: str  (ex: Automóveis de passageiros (táxi) | Automóveis de passageiros (pessoas com: deficiência física, visual ou auditiva; deficiência mental s...)
+  - oper: str  (ex: INC | INC)
+  - ncm: object  (ex: 87.03 | 87.03)
+
+================================================================================
+TOTAL: 69 CSVs + 2 MDs = 71 saidas
+Arquivos .xlsx processados: 14
+Abas convertidas: 71
+Erros: 0
+================================================================================

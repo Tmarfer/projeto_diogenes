@@ -1,0 +1,65 @@
+﻿aliquotas,bc_da_producao_debitos,bc_da_producao_debitos_1,bc_da_producao_debitos_2,bc_da_producao_debitos_3
+TOTAL,,,,
+Alíquota 0% - Cesta Básica - Anexo I - Art 125,20.08734176813143,25.70666148459946,20.08734176813143,25.70666148459946
+Alíquota 0% - Medicamentos - art 146,0.006288336199001605,0.001692109688669586,0.006288336199001605,0.001692109688669586
+Alíquota 0% - Produtos Hortícolas - Anexo XV - Art 148,30.836087204813868,36.45029763564039,30.836087204813868,36.45029763564039
+"Alíquota 0% - Tratores, maq, caminhões, - Art 110",0.6379855844439736,0.4644372595346567,0.6379855844439736,0.4644372595346567
+Alíquota reduzida 60%  -Alimentos - Anexo VII - Art 135,72.86865760939381,59.65679174478491,72.86865760939381,59.65679174478491
+Alíquota reduzida 60% - Anexo X - art 139,0,8.985904969311313e-05,0,8.985904969311313e-05
+Alíquota reduzida 60%  -Dispositivos médicos - Anexo IV - Art 131,0.000680649396405332,0.018774171508804678,0.000680649396405332,0.018774171508804678
+Alíquota reduzida 60%  -Insumos agropecuários - Anexo IX - art 138,213.368614451513,200.52222571746123,213.368614451513,200.52222571746123
+Alíquota reduzida 60%  -Medicamentos - Anexo VI - Art 133 § 1º,0.000209171319772404,0.001286389441255686,0.000209171319772404,0.001286389441255686
+Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137,165.7395368999311,173.336667095336,165.7395368999311,173.336667095336
+Alíquota de Referência - Demais Produtos,4.412208753460419,4.2330062948805445,4.412208753460419,4.2330062948805445
+,,(R$ bilhões),,(R$ bilhões)
+Tabela 10.1.2 BC dos Créditos,2023,2024,2023,2024
+Custos e despesas sujeitos a tomada de crédito tributado as seguintes alíquotas,BC dos custos e despesas (Créditos),BC dos custos e despesas (Créditos),BC dos custos e despesas (Créditos),BC dos custos e despesas (Créditos)
+Total,,,,
+Alíquota 0% - Cesta Básica - Anexo I - Art 125,1.828982022424505,2.043708903014986,1.828982022424505,2.043708903014986
+Alíquota 0% - Produtos Hortícolas - Anexo XV - Art 148,1.8881865190396558,2.716120704411783,1.8881865190396558,2.716120704411783
+Alíquota reduzida 60%  -Alimentos - Anexo VII - Art 135,13.31161471648705,13.14227174990415,13.31161471648705,13.14227174990415
+Alíquota reduzida 60%  -Insumos agropecuários - Anexo IX - art 138,279.9197388108629,274.1359493318656,279.9197388108629,274.1359493318656
+Alíquota reduzida 60%  -Produtos agropecuários in natura - art 137,52.627882425633636,60.55377783908873,52.627882425633636,60.55377783908873
+Alíquota de Referência - Demais Produtos,116.9836259534894,100.5126309434514,116.9836259534894,100.5126309434514
+Combustíveis,24.85957568078609,25.21283505048805,24.85957568078609,25.21283505048805
+DADOS,,,,
+- Declaração do Imposto de Renda das Pessoas Físicas (DIRPF),,,,
+- Nota Fiscal Eletrônica (NF-e),,,,
+- Esocial,,,,
+- Dados de arrecadação DARF,,,,
+- Preço médio combustíveis ANP,,,,
+Especificação,,,,
+Periodicidade,,,,
+2023-2024,,,,
+Escopo,,,,
+"Receitas e Despesas da atividade rural dos produtores com renda anual superior a R$ 3,6 milhões, declarados na DIRPF",,,,
+Notas Fiscais emitidas por produtor rural PF ou pela empresa adquirente de sua produção,,,,
+Notas Fiscais emitidas por produtor rural PF com cadastro no CNPJ (apenas para efeito de emissão de nota fiscal),,,,
+Notas Fiscais emitidas por empresas que venderam produtos para os produtores rurais PF,,,,
+Notas Fiscais emitidas por empresas que venderam para produtor rural PF com cadastro no CNPJ (apenas para efeito de emissão de nota fiscal),,,,
+Registros da massa salarial declarados no Esocial do produtor rural PF,,,,
+Arrecadação de tributos pelo produtor rural PF,,,,
+Informação a extrair,,,,
+"Identificação do CPF dos produtores rurais PF na DIRPF => preencheu ficha de atividade rural e declarou mais de R$ 3,6 milhões de receita",,,,
+Valor da receita da atividade rural e valor das despesas da atividade rural declaradas na DIRPF,,,,
+Identificação das NF-e de venda emitidas pelos produtores rurais PF,,,,
+Identificação das NF-e de venda emitidas pelos produtores rurais PF com cadastro no CNPJ (apenas para efeito de emissão de nota fiscal),,,,
+Identificação das NF-e de compra emitidas pelas empresas adquirentes do produtor rural PF,,,,
+Identificação das NF-e de venda emitidas por empresas em que o destinatário é produtor rural PF,,,,
+Identificação das NF-e de venda emitidas por empresas em que o destinatário é produtor rural PF com cadastro no CNPJ (apenas para efeito de emissão de nota fiscal),,,,
+"Valor das operações de venda de bens, informados na NF-e",,,,
+"Valor dos tributos incidentes sobre a operação (IPI, PIS, COFINS, ICMS, ISS), informados na NF-e",,,,
+"Identificação do código da Nomeclatura Comum do Mercosul (NCM) do bem vendido, conforme informado na NF-e",,,,
+Massa salarial dos empregados do produtor rural PF declarados no Esocial,,,,
+"Valor dos tributos arrecadados pelos produtores rurais PF, discriminados por código DARF",,,,
+Valor do preço médio de revenda do diesel divulgado pela ANP,,,,
+"Série histórica do levantamento de preços — Agência Nacional do Petróleo, Gás Natural e Biocombustíveis",,,,
+Segregação/Tratamento dos Dados,,,,
+Estimativa do valor total da base de cálculo dos débitos a partir da receita da atividade rural declarada na DIRPF subtraída do valor dos tributos constantes das NF-e e do valor dos bens registrados em NF-e de exportação,,,,
+"Tabulação dos valor dos bens comercializados pelos produtores rurais PF, discriminado por NCM, constante da NF-e",,,,
+"Estimativa do valor total da base de cálculo dos créditos a partir da despesa da atividade rural declarada na DIRPF subtraída do valor dos tributos constantes das NF-e, do valor da massa salarial declarada no Esocial, e do valor dos tributos arrecadados pelo produtor rural PF",,,,
+"Tabulação dos valor dos bens adquiridos pelos produtores rurais PF, discriminado por NCM, constante da NF-e",,,,
+Associação das regras de incidência da CBS com a tabela NCM (matriz de incidência tributária),,,,
+"Distribuição das bases de cálculo dos débitos e dos créditos da CBS pelas regras de incidência da CBS, utilizando a NCM e a matriz de incidência tributária",,,,
+Estimativa de volume de combustível consumido pelo produtor rural PF pela divisão do valor em reais das NF-e de compra de combustível pelo preço médio do litro de diesel divulgado pela ANP,,,,
+Estimativa do valor do crédito de CBS pela multiplicação da alíquota ad rem da CBS de combustível pela estimativa do volume consumido em litros,,,,

@@ -1,0 +1,167 @@
+arquivos_csv:
+- caminho_relativo: input/MOD_010/CSV/aux_mod_10_pf_execucao__aux_mod_10.csv
+  nome: aux_mod_10_pf_execucao__aux_mod_10.csv
+- caminho_relativo: input/MOD_010/CSV/aux_mod_10_pf_execucao__aux_mod_10_1.csv
+  nome: aux_mod_10_pf_execucao__aux_mod_10_1.csv
+- caminho_relativo: input/MOD_010/CSV/aux_mod_10_pf_execucao__aux_mod_10_2.csv
+  nome: aux_mod_10_pf_execucao__aux_mod_10_2.csv
+- caminho_relativo: input/MOD_010/CSV/aux_mod_10_pf_execucao__aux_mod_10_3.csv
+  nome: aux_mod_10_pf_execucao__aux_mod_10_3.csv
+- caminho_relativo: input/MOD_010/CSV/aux_mod_10_pf_execucao__aux_mod_10_4.csv
+  nome: aux_mod_10_pf_execucao__aux_mod_10_4.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__2m02.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__2m02.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__2n02.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__2n02.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__2o02.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__2o02.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__ci.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__ci.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__de_para.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__de_para.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda_2.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda_2.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda_2021_2019.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__demanda_2021_2019.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__prod_cnae_cf.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__prod_cnae_cf.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__tab16.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__tab16.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__tab_ibge_1.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__tab_ibge_1.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__tab_ibge_2.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__tab_ibge_2.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__consumo_final_contas_nacionais__va.csv
+  nome: demais_pessoas_fisicas__consumo_final_contas_nacionais__va.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__estimativa_valor_creditos__criterios.csv
+  nome: demais_pessoas_fisicas__estimativa_valor_creditos__criterios.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__estimativa_valor_creditos__dados_amostra.csv
+  nome: demais_pessoas_fisicas__estimativa_valor_creditos__dados_amostra.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__estimativa_valor_creditos__estim_bc_creditos.csv
+  nome: demais_pessoas_fisicas__estimativa_valor_creditos__estim_bc_creditos.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__estimativa_valor_creditos__numeros.csv
+  nome: demais_pessoas_fisicas__estimativa_valor_creditos__numeros.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__estimativa_valor_creditos__valor_livro_caixa_dirpf.csv
+  nome: demais_pessoas_fisicas__estimativa_valor_creditos__valor_livro_caixa_dirpf.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__correcao_ocup_nao_determinadas.csv
+  nome: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__correcao_ocup_nao_determinadas.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__estimativa_bc_debitos.csv
+  nome: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__estimativa_bc_debitos.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__rend_trab_nao_assalariado.csv
+  nome: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__rend_trab_nao_assalariado.csv
+- caminho_relativo: input/MOD_010/CSV/demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__totais_rend_tna_por_categoria.csv
+  nome: demais_pessoas_fisicas__rendimentos_trabalho_nao_assalariado_dirpf__totais_rend_tna_por_categoria.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__base_creditos_classificada.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__base_creditos_classificada.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__base_nfe_geral.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__base_nfe_geral.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__comparacao_base_nfe.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__comparacao_base_nfe.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__comparacao_matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__comparacao_matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__creditos_combustiveis.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__creditos_combustiveis.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__detalhamento_base_creditos.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__detalhamento_base_creditos.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_creditos_2023__resultado_intermediario.csv
+  nome: produtor_rural_pf__2023__base_creditos_2023__resultado_intermediario.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__base_debitos_classificada.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__base_debitos_classificada.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__base_debitos_combustiveis.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__base_debitos_combustiveis.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__base_nfe.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__base_nfe.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__comparacao_base_nfe.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__comparacao_base_nfe.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__comparacao_matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__comparacao_matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__detalhamento_base_debitos.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__detalhamento_base_debitos.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__base_debitos_2023__resultado_intermediario.csv
+  nome: produtor_rural_pf__2023__base_debitos_2023__resultado_intermediario.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__notebook__matriz_de_incidencia__apenas_entradas_duplicadas.csv
+  nome: produtor_rural_pf__2023__notebook__matriz_de_incidencia__apenas_entradas_duplicadas.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__notebook__matriz_de_incidencia__apenas_entradas_unicas.csv
+  nome: produtor_rural_pf__2023__notebook__matriz_de_incidencia__apenas_entradas_unicas.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__notebook__matriz_de_incidencia__tabela_completa.csv
+  nome: produtor_rural_pf__2023__notebook__matriz_de_incidencia__tabela_completa.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2023__notebook__ncm__sheet.csv
+  nome: produtor_rural_pf__2023__notebook__ncm__sheet.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__base_creditos_classificada.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__base_creditos_classificada.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__base_nfe_geral.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__base_nfe_geral.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__comparacao_base_nfe.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__comparacao_base_nfe.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__comparacao_matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__comparacao_matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__creditos_combustiveis.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__creditos_combustiveis.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__detalhamento_base_creditos.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__detalhamento_base_creditos.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_creditos_2024__resultado_intermediario.csv
+  nome: produtor_rural_pf__2024__base_creditos_2024__resultado_intermediario.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__base_debitos_classificada.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__base_debitos_classificada.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__base_debitos_combustiveis.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__base_debitos_combustiveis.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__base_nfe.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__base_nfe.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__comparacao_base_nfe.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__comparacao_base_nfe.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__comparacao_matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__comparacao_matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__detalhamento_base_debitos.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__detalhamento_base_debitos.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__matriz_de_incidencia.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__matriz_de_incidencia.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__base_debitos_2024__resultado_intermediario.csv
+  nome: produtor_rural_pf__2024__base_debitos_2024__resultado_intermediario.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__notebook__matriz_de_incidencia__apenas_entradas_duplicadas.csv
+  nome: produtor_rural_pf__2024__notebook__matriz_de_incidencia__apenas_entradas_duplicadas.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__notebook__matriz_de_incidencia__apenas_entradas_unicas.csv
+  nome: produtor_rural_pf__2024__notebook__matriz_de_incidencia__apenas_entradas_unicas.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__notebook__matriz_de_incidencia__tabela_completa.csv
+  nome: produtor_rural_pf__2024__notebook__matriz_de_incidencia__tabela_completa.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__2024__notebook__ncm__sheet.csv
+  nome: produtor_rural_pf__2024__notebook__ncm__sheet.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__matriz_de_incidencia__ncm__sheet.csv
+  nome: produtor_rural_pf__matriz_de_incidencia__ncm__sheet.csv
+- caminho_relativo: input/MOD_010/CSV/produtor_rural_pf__matriz_de_incidencia__regras_lei_complementar__planilha1.csv
+  nome: produtor_rural_pf__matriz_de_incidencia__regras_lei_complementar__planilha1.csv
+arquivos_xlsx:
+- caminho_relativo: input/MOD_010/XLSX/AUX_MOD_10 PF - execução.xlsx
+  nome: AUX_MOD_10 PF - execução.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Créditos 2023.xlsx
+  nome: Base Créditos 2023.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Créditos 2024.xlsx
+  nome: Base Créditos 2024.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Débitos 2023.xlsx
+  nome: Base Débitos 2023.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Base Débitos 2024.xlsx
+  nome: Base Débitos 2024.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Consumo Final Contas Nacionais.xlsx
+  nome: Consumo Final Contas Nacionais.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Estimativa Valor Créditos.xlsx
+  nome: Estimativa Valor Créditos.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Matriz de Incidência.xlsx
+  nome: Matriz de Incidência.xlsx
+- caminho_relativo: input/MOD_010/XLSX/NCM.xlsx
+  nome: NCM.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Regras_lei_complementar.xlsx
+  nome: Regras_lei_complementar.xlsx
+- caminho_relativo: input/MOD_010/XLSX/Rendimentos Trabalho Não Assalariado - DIRPF.xlsx
+  nome: Rendimentos Trabalho Não Assalariado - DIRPF.xlsx
+catalogo_json:
+  caminho_relativo: input/MOD_010/CSV/CATALOGO.json
+data_entrega: '2026-05-30'
+modulo: MOD_010
+raiz_projeto: /Users/tmarfer_mac/Documents/Projetos/projeto_diogenes/workspace

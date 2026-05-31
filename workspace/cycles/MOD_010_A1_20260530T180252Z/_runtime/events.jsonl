@@ -1,0 +1,3 @@
+{"timestamp_utc": "2026-05-30T18:02:58Z", "cycle_id": "MOD_010_A1_20260530T180252Z", "event_type": "CYCLE_STARTED", "phase": null, "agent": null, "details": {"cycle_id": "MOD_010_A1_20260530T180252Z"}}
+{"timestamp_utc": "2026-05-30T18:02:58Z", "cycle_id": "MOD_010_A1_20260530T180252Z", "event_type": "IRENE_VERIFICACAO_INICIO", "phase": null, "agent": null, "details": {"modulo": "MOD_010"}}
+{"timestamp_utc": "2026-05-30T18:02:58Z", "cycle_id": "MOD_010_A1_20260530T180252Z", "event_type": "IRENE_INICIO", "phase": null, "agent": null, "details": {"modulo": "MOD_010"}}

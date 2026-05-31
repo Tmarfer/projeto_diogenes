@@ -33,7 +33,16 @@
       "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" status --cycle MOD_SINT_001_A1_20260514T123134Z)",
       "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" start --module MOD_SINT_001 --activity 1)",
       "Bash(python -c \"from diogenes.cli.app import app; app\\(\\)\" confirm-manifest --cycle MOD_SINT_001_A1_20260514T125951Z)",
-      "Bash(PYTHONIOENCODING=utf-8 python -c 'import json *)"
+      "Bash(PYTHONIOENCODING=utf-8 python -c 'import json *)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(ls /Users/tmarfer_mac/Documents/Projetos/projeto_diogenes/diogenes/.venv*)",
+      "Bash(pip3 install:*)",
+      "Bash(diogenes:*)",
+      "Bash(pip3 show:*)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(ls:*)"
     ]
   }
 }

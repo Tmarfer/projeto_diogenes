@@ -21,7 +21,7 @@ from diogenes.config import get_config
 from diogenes.irene import executar_irene, verificar_catalogo_existente, _derivar_manifesto_irene, copiar_catalogo_para_ciclo
 from diogenes.llm.base import get_llm_client
 from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
-from diogenes.models import CycleManifest, DecisaoFinal, DefinirTasksResult, WatsonOutput
+from diogenes.models import CycleManifest, DecisaoFinal, DefinirTasksResult, SherlockOutput, WatsonOutput
 from diogenes.orchestrator.events import EventLogger
 from diogenes.orchestrator.exceptions import CorruptedStateError, OrchestratorError
 from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, InvalidTransitionError
@@ -197,6 +197,65 @@ class Orchestrator:
         return self._executar_fase_sherlock_e_consolidar(
             manifest, _DTR(tasks_text="", planilha_verificacao_no_pacote=False), None
         )
+
+    def retomar_apos_completude(self, manifest: CycleManifest) -> str:
+        """
+        Chamado por `diogenes complete-sherlock` quando o ciclo está em
+        AGUARDANDO_COMPLETUDE (Sherlock gerou output sem as seções ### 10.x).
+        Reutiliza o output já gravado no stranger_room, chama fixar_decisao_sherlock
+        com fallback e completa o pipeline até AGUARDANDO_VERIFICACAO_SAIDA.
+        """
+        record = self._audit.get_cycle(self._cycle_id)
+        if not record or record["status"] != CycleState.AGUARDANDO_COMPLETUDE.value:
+            estado_atual = record.get("status") if record else "N/A"
+            raise OrchestratorError(
+                f"Ciclo não está em AGUARDANDO_COMPLETUDE (estado atual: {estado_atual})"
+            )
+
+        fase = "sherlock_validacao"
+        rodada = 0
+
+        # Recuperar Watson decision do stranger_room (já gravada na fase Watson)
+        try:
+            decisao_watson = self._sr.ler_decisao_final("watson_integridade")
+        except FileNotFoundError:
+            decisao_watson = DecisaoFinal(
+                texto="[Decisão Watson indisponível — recuperação automática]",
+                mycroft_overruled=False, has_critical_alert=False,
+                critical_alerts_count=0, has_dilemma=False, dilemmas_count=0,
+            )
+
+        # Recuperar output Sherlock do stranger_room (já gravado por validar())
+        texto_sherlock = self._sr.ler_apresentacao(fase)
+        if not texto_sherlock:
+            raise OrchestratorError(
+                f"Apresentação Sherlock ausente em stranger_room/{fase}/01_apresentacao.md"
+            )
+        output_sherlock = SherlockOutput(
+            texto=texto_sherlock, dilemmas_count=0, has_divergencias=False, secoes={},
+        )
+
+        self._events.log("COMPLETUDE_RETOMADA", phase=fase,
+                         details={"motivo": "Sherlock output sem seções ### 10.x — continuando com fallback"})
+
+        # fixar_decisao_sherlock tem fallback — não depende de ChatTCU
+        decisao_sherlock = self._mycroft.fixar_decisao_sherlock(output_sherlock, rodada)
+        self._sr.escrever_decisao_final(fase=fase, author="mycroft", decisao=decisao_sherlock)
+        self._events.log("MYCROFT_DECISION_FINAL", agent="mycroft", phase=fase,
+                         details={"overruled": decisao_sherlock.mycroft_overruled,
+                                  "dilemmas": decisao_sherlock.dilemmas_count})
+
+        self._audit.update_sherlock_metadata(
+            self._cycle_id, rodada,
+            decisao_sherlock.mycroft_overruled, decisao_sherlock.dilemmas_count,
+        )
+        self._sr.validar_fase_completa(fase)
+        self._events.log("PHASE_ENDED", phase=fase)
+
+        output_path = self._consolidar_output_final(manifest, decisao_watson, decisao_sherlock)
+        self._transicionar(CycleState.AGUARDANDO_VERIFICACAO_SAIDA)
+        self._events.log("CYCLE_READY_FOR_MOTOR_SAIDA", details={"output": str(output_path)})
+        return str(output_path)
 
     def abortar(self, razao: str) -> None:
         """Aborta o ciclo por decisão de Lestrade."""

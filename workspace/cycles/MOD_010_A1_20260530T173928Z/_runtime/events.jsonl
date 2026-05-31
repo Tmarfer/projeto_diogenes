@@ -1,0 +1,5 @@
+{"timestamp_utc": "2026-05-30T17:40:44Z", "cycle_id": "MOD_010_A1_20260530T173928Z", "event_type": "CYCLE_STARTED", "phase": null, "agent": null, "details": {"cycle_id": "MOD_010_A1_20260530T173928Z"}}
+{"timestamp_utc": "2026-05-30T17:40:44Z", "cycle_id": "MOD_010_A1_20260530T173928Z", "event_type": "IRENE_VERIFICACAO_INICIO", "phase": null, "agent": null, "details": {"modulo": "MOD_010"}}
+{"timestamp_utc": "2026-05-30T17:40:44Z", "cycle_id": "MOD_010_A1_20260530T173928Z", "event_type": "IRENE_INICIO", "phase": null, "agent": null, "details": {"modulo": "MOD_010"}}
+{"timestamp_utc": "2026-05-30T17:40:45Z", "cycle_id": "MOD_010_A1_20260530T173928Z", "event_type": "IRENE_FIM", "phase": null, "agent": null, "details": {"estado": "IRENE_ERRO_FATAL"}}
+{"timestamp_utc": "2026-05-30T17:40:45Z", "cycle_id": "MOD_010_A1_20260530T173928Z", "event_type": "IRENE_ERRO_FATAL_REGISTRADO", "phase": null, "agent": null, "details": {"modulo": "MOD_010"}}
