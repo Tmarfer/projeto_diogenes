@@ -16,6 +16,7 @@ from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
 from diogenes.config import AgentSpec
 from diogenes.llm.base import LLMClient
 from diogenes.llm.call_id import gerar_call_id
+from diogenes.llm.exceptions import LLMCallError, LLMTimeoutError
 from diogenes.llm.seed import calcular_seed
 from diogenes.models import InputFileInfo, LLMCall, LLMMessage, WatsonOutput
 
@@ -56,23 +57,44 @@ class WatsonAgent:
         partes.append(f"[ARQUIVO: {arquivo_info.name}]\n{conteudo}")
 
         user = injetar_heartbeat(hb, "\n\n".join(partes))
-        resp = self._llm.complete(LLMCall(
-            call_id=gerar_call_id("watson", call_type),
-            cycle_id=self._cycle_id, phase=self.FASE,
-            agent="watson", call_type=call_type,
-            model=self._spec.modelo, temperature=self._spec.temperatura,
-            max_tokens=self._spec.max_tokens,
-            seed=calcular_seed(42, self._cycle_id, self.FASE, call_type,
-                               hash(arquivo_info.name) & 0xFFFF),
-            messages=[
-                LLMMessage(role="system", content=self._system_prompt),
-                LLMMessage(role="user", content=user),
-            ],
-            timeout_segundos=self._spec.timeout_segundos,
-            max_tentativas_retry=self._spec.max_tentativas_retry,
-            backoff_segundos=self._spec.backoff_segundos,
-        ))
-        return self._parsear_output(resp.content)
+        try:
+            resp = self._llm.complete(LLMCall(
+                call_id=gerar_call_id("watson", call_type),
+                cycle_id=self._cycle_id, phase=self.FASE,
+                agent="watson", call_type=call_type,
+                model=self._spec.modelo, temperature=self._spec.temperatura,
+                max_tokens=self._spec.max_tokens,
+                seed=calcular_seed(42, self._cycle_id, self.FASE, call_type,
+                                   hash(arquivo_info.name) & 0xFFFF),
+                messages=[
+                    LLMMessage(role="system", content=self._system_prompt),
+                    LLMMessage(role="user", content=user),
+                ],
+                timeout_segundos=self._spec.timeout_segundos,
+                max_tentativas_retry=self._spec.max_tentativas_retry,
+                backoff_segundos=self._spec.backoff_segundos,
+            ))
+            return self._parsear_output(resp.content)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            # Falha no arquivo individual não aborta o pipeline — registra como não analisável.
+            # O erro será incluído no watson_consolidado.md e visível para Mycroft/Sherlock.
+            import logging as _logging
+            _logging.getLogger(__name__).warning(
+                "[Watson] Arquivo '%s' não analisável: %s", arquivo_info.name, exc
+            )
+            return WatsonOutput(
+                texto=(
+                    f"## Análise de {arquivo_info.name}\n\n"
+                    f"**Status:** NÃO ANALISÁVEL\n"
+                    f"**Causa:** Falha persistente de comunicação com o LLM: {exc}\n\n"
+                    f"Este arquivo não foi analisado neste ciclo. "
+                    f"Registrado como não analisável para consolidação por Watson."
+                ),
+                critical_alerts_count=0,
+                has_unanalyzable_files=True,
+                secoes={},
+                ultimo_id_alerta=proximo_id_alerta,
+            )
 
     def consolidar(
         self,
