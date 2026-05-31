@@ -8,6 +8,7 @@ Referência normativa: RF-OR-01 a RF-OR-11 (PRD v0.1), Bloco 8 (SDD v0.1)
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 from datetime import datetime, timezone
@@ -75,6 +76,46 @@ def _salvar_tasks_cache(
     (cache_dir / _TASKS_CACHE_NOME).write_text(
         json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+
+def _watson_ckpt_path(ckpt_dir: Path, rel_path: str | Path) -> Path:
+    """Caminho canônico do checkpoint de um arquivo Watson."""
+    safe = str(rel_path).replace("/", "__").replace("\\", "__").replace(":", "_")
+    return ckpt_dir / f"{safe}.json"
+
+
+def _watson_ckpt_salvar(
+    ckpt_dir: Path, rel_path: str | Path,
+    output: WatsonOutput, proximo_id_apos: str,
+) -> None:
+    """Persiste WatsonOutput de um arquivo individual em JSON para retomada."""
+    p = _watson_ckpt_path(ckpt_dir, rel_path)
+    p.write_text(
+        json.dumps(
+            {
+                "arquivo": str(rel_path),
+                "proximo_id_apos": proximo_id_apos,
+                "output": dataclasses.asdict(output),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _watson_ckpt_carregar(
+    ckpt_dir: Path, rel_path: str | Path,
+) -> tuple[WatsonOutput, str] | None:
+    """Carrega WatsonOutput do checkpoint se existir; retorna None caso contrário."""
+    p = _watson_ckpt_path(ckpt_dir, rel_path)
+    if not p.exists():
+        return None
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return WatsonOutput(**data["output"]), data["proximo_id_apos"]
+    except Exception:  # noqa: BLE001
+        return None  # checkpoint corrompido — reanalisar
 
 
 class Orchestrator:
@@ -285,9 +326,22 @@ class Orchestrator:
         # parseado do output (não na contagem bruta reportada pelo LLM, que é
         # frágil e pode ser re-emitida por inteiro a cada rodada). Isso garante
         # IDs contíguos independentemente de como Watson formata a resposta.
+        #
+        # Checkpointing: cada WatsonOutput é persistido em _runtime/watson_checkpoints/
+        # após análise. Se o processo morrer e o ciclo for reiniciado, os arquivos
+        # já analisados são carregados do checkpoint sem nova chamada LLM.
+        ckpt_dir = self._runtime_dir / "watson_checkpoints"
+        ckpt_dir.mkdir(exist_ok=True)
+
         proximo_id = self._proximo_id_alerta(manifest.module_id, 1)
         analises_watson: list[WatsonOutput] = []
         for fi in manifest.input_files:
+            ckpt = _watson_ckpt_carregar(ckpt_dir, fi.rel_path)
+            if ckpt is not None:
+                analise_fi, proximo_id = ckpt
+                analises_watson.append(analise_fi)
+                continue  # arquivo já analisado — pula sem novo evento
+
             analise_fi = self._watson.analisar_arquivo(
                 arquivo_path=inputs_dir / fi.rel_path,
                 arquivo_info=fi,
@@ -296,6 +350,7 @@ class Orchestrator:
             )
             analises_watson.append(analise_fi)
             proximo_id = _avancar_id_alerta(proximo_id, analise_fi)
+            _watson_ckpt_salvar(ckpt_dir, fi.rel_path, analise_fi, proximo_id)
             self._events.log("WATSON_ARQUIVO_ANALISADO",
                              details={"arquivo": fi.name, "criticos": analise_fi.critical_alerts_count})
 
