@@ -65,3 +65,4 @@ def env_vars(workspace: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Desabilitar Irene em testes: o .env real tem DIOGENES_IRENE_HABILITADO=true,
     # mas load_dotenv() não sobrescreve vars já no ambiente — monkeypatch tem precedência.
     monkeypatch.setenv("DIOGENES_IRENE_HABILITADO", "false")
+    monkeypatch.setenv("DIOGENES_POST_IRENE_COOLDOWN_S", "0")
