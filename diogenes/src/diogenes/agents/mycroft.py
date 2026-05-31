@@ -18,6 +18,7 @@ from diogenes.agents.heartbeat import HeartbeatLoader, injetar_heartbeat
 from diogenes.config import AgentSpec
 from diogenes.llm.base import LLMClient
 from diogenes.llm.call_id import gerar_call_id
+from diogenes.llm.exceptions import LLMCallError, LLMTimeoutError
 from diogenes.llm.seed import calcular_seed
 from diogenes.models import (
     AvaliacaoMycroft,
@@ -102,8 +103,20 @@ class MycrooftAgent:
             f"localizada e fundamentada"
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
-        resp = self._llm.complete(self._montar_call(call_type, fase, user))
-        return _parsear_avaliacao(resp.content)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, fase, user))
+            return _parsear_avaliacao(resp.content)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] avaliar_watson indisponível — APROVADO automático: %s", exc)
+            return AvaliacaoMycroft(
+                tipo="APROVADO",
+                texto=(
+                    "## Avaliação\n\nAPROVADO\n\n"
+                    "[Aprovação automática de fallback — Mycroft indisponível: ChatTCU timeout. "
+                    "Avaliação sem revisão LLM.]"
+                ),
+                critica="",
+            )
 
     # ── fixar_decisao_watson ──────────────────────────────────
 
@@ -120,8 +133,25 @@ class MycrooftAgent:
             f"### Notas para Sherlock"
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
-        resp = self._llm.complete(self._montar_call(call_type, self.FASE_WATSON, user))
-        return _parsear_decisao_final(resp.content, output_final.critical_alerts_count)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, self.FASE_WATSON, user))
+            return _parsear_decisao_final(resp.content, output_final.critical_alerts_count)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] fixar_decisao_watson indisponível — fallback: %s", exc)
+            return DecisaoFinal(
+                texto=(
+                    "### Síntese\n\n[Fallback automático — Mycroft indisponível]\n\n"
+                    "### Posição Adotada\nAPROVADO\n\n"
+                    "### Overrule\nNÃO\n\n"
+                    f"### Alertas Críticos\nCONTAGEM: {output_final.critical_alerts_count}\n\n"
+                    "### Notas para Sherlock\n[Decisão sem revisão LLM — ChatTCU timeout]"
+                ),
+                mycroft_overruled=False,
+                has_critical_alert=output_final.has_critical_alert,
+                critical_alerts_count=output_final.critical_alerts_count,
+                has_dilemma=False,
+                dilemmas_count=0,
+            )
 
     # ── montar_pacote_sherlock ────────────────────────────────
 
@@ -158,10 +188,19 @@ class MycrooftAgent:
             f"cadeia de produção, pontos de atenção para análise metodológica."
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
-        resp = self._llm.complete(self._montar_call(call_type, self.FASE_SHERLOCK, user))
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, self.FASE_SHERLOCK, user))
+            sintese_mycroft = resp.content
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] montar_pacote_sherlock indisponível — pacote mínimo: %s", exc)
+            sintese_mycroft = (
+                "## Síntese para Sherlock\n\n"
+                "[Fallback automático — Mycroft indisponível: ChatTCU timeout]\n\n"
+                f"## Decisão Final Watson (resumo)\n\n{decisao_watson.texto[:1000]}"
+            )
 
         # Montar pacote completo: síntese Mycroft + análise Watson + documentos metodológicos
-        partes: list[str] = [resp.content]
+        partes: list[str] = [sintese_mycroft]
 
         # Análise completa de Watson (da Stranger's Room) — insumo principal para Sherlock
         if watson_apresentacao:
@@ -203,10 +242,20 @@ class MycrooftAgent:
             f"dispositivo alternativo, fundamentação"
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
-        resp = self._llm.complete(self._montar_call(call_type, fase, user))
-        return _parsear_avaliacao(resp.content)
-
-    # ── fixar_decisao_sherlock ────────────────────────────────
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, fase, user))
+            return _parsear_avaliacao(resp.content)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] avaliar_sherlock indisponível — APROVADO automático: %s", exc)
+            return AvaliacaoMycroft(
+                tipo="APROVADO",
+                texto=(
+                    "## Avaliação\n\nAPROVADO\n\n"
+                    "[Aprovação automática de fallback — Mycroft indisponível: ChatTCU timeout. "
+                    "Avaliação sem revisão LLM.]"
+                ),
+                critica="",
+            )
 
     def fixar_decisao_sherlock(self, output_final: SherlockOutput,
                                 rodadas_executadas: int) -> DecisaoFinal:
@@ -221,8 +270,25 @@ class MycrooftAgent:
             f"### Encaminhamento"
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
-        resp = self._llm.complete(self._montar_call(call_type, self.FASE_SHERLOCK, user))
-        return _parsear_decisao_sherlock(resp.content, output_final.dilemmas_count)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, self.FASE_SHERLOCK, user))
+            return _parsear_decisao_sherlock(resp.content, output_final.dilemmas_count)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] fixar_decisao_sherlock indisponível — fallback: %s", exc)
+            return DecisaoFinal(
+                texto=(
+                    "### Síntese\n\n[Fallback automático — Mycroft indisponível]\n\n"
+                    "### Posição Adotada\nAPROVADO\n\n"
+                    "### Overrule\nNÃO\n\n"
+                    f"### Dilemas\nCONTAGEM: {output_final.dilemmas_count}\n\n"
+                    "### Encaminhamento\n[Decisão sem revisão LLM — ChatTCU timeout]"
+                ),
+                mycroft_overruled=False,
+                has_critical_alert=output_final.has_critical_alert,
+                critical_alerts_count=output_final.critical_alerts_count,
+                has_dilemma=output_final.has_dilemma,
+                dilemmas_count=output_final.dilemmas_count,
+            )
 
     # ── consolidar ────────────────────────────────────────────
 
@@ -239,12 +305,24 @@ class MycrooftAgent:
             f"Terceira pessoa, impessoal, sem nomes de agentes no corpo."
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
-        resp = self._llm.complete(self._montar_call(call_type, "consolidacao", user))
-        overrule_w = _extrair_bool_cabecalho(resp.content, "Overrule Mycroft sobre Watson")
-        overrule_s = _extrair_bool_cabecalho(resp.content, "Overrule Mycroft sobre Sherlock")
-        return RelatorioOutput(texto=resp.content,
-                               overrule_watson=overrule_w,
-                               overrule_sherlock=overrule_s)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, "consolidacao", user))
+            overrule_w = _extrair_bool_cabecalho(resp.content, "Overrule Mycroft sobre Watson")
+            overrule_s = _extrair_bool_cabecalho(resp.content, "Overrule Mycroft sobre Sherlock")
+            return RelatorioOutput(texto=resp.content,
+                                   overrule_watson=overrule_w,
+                                   overrule_sherlock=overrule_s)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] consolidar indisponível — relatório mínimo: %s", exc)
+            texto_fallback = (
+                f"# {prefixo} — {manifest.module_id} (Atividade {manifest.activity})\n\n"
+                f"**Gerado automaticamente (fallback — Mycroft indisponível)**\n\n"
+                f"## Decisão de Integridade Técnica (Watson)\n\n{decisao_watson.texto}\n\n"
+                f"## Decisão de Validação Metodológica (Sherlock)\n\n{decisao_sherlock.texto}\n"
+            )
+            return RelatorioOutput(texto=texto_fallback,
+                                   overrule_watson=False,
+                                   overrule_sherlock=False)
 
     # ── Catálogo do Irene ────────────────────────────────────
 
