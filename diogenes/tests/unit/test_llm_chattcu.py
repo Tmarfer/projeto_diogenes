@@ -16,7 +16,6 @@ import pytest
 from diogenes.llm.chattcu import ChatTCUClient
 from diogenes.models import LLMCall, LLMMessage, LLMResponse
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
 class _FakeAuth:
@@ -84,7 +83,7 @@ class TestChatTCUClientSucesso:
     def test_complete_retorna_llm_response(self, tmp_path: Path) -> None:
         client = _client(tmp_path)
         call = _call()
-        with patch("requests.post", return_value=_mock_resp()) as mock_post:
+        with patch("requests.post", return_value=_mock_resp()):
             resp = client.complete(call)
 
         assert isinstance(resp, LLMResponse)
@@ -113,6 +112,15 @@ class TestChatTCUClientSucesso:
         assert body["stream"] is False
         assert body["busca_web"] is False
         assert body["raciocinio"] is True
+
+    def test_body_respeita_raciocinio_false(self, tmp_path: Path) -> None:
+        client = _client(tmp_path)
+        call = _call().model_copy(update={"raciocinio": False})
+        with patch("requests.post", return_value=_mock_resp()) as mock_post:
+            client.complete(call)
+
+        _, kwargs = mock_post.call_args
+        assert kwargs["json"]["raciocinio"] is False
 
     def test_header_authorization_bearer(self, tmp_path: Path) -> None:
         auth = _FakeAuth("meu-token-jwt-123")
@@ -147,6 +155,24 @@ class TestChatTCUClientSucesso:
         assert entry["provider"] == "chattcu"
         assert entry["model"] == "Claude 4.6 Sonnet"
 
+    def test_listar_modelos_parseia_catalogo(self, tmp_path: Path) -> None:
+        client = _client(tmp_path)
+        resp = MagicMock()
+        resp.ok = True
+        resp.json.return_value = {
+            "modelos": [
+                {"name": "Claude 4.6 Sonnet", "display_name": "Claude"},
+                {"id": "gemini-3.1-flash-lite"},
+            ]
+        }
+        with patch("requests.get", return_value=resp) as mock_get:
+            modelos = client.listar_modelos()
+
+        assert modelos[0]["name"] == "Claude 4.6 Sonnet"
+        assert modelos[1]["id"] == "gemini-3.1-flash-lite"
+        _, kwargs = mock_get.call_args
+        assert kwargs["headers"]["Authorization"] == "Bearer test-bearer-token"
+
     def test_extrair_prompts_sem_system(self, tmp_path: Path) -> None:
         """Se não há mensagem system, prompt_sistema vai vazio."""
         call = LLMCall(
@@ -172,9 +198,11 @@ class TestChatTCUClientErros:
         client = _client(tmp_path)
         resp_401 = _mock_resp(status=401)
         resp_401.text = "Unauthorized"
-        with patch("requests.post", return_value=resp_401) as mock_post:
-            with pytest.raises(LLMCallError, match="401"):
-                client.complete(_call())
+        with (
+            patch("requests.post", return_value=resp_401) as mock_post,
+            pytest.raises(LLMCallError, match="401"),
+        ):
+            client.complete(_call())
         assert mock_post.call_count == 1  # sem retry
 
     def test_5xx_faz_retry_ate_max(self, tmp_path: Path) -> None:
@@ -182,10 +210,12 @@ class TestChatTCUClientErros:
         client = _client(tmp_path)
         resp_503 = _mock_resp(status=503)
         resp_503.text = "Service Unavailable"
-        with patch("requests.post", return_value=resp_503) as mock_post:
-            with patch("time.sleep"):  # evitar sleep real
-                with pytest.raises(LLMCallError, match="503"):
-                    client.complete(_call())
+        with (
+            patch("requests.post", return_value=resp_503) as mock_post,
+            patch("time.sleep"),
+            pytest.raises(LLMCallError, match="503"),
+        ):
+            client.complete(_call())
         assert mock_post.call_count == 2  # max_tentativas_retry=2
 
     def test_5xx_depois_sucesso_retorna_ok(self, tmp_path: Path) -> None:
@@ -194,25 +224,27 @@ class TestChatTCUClientErros:
         resp_503 = _mock_resp(status=503)
         resp_503.text = "fail"
         resp_200 = _mock_resp()
-        with patch("requests.post", side_effect=[resp_503, resp_200]):
-            with patch("time.sleep"):
-                resp = client.complete(_call())
+        with patch("requests.post", side_effect=[resp_503, resp_200]), patch("time.sleep"):
+            resp = client.complete(_call())
         assert resp.content == "Resultado consolidado."
         assert resp.retry_attempts == 1
 
     def test_connection_error_faz_retry(self, tmp_path: Path) -> None:
         import requests as req
+
         from diogenes.llm.exceptions import LLMCallError
         client = _client(tmp_path)
-        with patch("requests.post", side_effect=req.ConnectionError("timeout")):
-            with patch("time.sleep"):
-                with pytest.raises(LLMCallError, match="conexão persistente"):
-                    client.complete(_call())
+        with (
+            patch("requests.post", side_effect=req.ConnectionError("timeout")),
+            patch("time.sleep"),
+            pytest.raises(LLMCallError, match="conexão persistente"),
+        ):
+            client.complete(_call())
 
     def test_provider_invalido_levanta_value_error(self, monkeypatch) -> None:
         """Factory get_llm_client deve levantar ConfigError para provider inválido."""
         monkeypatch.setenv("DIOGENES_LLM_PROVIDER", "provedor_nao_existe")
-        from diogenes.config import get_config, ConfigError
+        from diogenes.config import ConfigError, get_config
         from diogenes.llm.base import get_llm_client
         cfg = get_config()
         with pytest.raises(ConfigError, match="não reconhecido"):

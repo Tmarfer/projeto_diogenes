@@ -6,8 +6,7 @@ Referência normativa: SDD Bloco 13 (fixtures compartilhadas)
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -150,6 +149,102 @@ class TestListCycles:
         result = runner.invoke(app, ["list", "--module", "MOD_NAO_EXISTE"])
         assert result.exit_code == 0
         assert "Nenhum ciclo" in result.stdout
+
+
+# ── diogenes bench ───────────────────────────────────────────
+
+class TestBench:
+
+    def test_bench_preview_funciona_sem_rede(self, env_vars):
+        result = runner.invoke(
+            app,
+            ["bench", "preview", "watson", "--call-type", "analise_inicial", "--prompt", "teste"],
+        )
+        assert result.exit_code == 0
+        assert "Prompt Preview" in result.stdout
+        assert "gemini-3.1-flash-lite" in result.stdout
+
+    def test_bench_validate_models_usa_catalogo_chattcu(self, env_vars):
+        catalogo = [
+            {"name": "Claude 4.6 Sonnet", "fornecedora": "Anthropic"},
+            {"display_name": "gemini-3.1-flash-lite", "fornecedora": "Google"},
+            {"id": "gpt-5.4-thinking", "fornecedora": "OpenAI"},
+        ]
+        with patch("diogenes.llm.chattcu.ChatTCUClient.listar_modelos", return_value=catalogo):
+            result = runner.invoke(app, ["bench", "validate-models"])
+
+        assert result.exit_code == 0
+        assert "Todos os modelos validados" in result.stdout
+
+    def test_bench_call_monta_llmcall(self, env_vars):
+        from diogenes.models import LLMResponse
+
+        capturado = {}
+
+        def _fake_complete(self, call):
+            capturado["call"] = call
+            return LLMResponse(
+                content="OK",
+                call_id=call.call_id,
+                model_used=call.model,
+                system_fingerprint="chat-test",
+                prompt_tokens=10,
+                completion_tokens=2,
+                total_tokens=12,
+                cost_usd=0.0,
+                latency_ms=1,
+                retry_attempts=0,
+                http_status=200,
+                finish_reason="stop",
+            )
+
+        with patch("diogenes.llm.chattcu.ChatTCUClient.complete", _fake_complete):
+            result = runner.invoke(
+                app,
+                [
+                    "bench", "call", "watson",
+                    "--call-type", "analise_inicial",
+                    "--prompt", "Responda OK",
+                    "--no-raciocinio",
+                    "--timeout", "7",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert "OK" in result.stdout
+        call = capturado["call"]
+        assert call.agent == "watson"
+        assert call.call_type == "analise_inicial"
+        assert call.raciocinio is False
+        assert call.timeout_segundos == 7
+
+    def test_bench_smoke_chama_um_por_agente(self, env_vars):
+        chamadas = []
+
+        def _fake_complete(self, call):
+            from diogenes.models import LLMResponse
+            chamadas.append(call)
+            return LLMResponse(
+                content="OK",
+                call_id=call.call_id,
+                model_used=call.model,
+                system_fingerprint="chat-test",
+                prompt_tokens=1,
+                completion_tokens=1,
+                total_tokens=2,
+                cost_usd=0.0,
+                latency_ms=1,
+                retry_attempts=0,
+                http_status=200,
+                finish_reason="stop",
+            )
+
+        with patch("diogenes.llm.chattcu.ChatTCUClient.complete", _fake_complete):
+            result = runner.invoke(app, ["bench", "smoke", "--timeout", "3"])
+
+        assert result.exit_code == 0
+        assert {c.agent for c in chamadas} == {"mycroft", "sherlock", "watson"}
+        assert all(c.raciocinio is False for c in chamadas)
 
 
 # ── diogenes abort ───────────────────────────────────────────

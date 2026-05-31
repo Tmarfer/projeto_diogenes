@@ -4,10 +4,9 @@ Typer sub-app para 'diogenes bench'.
 """
 from __future__ import annotations
 
-import json
 import time
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -26,9 +25,9 @@ console = Console()
 @bench_app.command(name="preview")
 def preview(
     agent: str = typer.Argument(..., help="ID do agente (watson, sherlock, mycroft)"),
-    call_type: Optional[str] = typer.Option(None, "--call-type", "-c", help="call_type para extrair seção do heartbeat"),
-    fixture: Optional[str] = typer.Option(None, "--fixture", "-f", help="Caminho para fixture .md"),
-    user_prompt: Optional[str] = typer.Option(None, "--prompt", "-p", help="User prompt inline (alternativa a --fixture)"),
+    call_type: str | None = typer.Option(None, "--call-type", "-c", help="call_type para extrair seção do heartbeat"),
+    fixture: str | None = typer.Option(None, "--fixture", "-f", help="Caminho para fixture .md"),
+    user_prompt: str | None = typer.Option(None, "--prompt", "-p", help="User prompt inline (alternativa a --fixture)"),
 ) -> None:
     """Monta e exibe o prompt sem chamar LLM. Mostra tamanho e redução do heartbeat."""
     from diogenes.bench.core import build_prompt
@@ -57,38 +56,60 @@ def preview(
 @bench_app.command(name="call")
 def call(
     agent: str = typer.Argument(..., help="ID do agente (watson, sherlock, mycroft)"),
-    call_type: Optional[str] = typer.Option(None, "--call-type", "-c", help="call_type do heartbeat"),
-    fixture: Optional[str] = typer.Option(None, "--fixture", "-f", help="Caminho para fixture .md"),
-    user_prompt: Optional[str] = typer.Option(None, "--prompt", "-p", help="User prompt inline"),
-    model_override: Optional[str] = typer.Option(None, "--model", "-m", help="Modelo alternativo"),
+    call_type: str | None = typer.Option(None, "--call-type", "-c", help="call_type do heartbeat"),
+    fixture: str | None = typer.Option(None, "--fixture", "-f", help="Caminho para fixture .md"),
+    user_prompt: str | None = typer.Option(None, "--prompt", "-p", help="User prompt inline"),
+    model_override: str | None = typer.Option(None, "--model", "-m", help="Modelo alternativo"),
     timeout: int = typer.Option(180, "--timeout", "-t", help="Timeout em segundos"),
     no_raciocinio: bool = typer.Option(False, "--no-raciocinio", help="Desabilitar raciocinio (thinking)"),
 ) -> None:
     """Chama ChatTCU com fixture isolada. Imprime resposta e metadados."""
     from diogenes.bench.core import build_prompt
+    from diogenes.config import get_config
     from diogenes.llm.chattcu import ChatTCUClient
+    from diogenes.models import LLMCall, LLMMessage
 
     prompt_text = _resolve_user_prompt(fixture, user_prompt)
     bundle = build_prompt(agent, prompt_text, call_type=call_type, model_override=model_override)
 
     console.print(f"[bold]Chamando ChatTCU...[/bold] modelo={bundle.model}, tokens≈{bundle.estimated_tokens:,}")
 
-    client = ChatTCUClient()
-    t0 = time.time()
-    resp = client.completar(
-        prompt_sistema=bundle.system_prompt,
-        prompt_usuario=bundle.user_prompt,
-        modelo=bundle.model,
-        timeout=timeout,
-        raciocinio=not no_raciocinio,
+    cfg = get_config()
+    bench_id = _bench_id(agent, call_type)
+    runtime_dir = cfg.workspace.path / "_bench" / bench_id
+    client = ChatTCUClient(
+        base_url=cfg.llm.chattcu_base_url,
+        cycle_id=bench_id,
+        runtime_dir=runtime_dir,
     )
+    llm_call = LLMCall(
+        call_id=f"{bench_id}_0001",
+        cycle_id=bench_id,
+        phase="bench",
+        agent=agent,
+        call_type=call_type or "bench",
+        model=bundle.model,
+        temperature=0.0,
+        max_tokens=8000,
+        seed=0,
+        raciocinio=not no_raciocinio,
+        messages=[
+            LLMMessage(role="system", content=bundle.system_prompt),
+            LLMMessage(role="user", content=bundle.user_prompt),
+        ],
+        timeout_segundos=timeout,
+        max_tentativas_retry=1,
+        backoff_segundos=0,
+    )
+    t0 = time.time()
+    resp = client.complete(llm_call)
     duration = time.time() - t0
 
-    response_text = resp.get("response", "")
+    response_text = resp.content
     console.print(Panel(
         f"[green]OK[/green] em {duration:.1f}s | "
         f"Resposta: {len(response_text):,} chars (~{len(response_text)//4:,} tokens)\n"
-        f"chat_id: {resp.get('chat_id', 'N/A')}",
+        f"chat_id: {resp.system_fingerprint or 'N/A'}",
         title="Resultado",
     ))
     console.print(f"\n{response_text[:3000]}")
@@ -106,7 +127,7 @@ def validate_models() -> None:
         results = _validate()
     except Exception as e:
         console.print(f"[red]Erro:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     table = Table(title="Validação de Modelos")
     table.add_column("Agente", style="bold")
@@ -134,10 +155,18 @@ def smoke(
 ) -> None:
     """Smoke test: 1 chamada mínima por agente. Valida conectividade e modelos."""
     from diogenes.bench.core import build_prompt, load_agents_spec
+    from diogenes.config import get_config
     from diogenes.llm.chattcu import ChatTCUClient
+    from diogenes.models import LLMCall, LLMMessage
 
     specs = load_agents_spec()
-    client = ChatTCUClient()
+    cfg = get_config()
+    bench_id = _bench_id("all", "smoke")
+    client = ChatTCUClient(
+        base_url=cfg.llm.chattcu_base_url,
+        cycle_id=bench_id,
+        runtime_dir=cfg.workspace.path / "_bench" / bench_id,
+    )
     minimal_prompt = "Responda apenas: OK"
 
     table = Table(title="Smoke Test")
@@ -150,12 +179,26 @@ def smoke(
         bundle = build_prompt(agent_id, minimal_prompt)
         t0 = time.time()
         try:
-            resp = client.completar(
-                prompt_sistema="Responda de forma ultra-breve.",
-                prompt_usuario=minimal_prompt,
-                modelo=bundle.model,
-                timeout=timeout,
-                raciocinio=False,
+            client.complete(
+                LLMCall(
+                    call_id=f"{bench_id}_{agent_id}_0001",
+                    cycle_id=bench_id,
+                    phase="bench",
+                    agent=agent_id,
+                    call_type="smoke",
+                    model=bundle.model,
+                    temperature=0.0,
+                    max_tokens=32,
+                    seed=0,
+                    raciocinio=False,
+                    messages=[
+                        LLMMessage(role="system", content="Responda de forma ultra-breve."),
+                        LLMMessage(role="user", content=minimal_prompt),
+                    ],
+                    timeout_segundos=timeout,
+                    max_tentativas_retry=1,
+                    backoff_segundos=0,
+                )
             )
             duration = time.time() - t0
             table.add_row(
@@ -172,6 +215,12 @@ def smoke(
             )
 
     console.print(table)
+
+
+def _bench_id(agent: str, call_type: str | None) -> str:
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    safe_call_type = call_type or "adhoc"
+    return f"BENCH_{agent}_{safe_call_type}_{timestamp}"
 
 
 def _resolve_user_prompt(fixture: str | None, user_prompt: str | None) -> str:

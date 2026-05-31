@@ -5,13 +5,14 @@ Compartilhado entre o CLI (diogenes bench) e o MCP (integra-chattcu).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from diogenes.agents.heartbeat import CALL_TYPE_TO_SECTION, HeartbeatLoader
+from diogenes.agents.heartbeat import HeartbeatLoader
 from diogenes.config import get_config
 
 
@@ -89,7 +90,7 @@ def load_agents_spec(project_root: Path | None = None) -> dict[str, AgentSpec]:
             temperatura=float(cfg.get("temperatura", 0.0)),
             max_tokens=cfg.get("max_tokens"),
             timeout_segundos=int(cfg.get("timeout_segundos", 180)),
-            retries=int(cfg.get("retries", 4)),
+            retries=int(cfg.get("max_tentativas_retry", cfg.get("retries", 4))),
         )
     return agents
 
@@ -162,14 +163,31 @@ def validate_models(project_root: Path | None = None) -> list[dict[str, Any]]:
     Returns list of dicts with validation results per agent.
     Does NOT call LLM — only checks model availability.
     """
+    from diogenes.config import get_config
     from diogenes.llm.chattcu import ChatTCUClient
 
     root = project_root or _project_root()
     specs = load_agents_spec(root)
+    cfg = get_config()
 
-    client = ChatTCUClient()
+    runtime_dir = (
+        cfg.workspace.path
+        / "_bench"
+        / "validate-models"
+        / datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    )
+    client = ChatTCUClient(
+        base_url=cfg.llm.chattcu_base_url,
+        cycle_id="BENCH_VALIDATE_MODELS",
+        runtime_dir=runtime_dir,
+    )
     available_models = client.listar_modelos()
-    model_ids = {m.get("id") or m.get("model_id", ""): m for m in available_models}
+    model_ids: dict[str, dict[str, Any]] = {}
+    for model in available_models:
+        for key in ("name", "display_name", "id", "model_id"):
+            value = model.get(key)
+            if value:
+                model_ids[str(value)] = model
 
     results = []
     for agent_id, spec in specs.items():

@@ -49,6 +49,7 @@ class LLMCall(BaseModel):
     temperature: float
     max_tokens: int
     seed: int
+    raciocinio: bool = True
     # Conteúdo
     messages: list[LLMMessage]
     # Política de retry

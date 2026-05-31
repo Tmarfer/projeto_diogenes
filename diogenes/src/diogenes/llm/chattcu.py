@@ -26,8 +26,8 @@ from __future__ import annotations
 
 import logging
 import os
-import time
 from pathlib import Path
+from typing import Any
 
 import msal
 import requests
@@ -69,6 +69,22 @@ def _log_chamada_llm(agente: str, modelo: str, tokens_input: int, tokens_output:
     )
     logger.info(linha)
     print(linha)
+
+
+def _parse_lista(data: Any, chave_preferida: str | None = None) -> list:
+    """Normaliza respostas de catálogo da API ChatTCU."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        if chave_preferida and data.get(chave_preferida):
+            return data[chave_preferida]
+        for key in ("modelos", "data", "bases"):
+            if data.get(key):
+                return data[key]
+        if data:
+            first = next(iter(data.values()))
+            return first if isinstance(first, list) else [first]
+    return []
 
 # ── Constantes da plataforma ChatTCU ────────────────────────────────────────
 
@@ -153,6 +169,13 @@ class _ChatTCUAuth:
         if self._cache.has_state_changed:
             self._cache_path.parent.mkdir(parents=True, exist_ok=True)
             self._cache_path.write_text(self._cache.serialize(), encoding="utf-8")
+            try:
+                self._cache_path.chmod(0o600)
+            except OSError:
+                logger.warning(
+                    "[ChatTCUAuth/Diogenes] Não foi possível ajustar permissão 600 em %s.",
+                    self._cache_path,
+                )
 
 
 # ── Cliente ──────────────────────────────────────────────────────────────────
@@ -187,9 +210,7 @@ class ChatTCUClient:
         self._base_url = base_url.rstrip("/")
         self._cycle_id = cycle_id
         self._runtime_dir = runtime_dir
-        self._auth: _ChatTCUAuth = (
-            auth if auth is not None else _ChatTCUAuth()  # type: ignore[assignment]
-        )
+        self._auth: object | None = auth
 
     def complete(self, call: LLMCall) -> LLMResponse:
         """
@@ -211,7 +232,7 @@ class ChatTCUClient:
             "parametro_modelo_llm": call.model,
             "stream":               False,
             "busca_web":            False,
-            "raciocinio":           True,
+            "raciocinio":           call.raciocinio,
             "max_tokens":           call.max_tokens,
         }
 
@@ -220,14 +241,13 @@ class ChatTCUClient:
         _dev_mode = os.environ.get("DIOGENES_DEV_MODE", "").lower() in ("true", "1")
         max_tentativas = 1 if _dev_mode else max(1, call.max_tentativas_retry)
         _timeout = min(call.timeout_segundos, 30) if _dev_mode else call.timeout_segundos
-        ultimo_status = 0
         retry_count = 0
 
         import time as _time
         t0 = _time.monotonic()
 
         for tentativa in range(1, max_tentativas + 1):
-            token = self._auth.obter_token()
+            token = self._obter_token()
             headers = {
                 "Authorization": f"Bearer {token}",
                 "Content-Type":  "application/json",
@@ -237,7 +257,6 @@ class ChatTCUClient:
                     url, json=body, headers=headers,
                     timeout=_timeout,
                 )
-                ultimo_status = resp.status_code
 
                 if 400 <= resp.status_code < 500:
                     from diogenes.llm.exceptions import LLMCallError
@@ -321,7 +340,29 @@ class ChatTCUClient:
         from diogenes.llm.exceptions import LLMCallError
         raise LLMCallError(f"ChatTCU: falha inesperada (call_id={call.call_id}).")
 
+    def listar_modelos(self, timeout: int = 60) -> list[dict[str, Any]]:
+        """Lista modelos disponíveis no ChatTCU via GET /api/v1/models/."""
+        token = self._obter_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        resp = requests.get(
+            f"{self._base_url}/api/v1/models/",
+            headers=headers,
+            timeout=timeout,
+        )
+        if not resp.ok:
+            resp.raise_for_status()
+        modelos = _parse_lista(resp.json(), "modelos")
+        return [m for m in modelos if isinstance(m, dict)]
+
     # ── Helpers ──────────────────────────────────────────────────────────────
+
+    def _obter_token(self) -> str:
+        if self._auth is None:
+            self._auth = _ChatTCUAuth()
+        return self._auth.obter_token()  # type: ignore[attr-defined]
 
     @staticmethod
     def _extrair_prompts(call: LLMCall) -> tuple[str, str]:
@@ -351,11 +392,11 @@ class ChatTCUClient:
     ) -> None:
         """Grava JSONL de chamada em _runtime/llm_calls.jsonl (mesmo padrão do OpenRouter)."""
         import json
-        from datetime import datetime, timezone
+        from datetime import UTC, datetime
         entry = {
             "call_id": call.call_id,
             "cycle_id": call.cycle_id,
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
             "provider": "chattcu",
             "model": call.model,
             "phase": call.phase,

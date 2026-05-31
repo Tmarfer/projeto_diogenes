@@ -159,6 +159,40 @@ class TestVerificarCatalogoExistente:
         assert existe is True
         assert "irene_catalog.yaml" in caminho
 
+    def test_sample_c4_dev_limita_abas(
+        self, env_vars, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from diogenes.config import get_config
+        from diogenes.irene import _sample_c4_dev
+
+        monkeypatch.setenv("DIOGENES_DEV_MODE", "true")
+        monkeypatch.setenv("IRENE_C4_SAMPLE_N", "2")
+        get_config.cache_clear()
+
+        resultado = _sample_c4_dev(["p1", "p2", "p3"], ["a1", "a2", "a3"])
+
+        assert resultado["sample_mode"] is True
+        assert resultado["sample_n"] == 2
+        assert resultado["abas_total_original"] == 3
+        assert resultado["perfis"] == ["p1", "p2"]
+        assert resultado["amostragens"] == ["a1", "a2"]
+
+    def test_sample_c4_ignorado_fora_dev_mode(
+        self, env_vars, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from diogenes.config import get_config
+        from diogenes.irene import _sample_c4_dev
+
+        monkeypatch.setenv("DIOGENES_DEV_MODE", "false")
+        monkeypatch.setenv("IRENE_C4_SAMPLE_N", "2")
+        get_config.cache_clear()
+
+        resultado = _sample_c4_dev(["p1", "p2", "p3"], ["a1", "a2", "a3"])
+
+        assert resultado["sample_mode"] is False
+        assert resultado["sample_n"] == 0
+        assert resultado["perfis"] == ["p1", "p2", "p3"]
+
     def test_catalogo_ausente_retorna_false(self, tmp_path: Path) -> None:
         """Sem catálogo, retorna (False, '')."""
         from diogenes.irene import verificar_catalogo_existente

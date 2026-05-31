@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import shutil
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from pathlib import Path
 
 import yaml
@@ -80,8 +80,11 @@ def executar_irene(
         logger.info("[Irene] MCP Excel forçadamente desabilitado — usando openpyxl")
 
         from irene import __version__ as versao_irene
+        from irene import amostragem as c3
+        from irene import artefatos as c5
+        from irene import manifesto as c1
+        from irene import profiling as c2
         from irene.config import carregar_config as carregar_config_irene
-        from irene import manifesto as c1, profiling as c2, amostragem as c3, artefatos as c5
 
         # Resetar cache do MCP no módulo amostragem (evita estado stale)
         if hasattr(c3, '_MCP_DISPONIVEL'):
@@ -140,9 +143,18 @@ def executar_irene(
 
         # ── C4 — Semântica via LLM ────────────────────────────────────────────
         logger.info("[Irene] C4 — Semântica via LLM")
-        n_processaveis = sum(1 for p in perfis if p.processavel)
+        sample_info = _sample_c4_dev(perfis, amostragens)
+        perfis_c4 = sample_info["perfis"]
+        amostragens_c4 = sample_info["amostragens"]
+
+        n_processaveis = sum(1 for p in perfis_c4 if p.processavel)
         print(f"[Irene] C4 — Semântica via LLM (ChatTCU) — {n_processaveis} abas a classificar")
         print(f"[Irene] C4 — Modelo: {config.model} | Timeout: 180s/chamada")
+        if sample_info["sample_mode"]:
+            print(
+                "[Irene] C4 — SAMPLE DEV ativo: "
+                f"{len(perfis_c4)}/{sample_info['abas_total_original']} abas"
+            )
 
         # Adicionar handler stdout temporário para ver progresso do C4
         _c4_handler = logging.StreamHandler()
@@ -156,7 +168,7 @@ def executar_irene(
         try:
             from irene import semantica as c4
             classificacoes = c4.executar(
-                perfis, amostragens,
+                perfis_c4, amostragens_c4,
                 modulo, descricao_modulo or f"Módulo {modulo}",
                 config,
             )
@@ -175,8 +187,8 @@ def executar_irene(
         print("[Irene] C5 — Artefatos (consolidação)")
         try:
             rec, gerados = c5.executar(
-                inventario=inventario, perfis=perfis,
-                amostragens=amostragens, classificacoes=classificacoes,
+                inventario=inventario, perfis=perfis_c4,
+                amostragens=amostragens_c4, classificacoes=classificacoes,
                 dir_saida=dir_saida_efetivo, config=config,
             )
         except Exception as exc:
@@ -187,7 +199,7 @@ def executar_irene(
         recomendacao_str = rec.recomendacao.value   # "APROVADO" | "ALERTA" | "BLOQUEADO"
         estado = f"IRENE_{recomendacao_str}"
 
-        abas_total = len(perfis)
+        abas_total = len(perfis_c4)
         abas_classificadas = len([c for c in classificacoes if c is not None]) if classificacoes else 0
         tokens_total = sum(
             getattr(c, "tokens_prompt", 0) + getattr(c, "tokens_resposta", 0)
@@ -201,6 +213,9 @@ def executar_irene(
             "versao_irene": versao_irene,
             "abas_classificadas": abas_classificadas,
             "abas_total": abas_total,
+            "abas_total_original": sample_info["abas_total_original"],
+            "sample_mode": sample_info["sample_mode"],
+            "sample_n": sample_info["sample_n"],
             "tokens_total": tokens_total,
             "dir_saida": str(dir_saida_efetivo),
             "artefatos": {
@@ -268,6 +283,52 @@ def verificar_catalogo_existente(
             logger.warning("[Irene] Falha ao ler catálogo em %s: %s", caminho, exc)
 
     return False, ""
+
+
+def _sample_c4_dev(perfis: list, amostragens: list) -> dict:
+    """
+    Aplica IRENE_C4_SAMPLE_N apenas em DIOGENES_DEV_MODE.
+
+    Retorna dict para facilitar testes sem depender dos tipos internos do Irene.
+    """
+    from diogenes.config import get_config
+
+    cfg = get_config()
+    total_original = len(perfis)
+    sample_n = cfg.irene_c4_sample_n
+    if sample_n <= 0:
+        return {
+            "perfis": perfis,
+            "amostragens": amostragens,
+            "sample_mode": False,
+            "sample_n": 0,
+            "abas_total_original": total_original,
+        }
+    if not cfg.dev_mode:
+        logger.warning(
+            "[Irene] IRENE_C4_SAMPLE_N=%d ignorado porque DIOGENES_DEV_MODE=false.",
+            sample_n,
+        )
+        return {
+            "perfis": perfis,
+            "amostragens": amostragens,
+            "sample_mode": False,
+            "sample_n": 0,
+            "abas_total_original": total_original,
+        }
+    limite = min(sample_n, total_original)
+    logger.info(
+        "[Irene] SAMPLE DEV ativo: limitando C4/C5 a %d de %d abas.",
+        limite,
+        total_original,
+    )
+    return {
+        "perfis": perfis[:limite],
+        "amostragens": amostragens[:limite],
+        "sample_mode": True,
+        "sample_n": limite,
+        "abas_total_original": total_original,
+    }
 
 
 def _versao_valida(versao: str) -> bool:
