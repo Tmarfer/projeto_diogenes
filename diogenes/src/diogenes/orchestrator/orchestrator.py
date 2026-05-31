@@ -152,12 +152,16 @@ class Orchestrator:
 
     def executar(self, manifest: CycleManifest) -> str:
         """Executa o ciclo completo. Retorna caminho do output ou "" se pausado."""
+        if self._cfg.dev_mode:
+            self._events.log("DEV_MODE_ACTIVE", details={
+                "timeout_max": 30, "retries": 1, "cooldown_skip": True,
+            })
         self._events.log("CYCLE_STARTED", details={"cycle_id": manifest.cycle_id})
         try:
             # Fase Irene — catalogação semântica antes de Watson (requer DIOGENES_IRENE_HABILITADO=true)
             if self._cfg.irene_habilitado:
                 irene_executou = self._executar_fase_irene(manifest)
-                if irene_executou and self._cfg.post_irene_cooldown_s > 0:
+                if irene_executou and self._cfg.post_irene_cooldown_s > 0 and not self._cfg.dev_mode:
                     import time as _time
                     cooldown = self._cfg.post_irene_cooldown_s
                     self._events.log("POST_IRENE_COOLDOWN_INICIO",

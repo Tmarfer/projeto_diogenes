@@ -33,6 +33,10 @@ def seal(
         display.erro(str(e))
         raise typer.Exit(1) from e
 
+    if cfg.dev_mode:
+        display.erro("⚠ DIOGENES_DEV_MODE=true — seal bloqueado em modo de desenvolvimento.")
+        raise typer.Exit(1)
+
     audit = AuditIndex(cfg.workspace.path)
     record = audit.get_cycle(cycle)
     if record is None:

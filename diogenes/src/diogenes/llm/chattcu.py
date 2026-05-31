@@ -25,6 +25,7 @@ Execuções subsequentes renovam o token silenciosamente.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -215,7 +216,10 @@ class ChatTCUClient:
         }
 
         url = self._base_url + _ENDPOINT
-        max_tentativas = max(1, call.max_tentativas_retry)
+        # Dev mode: fast iteration with reduced timeout and single attempt
+        _dev_mode = os.environ.get("DIOGENES_DEV_MODE", "").lower() in ("true", "1")
+        max_tentativas = 1 if _dev_mode else max(1, call.max_tentativas_retry)
+        _timeout = min(call.timeout_segundos, 30) if _dev_mode else call.timeout_segundos
         ultimo_status = 0
         retry_count = 0
 
@@ -231,7 +235,7 @@ class ChatTCUClient:
             try:
                 resp = requests.post(
                     url, json=body, headers=headers,
-                    timeout=call.timeout_segundos,
+                    timeout=_timeout,
                 )
                 ultimo_status = resp.status_code
 

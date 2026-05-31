@@ -95,6 +95,7 @@ class DiogenesConfig(BaseModel):
     agentes: AgentesConfig
     irene_habilitado: bool = False  # True ativa fase de catalogação Irene antes de Watson
     post_irene_cooldown_s: int = 0  # Pausa (segundos) após Irene antes de Mycroft/Watson
+    dev_mode: bool = False  # True → timeouts curtos, retries 1, fallbacks instantâneos
 
     @property
     def llm_provider(self) -> str:
@@ -223,4 +224,7 @@ def get_config() -> DiogenesConfig:
         post_irene_cooldown_s=int(
             os.environ.get("DIOGENES_POST_IRENE_COOLDOWN_S", "0") or "0"
         ),
+        dev_mode=os.environ.get(
+            "DIOGENES_DEV_MODE", "false"
+        ).lower() in ("true", "1"),
     )
