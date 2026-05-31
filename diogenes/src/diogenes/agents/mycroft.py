@@ -284,9 +284,9 @@ class MycrooftAgent:
                     "### Encaminhamento\n[Decisão sem revisão LLM — ChatTCU timeout]"
                 ),
                 mycroft_overruled=False,
-                has_critical_alert=output_final.has_critical_alert,
-                critical_alerts_count=output_final.critical_alerts_count,
-                has_dilemma=output_final.has_dilemma,
+                has_critical_alert=False,
+                critical_alerts_count=0,
+                has_dilemma=(output_final.dilemmas_count > 0),
                 dilemmas_count=output_final.dilemmas_count,
             )
 
