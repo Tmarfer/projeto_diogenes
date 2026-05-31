@@ -31,6 +31,7 @@ from diogenes.cli.commands import (
     status,
     verify_output,
 )
+from diogenes.cli.commands.bench.app import bench_app
 
 app = typer.Typer(
     name="diogenes",
@@ -65,3 +66,4 @@ app.command(name="verify-output")(verify_output.verify_output)
 app.command(name="seal")(seal.seal)
 app.command(name="show")(show.show)
 app.command(name="complete-sherlock")(complete_sherlock.complete_sherlock)
+app.add_typer(bench_app, name="bench")
