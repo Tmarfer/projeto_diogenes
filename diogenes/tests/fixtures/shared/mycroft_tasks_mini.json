@@ -1,0 +1,7 @@
+{
+  "module_id": "MOD_FIXTURE",
+  "tasks_text": "**Planilha de Verificação no pacote:** Não\n\n**Task 1: Verificação de metadados e análise por tipo de arquivo**\nEscopo: todos os arquivos listados em inputs_disponíveis, na ordem definida.\nPara cada arquivo: verificar metadados mínimos e executar a análise específica ao tipo.\nCritério de conclusão: todos os arquivos processados ou registrados como não analisáveis.\n\n**Task 2: Rastreabilidade da cadeia de produção**\nEscopo: todos os arquivos analisados na Task 1.\nCritério de conclusão: cadeia mapeada de ponta a ponta.\n\n**Task 3: Consolidação e posição**\nEscopo: todos os watson_analise_*.md produzidos.\nCritério de conclusão: watson_consolidado.md produzido com inventário, cadeia, alertas e posição.",
+  "planilha_verificacao_no_pacote": false,
+  "criado_em": "2026-05-30T23:54:39+00:00",
+  "_origem": "fixture_bancada"
+}
