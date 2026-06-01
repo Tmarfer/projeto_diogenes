@@ -153,8 +153,13 @@ def validate_models() -> None:
 def pipeline(
     module: str = typer.Argument(..., help="Nome do módulo em workspace/input/ (ex: MOD010MCP3)"),
     model_override: str | None = typer.Option(None, "--model", "-m", help="Modelo alternativo para todos os agentes"),
-    timeout: int = typer.Option(120, "--timeout", "-t", help="Timeout por chamada em segundos"),
+    profile: str | None = typer.Option(None, "--profile", help="Perfil de bancada (ex: stable-gpt54)"),
+    timeout: int | None = typer.Option(None, "--timeout", "-t", help="Timeout por chamada em segundos"),
+    retries: int | None = typer.Option(None, "--retries", "-r", help="Retries externos por etapa"),
+    pre_report: bool = typer.Option(False, "--pre-report", help="Imprime pré-relatório após cada etapa"),
+    sherlock_mode: str | None = typer.Option(None, "--sherlock-mode", help="Modo Sherlock da bancada"),
     output_dir: str | None = typer.Option(None, "--output", "-o", help="Diretório de output (default: workspace/_bench/pipeline_<ts>)"),
+    limit: int | None = typer.Option(None, "--limit", "-l", help="Limita o número de arquivos CSV analisados"),
 ) -> None:
     """Pipeline ponta a ponta com prompts reduzidos. Encadeia Irene→Mycroft→Watson→Sherlock."""
     from diogenes.bench.pipeline import BenchPipeline
@@ -167,18 +172,26 @@ def pipeline(
         pipe = BenchPipeline(
             module=module,
             model_override=model_override,
+            profile=profile,
             timeout=timeout,
+            max_retries=retries,
+            pre_report=pre_report,
+            sherlock_mode=sherlock_mode,
             output_dir=out_path,
+            limit=limit,
         )
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]Erro:[/red] {e}")
         raise typer.Exit(1) from e
 
     console.print(Panel(
         f"[bold]Pipeline de Bancada[/bold]\n"
         f"Módulo: {module}\n"
-        f"Modelo override: {model_override or '(agents_spec.yaml)'}\n"
-        f"Timeout: {timeout}s por chamada",
+        f"Perfil: {getattr(pipe, '_profile', profile or 'default')}\n"
+        f"Modelo override: {model_override or getattr(pipe, '_model_override', None) or '(agents_spec.yaml)'}\n"
+        f"Timeout: {getattr(pipe, '_timeout', timeout)}s por chamada\n"
+        f"Retries: {getattr(pipe, '_max_retries', retries)}\n"
+        f"Sherlock: {getattr(pipe, '_sherlock_mode', sherlock_mode or 'protocolar')}",
         title="diogenes bench pipeline",
     ))
 

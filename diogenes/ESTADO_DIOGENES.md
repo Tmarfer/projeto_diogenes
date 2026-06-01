@@ -6,6 +6,15 @@
 
 ---
 
+> **Nota de atualização — 2026-05-31:** este documento é um snapshot histórico.
+> O código atual já contém integração Irene, estados `VERIFICANDO_EXISTENCIA`,
+> `AGUARDANDO_IRENE`, `IRENE_CONCLUIDA`, colunas `irene_*`, cliente ChatTCU,
+> `diogenes bench` e `DIOGENES_DEV_MODE`. Para o estado operacional corrente,
+> confira `README.md`, `AUDITORIA_SPRINT_PILOTO.md`, `agents_spec.yaml` e a
+> suíte de testes.
+
+---
+
 ## 1. Versão e identidade
 
 | Campo | Valor |

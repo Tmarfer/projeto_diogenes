@@ -162,13 +162,14 @@ class TestBench:
         )
         assert result.exit_code == 0
         assert "Prompt Preview" in result.stdout
-        assert "gemini-3.1-flash-lite" in result.stdout
+        assert "gpt-5.5-thinking" in result.stdout
 
     def test_bench_validate_models_usa_catalogo_chattcu(self, env_vars):
         catalogo = [
             {"name": "Claude 4.6 Sonnet", "fornecedora": "Anthropic"},
             {"display_name": "gemini-3.1-flash-lite", "fornecedora": "Google"},
             {"id": "gpt-5.4-thinking", "fornecedora": "OpenAI"},
+            {"model_id": "gpt-5.5-thinking", "fornecedora": "OpenAI"},
         ]
         with patch("diogenes.llm.chattcu.ChatTCUClient.listar_modelos", return_value=catalogo):
             result = runner.invoke(app, ["bench", "validate-models"])

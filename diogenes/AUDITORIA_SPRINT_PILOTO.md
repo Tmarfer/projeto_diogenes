@@ -24,7 +24,7 @@ produção completa, mas nenhum impede a execução do piloto.
 | D3 Derivação de manifesto | APROVADO | Tratamento robusto de XLSX vazio e CATALOGO.json ausente |
 | D4 Contrato Irene→Watson | APROVADO | Seção catalogo_irene posicionada corretamente no user_prompt |
 | D5 Resiliência a falhas | APROVADO | executar_irene() tem try/except global → IRENE_ERRO_FATAL |
-| D6 Cobertura de edge cases | ALERTA | Falta teste IRENE_ALERTA e IRENE_BLOQUEADO no ciclo completo |
+| D6 Cobertura de edge cases | APROVADO | IRENE_ALERTA e IRENE_BLOQUEADO cobertos no ciclo completo |
 | D7 Documentos de agente | APROVADO | Coerentes com o pipeline técnico e com os papéis definidos |
 | D8 Integridade audit_index | APROVADO | 4 colunas irene_* em AUDIT_INDEX_COLUMNS, escrita atômica, score como string formatada |
 | D9 Segurança e governança | APROVADO | OpenRouter bloqueado em produção; Irene envia apenas metadados ao LLM |
@@ -44,10 +44,9 @@ orchestrator.py permite que IRENE_BLOQUEADO avance para EM_EXECUCAO_WATSON
 via IRENE_CONCLUIDA (Watson decide como ponderar). Comportamento correto —
 apenas o comentário está desalinhado.
 
-**N2 (MÉDIO) — Falta teste para IRENE_ALERTA e IRENE_BLOQUEADO no ciclo**
-Os testes de integração cobrem IRENE_APROVADO e IRENE_ERRO_FATAL mas não
-exercitam o path de IRENE_ALERTA (Watson com flag) nem IRENE_BLOQUEADO
-(Watson com flag de bloqueio). Risco: regressão futura não detectada.
+**N2 (RESOLVIDO) — Testes para IRENE_ALERTA e IRENE_BLOQUEADO no ciclo**
+Os testes de integração agora exercitam IRENE_ALERTA e IRENE_BLOQUEADO,
+confirmando que ambos avançam para Watson com o catálogo disponível.
 
 **N3 (BAIXO) — observabilidade _log_chamada_llm usa print()**
 Em produção, print() pode poluir stdout. Recomendação: manter apenas para
@@ -57,8 +56,8 @@ o piloto e avaliar remoção em favor de logging.info puro em produção.
 
 | Caso de borda | Coberto? | Arquivo de teste | Risco se ausente |
 |---|---|---|---|
-| IRENE_ALERTA → Watson com flag | NÃO | — | MÉDIO |
-| IRENE_BLOQUEADO → Watson com flag | NÃO | — | MÉDIO |
+| IRENE_ALERTA → Watson com flag | SIM | test_ciclo_com_irene | — |
+| IRENE_BLOQUEADO → Watson com flag | SIM | test_ciclo_com_irene | — |
 | irene_catalog.yaml corrompido | SIM | test_mycroft_catalogo_irene | — |
 | workspace/XLSX/ vazio | SIM | test_irene_manifesto | — |
 | versao_irene < 1.3.0 → rejeitar | SIM (via verificar_catalogo_existente) | test_ciclo_com_irene | — |

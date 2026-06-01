@@ -44,6 +44,29 @@ diogenes verify-output --cycle <id>
 diogenes seal --cycle <id>
 ```
 
+## Bancada cirúrgica
+
+Use a bancada para testar prompts, modelos e conectividade sem rodar o ciclo
+completo:
+
+```bash
+diogenes bench preview watson --call-type analise_inicial --prompt "teste"
+diogenes bench validate-models
+diogenes bench smoke
+diogenes bench call watson --call-type analise_inicial --prompt "Responda OK"
+```
+
+Para desenvolvimento rápido:
+
+```dotenv
+DIOGENES_DEV_MODE=true
+IRENE_C4_SAMPLE_N=5
+DIOGENES_POST_IRENE_COOLDOWN_S=0
+```
+
+`IRENE_C4_SAMPLE_N` só é aplicado em `DIOGENES_DEV_MODE=true`; em execução oficial
+ele é ignorado.
+
 ## Documentos de referência
 - `docs/agentes/` — definição dos agentes (soul, skills, agent, heartbeat)
 - `PRD_Piloto_Diogenes_v01.md` — requisitos do piloto

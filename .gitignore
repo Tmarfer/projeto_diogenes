@@ -8,8 +8,12 @@
 workspace/cycles/
 workspace/input/
 workspace/MOD_010/
+workspace/MOD010*/
 workspace/IRENE_OUT/
 workspace/audit_index.csv
+workspace/_bench/
+
+
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/

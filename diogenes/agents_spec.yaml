@@ -29,7 +29,7 @@ agentes:
   mycroft:
     # Auditor Chefe — síntese, delegação, decisão, consolidação
     # ChatTCU (piloto de teste):
-    modelo: "Claude 4.6 Sonnet"
+    modelo: "gpt-5.5-thinking"
     # OpenRouter Fase B (fallback):
     # modelo: meta-llama/llama-4-maverick
     # OpenRouter Fase D:
@@ -37,7 +37,7 @@ agentes:
     temperatura: 0.0  # 0.0 = determinístico; elimina alucinações na síntese
     max_tokens: 8000  # ChatTCU: teto conservador para piloto; escalar em Fase D
     max_tokens_ciclo: 131072
-    timeout_segundos: 300
+    timeout_segundos: 600
     max_tentativas_retry: 4   # aumentado de 2→4 para resistir a saturação pós-Irene
     backoff_segundos: 60      # aumentado de 10→60 para dar tempo ao ChatTCU recuperar
 
@@ -45,7 +45,7 @@ agentes:
     # Auditor de Integridade Técnica — análise documental, tradução SQL/Python
     # Exige contexto longo (>128k) para ingerir os ~95k tokens do pacote de arquivos.
     # ChatTCU (piloto de teste):
-    modelo: "gemini-3.1-flash-lite"
+    modelo: "gpt-5.5-thinking"
     # OpenRouter Fase B (fallback):
     # modelo: google/gemini-2.5-flash-lite
     # OpenRouter Fase D:
@@ -61,7 +61,7 @@ agentes:
     # Auditor de Validação Metodológica CBS — análise normativa, classificação
     # Exige raciocínio dedutivo sobre metodologia jurídico-tributária.
     # ChatTCU (piloto de teste):
-    modelo: "gpt-5.4-thinking"
+    modelo: "gpt-5.5-thinking"
     # OpenRouter Fase B (fallback):
     # modelo: deepseek/deepseek-v4-flash
     # OpenRouter Fase D:
