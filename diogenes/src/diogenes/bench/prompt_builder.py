@@ -11,11 +11,31 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from diogenes.agents.file_prep import rotulo_tipo  # re-export — fonte única de tipos
 from diogenes.agents.heartbeat import HeartbeatLoader
 from diogenes.bench.core import _project_root, _read_if_exists, load_agents_spec
 
-# Limite de linhas por CSV antes de truncar (evita tokens excessivos)
-_MAX_CSV_LINES = 2000
+__all__ = ["rotulo_tipo"]  # mantém rotulo_tipo importável a partir deste módulo
+
+# file_prep é a fonte única de truncamento por tipo (Etapa 2). Aqui mantemos apenas
+# uma rede de segurança em chars contra conteúdos extremos, sem re-truncar por linhas.
+_MAX_CHARS_SEGURANCA = 160_000
+
+# Linguagem da cerca de código por tipo (apresentação no prompt).
+_CERCA_POR_TIPO: dict[str, str] = {
+    "csv": "csv",
+    "planilha": "text",
+    "sql": "sql",
+    "notebook": "python",
+    "script": "python",
+    "esquema": "json",
+    "documento": "markdown",
+}
+
+
+def _cerca_por_tipo(tipo: str) -> str:
+    """Linguagem da cerca de código apropriada para o tipo."""
+    return _CERCA_POR_TIPO.get(tipo, "text")
 
 
 def build_reduced_system(
@@ -64,24 +84,31 @@ def build_user_irene_catalog(
 
 def build_user_watson_analise(
     filename: str,
-    csv_content: str,
+    content: str,
+    tipo: str | None = None,
     irene_classification: str | None = None,
 ) -> str:
-    """User prompt para Watson análise individual de CSV."""
-    lines = [f"# Arquivo para análise: {filename}\n"]
+    """User prompt para Watson — análise individual de um arquivo de qualquer tipo.
+
+    `content` já vem convertido para texto por file_prep.preparar_arquivo (xlsx, sql,
+    ipynb, pdf) ou é o texto bruto (csv, md, py). `tipo` é o rótulo derivado da
+    extensão (ver rotulo_tipo); orienta Watson sobre qual análise do heartbeat aplicar.
+    """
+    tipo_efetivo = tipo or rotulo_tipo(filename)
+    cerca = _cerca_por_tipo(tipo_efetivo)
+
+    lines = [
+        f"# Arquivo para análise: {filename}\n",
+        f"**Tipo identificado:** {tipo_efetivo}\n",
+    ]
     if irene_classification:
         lines.append(f"**Classificação Irene:** {irene_classification}\n")
 
-    csv_lines = csv_content.splitlines()
-    if len(csv_lines) > _MAX_CSV_LINES:
-        truncated = "\n".join(csv_lines[:_MAX_CSV_LINES])
-        lines.append(
-            f"## Conteúdo (truncado em {_MAX_CSV_LINES} de {len(csv_lines)} linhas)\n"
-            f"```csv\n{truncated}\n```\n"
-            f"⚠ {len(csv_lines) - _MAX_CSV_LINES} linhas omitidas."
-        )
-    else:
-        lines.append(f"## Conteúdo completo ({len(csv_lines)} linhas)\n```csv\n{csv_content}\n```")
+    # O conteúdo já vem truncado por file_prep (fonte única). Aqui só uma rede de
+    # segurança em chars contra extremos, sem re-truncar por linhas.
+    if len(content) > _MAX_CHARS_SEGURANCA:
+        content = content[:_MAX_CHARS_SEGURANCA] + "\n[TRUNCADO — rede de segurança da bancada]"
+    lines.append(f"## Conteúdo\n```{cerca}\n{content}\n```")
 
     return "\n".join(lines)
 
@@ -100,14 +127,24 @@ def build_user_watson_consolidar(
 def build_user_mycroft_tasks(
     catalog_summary: str,
     module_name: str,
+    module_docs: str | None = None,
 ) -> str:
-    """User prompt para Mycroft definir tasks Watson."""
-    return (
-        f"# Definição de tarefas Watson — {module_name}\n\n"
-        f"Analise o catálogo abaixo e defina as tarefas de integridade "
-        f"para Watson executar em cada arquivo.\n\n"
-        f"{catalog_summary}"
-    )
+    """User prompt para Mycroft definir tasks Watson.
+
+    `catalog_summary` é o inventário multi-tipo dos arquivos da entrega.
+    `module_docs`, quando presente, é o resumo da documentação do módulo (briefing,
+    regra de negócio) — contexto para Mycroft definir o escopo das tasks.
+    """
+    parts = [
+        f"# Definição de tarefas Watson — {module_name}\n",
+        "Analise o inventário abaixo e defina as tarefas de integridade "
+        "para Watson executar em cada arquivo, na ordem da cadeia de produção "
+        "(documentação → SQL → notebooks → planilhas de resultado → outros).\n",
+        f"## Inventário da entrega\n{catalog_summary}",
+    ]
+    if module_docs:
+        parts.append(f"\n## Documentação do módulo (briefing / regra de negócio)\n{module_docs}")
+    return "\n".join(parts)
 
 
 def build_user_mycroft_avaliar(
@@ -125,15 +162,38 @@ def build_user_mycroft_avaliar(
 def build_user_sherlock(
     watson_consolidado: str,
     mycroft_decisao: str,
+    metodologia: str | None = None,
+    corpus_juridico: str | None = None,
 ) -> str:
-    """User prompt para Sherlock validação metodológica."""
-    return (
-        "# Pacote para validação metodológica\n\n"
+    """User prompt para Sherlock validação metodológica.
+
+    `metodologia` é a documentação metodológica / regra de negócio do módulo (cat. C);
+    `corpus_juridico` é o recorte curado do arcabouço jurídico do módulo (cat. D) —
+    a régua contra a qual Sherlock valida. Sem esses insumos Sherlock só consegue
+    registrar limitação metodológica.
+    """
+    parts = [
+        "# Pacote para validação metodológica\n",
+    ]
+    if metodologia:
+        parts.append(
+            "## Metodologia e regra de negócio do módulo\n"
+            f"{metodologia}\n"
+        )
+    if corpus_juridico:
+        parts.append(
+            "## Arcabouço jurídico curado do módulo (dispositivos aplicáveis)\n"
+            f"{corpus_juridico}\n"
+        )
+    parts.append(
         "## Consolidação Watson (integridade)\n"
-        f"{watson_consolidado}\n\n"
+        f"{watson_consolidado}\n"
+    )
+    parts.append(
         "## Decisão Mycroft sobre Watson\n"
         f"{mycroft_decisao}"
     )
+    return "\n".join(parts)
 
 
 def build_user_mycroft_consolidar(

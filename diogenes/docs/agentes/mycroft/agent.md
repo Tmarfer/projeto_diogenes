@@ -18,18 +18,16 @@ processo: TC 015.848/2025-6
 ## Parâmetros de modelo
 
 ```yaml
-model_preferencial: claude-sonnet-4-6
+model_preferencial: gpt-5.5-thinking  # configurado no agents_spec.yaml — alinhado com o TCU em produção
 # Justificativa: Mycroft não processa os documentos do pacote RFB diretamente —
 # ele avalia os outputs estruturados de Watson e Sherlock, integra resultados
-# e produz documentos de orquestração. O Sonnet é suficiente para raciocínio
-# de integração e síntese sobre outputs já estruturados.
+# e produz documentos de orquestração.
 # Pode ser sobrescrito pelo agents_spec.yaml do ciclo.
 
-model_excecao: claude-opus-4-6
-# Usado exclusivamente na chamada `consolidar`, onde Mycroft precisa integrar
-# todo o histórico do ciclo (outputs de Watson + rodadas de revisão + outputs
-# de Sherlock + rodadas de revisão) em uma posição consolidada coerente.
-# O volume e a heterogeneidade dos inputs nessa chamada justificam o Opus.
+model_excecao: gpt-5.5-thinking     # produção usa o mesmo modelo para todas as chamadas de Mycroft
+# Documentação original previa claude-opus-4-6 para `consolidar` e claude-sonnet-4-6
+# para as demais. Em produção (ChatTCU), agents_spec.yaml define gpt-5.5-thinking
+# para todas as fases de Mycroft.
 
 temperatura: 0.2
 # Justificativa: Mycroft exerce julgamento — uma atividade que requer

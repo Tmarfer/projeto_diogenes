@@ -59,7 +59,7 @@ _PRECOS = {
 
 
 def _log_chamada_llm(agente: str, modelo: str, tokens_input: int, tokens_output: int, elapsed_s: float) -> None:
-    """Log de observabilidade pós-chamada ao ChatTCU."""
+    """Log de observabilidade pós-chamada ao ChatTCU com design visual premium (estilo Claude Code)."""
     preco_in, preco_out = _PRECOS.get(modelo, (0.0, 0.0))
     custo = (tokens_input * preco_in + tokens_output * preco_out) / 1_000_000
     linha = (
@@ -68,7 +68,69 @@ def _log_chamada_llm(agente: str, modelo: str, tokens_input: int, tokens_output:
         f"tempo={elapsed_s:.1f}s | custo_ref=USD {custo:.6f}"
     )
     logger.info(linha)
-    print(linha)
+
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.columns import Columns
+
+        console = Console()
+
+        agente_nome = agente.lower()
+        if agente_nome == "mycroft":
+            avatar = (
+                "[yellow]  ▗███▖  [/yellow]\n"
+                "[yellow] ▐  🧠 ▌ [/yellow]\n"
+                "[yellow]  ▝███▘  [/yellow]"
+            )
+            cor = "yellow"
+            desc = "[bold yellow]MYCROFT[/bold yellow] — Auditor Chefe"
+        elif agente_nome == "watson":
+            avatar = (
+                "[magenta]  ▗███▖  [/magenta]\n"
+                "[magenta] ▐ 👨‍⚕️ ▌ [/magenta]\n"
+                "[magenta]  ▝███▘  [/magenta]"
+            )
+            cor = "magenta"
+            desc = "[bold magenta]WATSON[/bold magenta] — Integridade Técnica"
+        elif agente_nome == "sherlock":
+            avatar = (
+                "[green]  ▗███▖  [/green]\n"
+                "[green] ▐ 🕵️ ▌_̅o[/green]\n"
+                "[green]  ▝███▘  [/green]"
+            )
+            cor = "green"
+            desc = "[bold green]SHERLOCK[/bold green] — Validação Metodológica"
+        elif agente_nome == "irene":
+            avatar = (
+                "[cyan]  ▗███▖  [/cyan]\n"
+                "[cyan] ▐ 👩‍💻 ▌ [/cyan]\n"
+                "[cyan]  ▝███▘  [/cyan]"
+            )
+            cor = "cyan"
+            desc = "[bold cyan]IRENE[/bold cyan] — Catalogadora Semântica"
+        else:
+            avatar = (
+                "[blue]  ▗███▖  [/blue]\n"
+                "[blue] ▐  👮 ▌ [/blue]\n"
+                "[blue]  ▝███▘  [/blue]"
+            )
+            cor = "blue"
+            desc = f"[bold blue]{agente.upper()}[/bold blue]"
+
+        info_texto = (
+            f"{desc}\n"
+            f"[dim]Modelo: {modelo}[/dim]\n"
+            f"[bold]Métricas:[/bold] [cyan]{tokens_input:,}[/cyan] in ➔ [cyan]{tokens_output:,}[/cyan] out | [green]{elapsed_s:.1f}s[/green]\n"
+            f"[bold]Custo de Referência:[/bold] [yellow]USD {custo:.6f}[/yellow]"
+        )
+
+        panel_avatar = Panel(avatar, border_style=cor, padding=(0, 1))
+        panel_info = Panel(info_texto, border_style="dim", expand=True)
+
+        console.print(Columns([panel_avatar, panel_info], expand=True))
+    except Exception:  # noqa: BLE001
+        print(linha)
 
 
 def _parse_lista(data: Any, chave_preferida: str | None = None) -> list:

@@ -32,7 +32,7 @@ class TestDerivarManifestoIrene:
         assert dados["modulo"] == "MOD_010"
         assert len(dados["arquivos_xlsx"]) == 2
         assert dados["arquivos_csv"] == []
-        assert "catalogo_json" not in dados
+        assert "catalogo_json" in dados
 
     def test_manifesto_inclui_csvs(self, tmp_path: Path) -> None:
         """CSVs presentes em CSV/ são listados em arquivos_csv para C2/C3."""

@@ -125,6 +125,10 @@ VALIDACAO_SHERLOCK = """## Resumo Executivo\nMódulo verificado.\n
 ### 10.10 Decisões da Stranger Room\nNenhum dilema.\n
 ### 10.11 Histórico de Revalidações\nPrimeiro ciclo.\n"""
 
+# consolidar_sherlock — relatório estruturado de 11 seções (verificado pela completude).
+# Reusa o conteúdo de VALIDACAO_SHERLOCK (que já traz as 11 seções 10.x).
+CONSOLIDADO_SHERLOCK = VALIDACAO_SHERLOCK
+
 DECISAO_SHERLOCK_COMPLETO = """## Decisão Final\n### Síntese\nValidação completa.\n
 ### Posição Adotada\nAcatada.\n### Overrule\nNÃO\n
 ### Dilemas\nCONTAGEM: 0\n### Encaminhamento\nNenhum.\n"""
@@ -169,7 +173,7 @@ def test_fase_watson_completa_sem_revisao(httpx_mock: HTTPXMock, ciclo_preparado
         CONSOLIDADO_WATSON,                                         # consolidar_watson (6)
         AVALIACAO_APROVADO, DECISAO_FINAL,                         # avaliar + fixar Watson (7-8)
         PACOTE_SH,                                                  # montar_pacote_sherlock (9)
-        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (10-13)
+        VALIDACAO_SHERLOCK, CONSOLIDADO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (10-14)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",
@@ -228,7 +232,7 @@ QUESTIONAR. Há pontos a esclarecer.
         ANALISE_WATSON,                                             # resposta_r1 Watson (8)
         AVALIACAO_APROVADO, DECISAO_FINAL,                         # avaliar r1 + fixar (9-10)
         PACOTE_SH2,                                                 # montar_pacote_sherlock (11)
-        VALIDACAO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (12-15)
+        VALIDACAO_SHERLOCK, CONSOLIDADO_SHERLOCK, AVALIACAO_APROVADO, DECISAO_SHERLOCK_COMPLETO, RELATORIO_COMPLETO,  # Sherlock (12-16)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",

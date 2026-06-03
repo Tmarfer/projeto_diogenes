@@ -9,6 +9,8 @@ workspace/cycles/
 workspace/input/
 workspace/MOD_010/
 workspace/MOD010*/
+workspace/MOD_010_PILOTO/
+workspace/_teste_inputs/
 workspace/IRENE_OUT/
 workspace/audit_index.csv
 workspace/_bench/

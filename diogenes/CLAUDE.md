@@ -5,19 +5,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## O que é este projeto
 
 Sistema agêntico de validação da alíquota de referência da CBS para o TCU
-(TC 015.848/2025-6). Três agentes LLM (Mycroft, Watson, Sherlock) operam
-sequencialmente sob supervisão de um auditor humano (Lestrade).
+(TC 015.848/2025-6). Três agentes LLM auditores (Mycroft, Watson, Sherlock)
+operam sequencialmente sob supervisão de um auditor humano (Lestrade), precedidos
+por uma fase de catalogação semântica (Irene) que prepara o pacote para Watson.
 
 **Documentos de referência:**
 - `docs/antecedentes/PRD_Piloto_Diogenes_v01.md` — requisitos do piloto
 - `docs/sdd/SDD_Piloto_Diogenes_v01.md` — arquitetura de software (fonte da verdade)
 - `docs/agentes/` — definição dos agentes (soul, skills, agent, heartbeat)
+- `INTEGRACAO_DIOGENES.md` — integração do pipeline Irene (catalogação) no Orquestrador
 
 ---
 
 ## Arquitetura dos agentes
 
-Cada agente tem quatro arquivos em `docs/agentes/{agente}/`:
+Os três agentes auditores (Mycroft, Watson, Sherlock) e a catalogadora Irene têm
+arquivos em `docs/agentes/{agente}/`:
 
 | Arquivo | Uso |
 |---------|-----|
@@ -54,15 +57,15 @@ listada no manifesto):
 
 ```
 projeto_diogenes/          ← raiz do repositório
-  diogenes/                ← pacote Python (trabalhe aqui)
+  diogenes/                ← pacote Python (trabalhe aqui — é o CWD de todos os comandos)
     src/diogenes/          ← código fonte
-    tests/                 ← testes
+    tests/                 ← testes (unit/ + integration/ + fixtures/)
+    docs/                  ← PRD, SDD, definição dos agentes
     agents_spec.yaml       ← modelos LLM por agente e fase
-    runtime.yaml           ← parâmetros operacionais
-    .env                   ← chaves e workspace (não versionado)
-  piloto/
-    setup_local.sh         ← script de setup rápido
-  detalhamento/            ← documentos auxiliares (Word, imagens)
+    runtime.yaml           ← parâmetros operacionais (ciclo, motor_saida, persistência)
+    .env                   ← provider, workspace, flags Irene (não versionado)
+    AUDITORIA_*.md / ESTADO_DIOGENES.md  ← relatórios de execução do piloto
+  workspace/               ← workspace de runtime (cycles/, input/, _bench/) — gitignored
 ```
 
 ---
@@ -95,22 +98,35 @@ ruff format src/ tests/
 
 # Type check
 mypy src/
+
+# Bancada cirúrgica — testar prompts/modelos/conectividade sem rodar o ciclo completo
+diogenes bench smoke                                          # checa conectividade
+diogenes bench validate-models                                # valida modelos do agents_spec.yaml
+diogenes bench preview watson --call-type analise_inicial --prompt "teste"  # monta prompt sem chamar LLM
+diogenes bench call watson --call-type analise_inicial --prompt "Responda OK" # chamada real isolada
 ```
+
+Subcomandos do ciclo: `init`, `start`, `confirm-manifest`, `status`, `list`,
+`show`, `proceed`, `pause`, `resume`, `abort`, `verify-output`, `seal`,
+`complete-sherlock`. Cada um vive em `cli/commands/{nome}.py`.
 
 ---
 
 ## Stack e estrutura
 
 ```
-Python 3.11+ | openai SDK | Typer CLI | Pydantic v2 | pytest
+Python 3.11+ | openai SDK | msal+requests (ChatTCU) | Typer CLI | Pydantic v2 | pytest
+file_prep: openpyxl (xlsx) · sqlparse (sql) · nbformat (ipynb) · pdfminer.six (pdf)
 ```
 
 ```
 src/diogenes/
   agents/      — Watson, MycrooftAgent, Sherlock + heartbeat + file_prep
-  cli/         — app.py + commands/ (um arquivo por subcomando)
+  bench/       — bancada cirúrgica: core.py + pipeline.py + prompt_builder.py
+  cli/         — app.py + commands/ (um arquivo por subcomando) + commands/bench/
   config.py    — get_config() com @lru_cache — ÚNICO ponto de leitura de config
-  llm/         — base.py (Protocol) + openrouter.py + azure_foundry.py + seed.py + call_id.py
+  irene.py     — wrapper do pipeline Irene (C1-C5); catalogação semântica pré-Watson
+  llm/         — base.py (Protocol/factory) + chattcu.py + openrouter.py + azure_foundry.py + seed.py + call_id.py
   models.py    — TODOS os dataclasses de domínio (LLMCall, CycleRecord, etc.)
   motors/      — motor_start.py + motor_saida.py
   orchestrator/— orchestrator.py + states.py + stranger_room.py + events.py
@@ -127,13 +143,24 @@ src/diogenes/
 | `orchestrator/stranger_room.py` | Persiste arquivos imutáveis Markdown+frontmatter YAML da revisão Mycroft ↔ Watson/Sherlock |
 | `orchestrator/events.py` | `EventLogger` — grava JSONL de auditoria em `_runtime/events.jsonl` |
 | `persistence/audit_index.py` | Lê/grava `audit_index.csv` com escrita atômica (temp + rename) |
-| `llm/base.py` | `LLMClient` Protocol + factory `get_llm_client()` |
+| `llm/base.py` | `LLMClient` Protocol + factory `get_llm_client()` + guardião de governança de provider |
+| `irene.py` | `executar_irene()` chama os estágios C1-C5 do pipeline Irene como biblioteca e devolve `(estado, metricas)` ao Orquestrador |
 
-### LLM Providers
+### LLM Providers — governança crítica
 
-`get_llm_client()` instancia o cliente pelo valor de `DIOGENES_ENV`:
-- `local` / `vps` → `OpenRouterClient` (padrão)
+**ChatTCU é o ÚNICO provider permitido em produção.** Dados fiscais do
+TC 015.848/2025-6 não podem trafegar por serviços externos. `get_llm_client()`
+(em `llm/base.py`) é o guardião: levanta `ConfigError` para `openrouter` fora de
+contexto pytest, e para qualquer provider != `chattcu`.
+
+`get_llm_client()` tem **duas assinaturas**:
+- `get_llm_client(cfg: DiogenesConfig)` → caminho de validação de governança (só valida, não instancia)
+- `get_llm_client(cycle_id: str, runtime_dir: Path)` → caminho de produção (instancia o cliente real)
+
+Provider selecionado por `DIOGENES_LLM_PROVIDER` no `.env` (default `chattcu`):
+- `chattcu` → `ChatTCUClient` (infra interna TCU; autenticação **MSAL**, sem API key — o browser abre na 1ª execução)
 - `azure` → `AzureFoundryClient`
+- `openrouter` → `OpenRouterClient` (**bloqueado em produção**; permitido apenas sob `PYTEST_CURRENT_TEST` para mocks com `pytest-httpx`)
 
 Em redes com proxy de inspeção SSL (TCU), definir `DIOGENES_SSL_VERIFY=false`.
 
@@ -173,19 +200,29 @@ Em redes com proxy de inspeção SSL (TCU), definir `DIOGENES_SSL_VERIFY=false`.
 
 ```bash
 # .env obrigatório (copiar de .env.example)
-DIOGENES_LLM_BASE_URL=https://openrouter.ai/api/v1
-DIOGENES_LLM_API_KEY=<chave OpenRouter>
+DIOGENES_LLM_PROVIDER=chattcu                              # ÚNICO valor permitido em produção
+DIOGENES_CHATTCU_BASE_URL=https://chat-tcu.apps.tcu.gov.br # produção pública; URL desenvol dentro da VPN
 DIOGENES_WORKSPACE=/caminho/absoluto/workspace
-DIOGENES_ENV=local          # local | vps | azure
+# ChatTCU autentica via MSAL — sem API key. O browser abre na 1ª execução.
+
+# Irene (fase de catalogação pré-Watson)
+DIOGENES_IRENE_HABILITADO=true
+IRENE_PROVIDER=chattcu
+IRENE_MODEL=gpt-5.5-thinking
 
 # Opcionais
-DIOGENES_SSL_VERIFY=false   # em redes TCU com proxy de inspeção SSL
-DIOGENES_OPENROUTER_SITE_URL=https://github.com/tcu/diogenes
-DIOGENES_OPENROUTER_APP_NAME=DVA-CBS Projeto Diogenes
+DIOGENES_SSL_VERIFY=false        # em redes TCU com proxy de inspeção SSL
+DIOGENES_DEV_MODE=false          # true → retries/timeouts curtos, bloqueia seal, habilita IRENE_C4_SAMPLE_N
+IRENE_C4_SAMPLE_N=0              # limita catalogação C4/C5 a N abas (só honrado em DEV_MODE)
+DIOGENES_POST_IRENE_COOLDOWN_S=0 # pausa após Irene antes de Mycroft/Watson (ignorada em DEV_MODE)
 
 # Inicializar workspace (rodar de dentro de diogenes/)
 diogenes init
 ```
+
+> **Nota:** o modelo legado usava `DIOGENES_ENV` + `DIOGENES_LLM_API_KEY`/`DIOGENES_LLM_BASE_URL`
+> para selecionar OpenRouter/Azure. Esses campos ainda existem em `LLMConfig` por
+> compatibilidade com testes, mas **o provider real é `DIOGENES_LLM_PROVIDER`**.
 
 **Worktree local:** o projeto roda em worktree (`C:\Projetos\Projeto_Diogenes\...`).
 A worktree não herda `.env` nem `workspace/` (gitignored). Copiar o `.env` do repo
@@ -196,24 +233,30 @@ worktree. Rodar `pip install -e .` de dentro da worktree.
 
 ## Fases do piloto e modelos ativos
 
-| Fase | Módulo | Modelos (agents_spec.yaml) | Teto de custo |
-|------|--------|---------------------------|---------------|
-| A (piloto sintético) | MOD_SINT_001 | Mycroft: `meta-llama/llama-4-maverick` / Watson: `google/gemini-2.5-flash-lite` / Sherlock: `deepseek/deepseek-v4-flash` | USD 5/ciclo |
-| D (produção) | MOD_010 | Claude Opus/Sonnet via OpenRouter ou Azure Foundry | ~USD 10/ciclo |
+A configuração corrente roda **todos os modelos via ChatTCU** (provider institucional,
+custo zero por chamada — `teto_custo_ciclo_usd: 0.00`). Os nomes de modelo em
+`agents_spec.yaml` devem ser escritos **exatamente como listados na plataforma ChatTCU**
+(ex: `gpt-5.5-thinking`, `Claude 4.6 Sonnet`), sem prefixo de organização.
 
-**Modelos free foram abolidos** — causavam rate limit recorrente no OpenRouter.
-Não reintroduzir fallback para modelos free.
+**`agents_spec.yaml` é a fonte da verdade dos modelos ativos** — sempre consulte-o
+antes de assumir; a frente de avaliação alterna entre famílias (`gpt-5.4-thinking`,
+`gpt-5.5-thinking`, Claude) e os relatórios `AUDITORIA_COMPARATIVA_*.md` documentam
+essas comparações.
 
-`max_tokens` ajustados com base em outputs observados: Mycroft/Watson `16384`,
-Sherlock `24576`.
+`max_tokens` é conservador no piloto ChatTCU (`8000`/agente, `max_tokens_ciclo:
+131072`); escalar na Fase D de produção.
 
-Para trocar de fase: editar `agents_spec.yaml` — atualizar `fase_ativa` e os
-campos `modelo` por agente.
+Para trocar de modelo/fase: editar `agents_spec.yaml` — comentar/descomentar as
+linhas `modelo` por agente e atualizar `fase_ativa` e `teto_custo_ciclo_usd`.
 
-> **Nota de nomenclatura:** `agents_spec.yaml` rotula a configuração atual como
-> `fase_ativa: B`, mas operacionalmente ela corresponde à Fase A do piloto
-> (MOD_SINT_001 com modelos pagos baratos). Alinhar essa nomenclatura quando
-> conveniente — não é bloqueante.
+> **Nota de nomenclatura:** `agents_spec.yaml` rotula a config atual como
+> `fase_ativa: B`. O campo `fase_ativa` é livre (string, default `"A"`) e serve
+> apenas para rastreabilidade — não altera comportamento. Alinhar quando
+> conveniente; não é bloqueante.
+>
+> **OpenRouter / modelos free foram abandonados** — modelos free causavam rate
+> limit recorrente e OpenRouter é bloqueado por governança (dados fiscais). Não
+> reintroduzir.
 
 ---
 
@@ -226,6 +269,13 @@ diogenes start --module MOD_010 --activity 1
 
 diogenes confirm-manifest --cycle {id}
   → Orchestrator.executar():
+
+      [FASE IRENE]  (CONDICIONAL: só se DIOGENES_IRENE_HABILITADO=true)
+      executar_irene()  → estados AGUARDANDO_IRENE → IRENE_CONCLUIDA
+        ↳ catalogação semântica C1-C5 dos XLSX/CSV; reusa catálogo existente se
+          versão ≥ VERSAO_IRENE_MINIMA, senão roda o pipeline
+        ↳ IRENE_ERRO_FATAL → ABORTADO_FALHA_AGENTE (IRENE_BLOQUEADO não é fatal —
+          Watson recebe o catálogo com ressalvas)
 
       [FASE WATSON]
       Mycroft.definir_tasks_watson()             [heartbeat: definir_tasks_watson]
@@ -362,28 +412,28 @@ real, usado na Fase D.
 - Exceções em `except` clauses usam `raise ... from e` (B904)
 - Nenhuma semicolon em statements múltiplos (E702)
 
-**Estado atual:** 88 testes passando, ruff limpo nos arquivos tocados.
+**Estado atual:** 187 testes passando, ruff limpo nos arquivos tocados.
 
 ---
 
-## Próximos itens pendentes
+## Estado atual e itens pendentes
 
-- [ ] Mitigar degeneração de arquivos `.ipynb`: limpar JSON do notebook antes da
-  análise no `file_prep` (extrair só células de código/markdown relevantes,
-  descartar metadados e outputs ruidosos) — Watson com gemini-2.5-flash-lite
-  entra em loop de whitespace com notebooks pesados
-- [ ] Após mitigação: seal de um ciclo sintético íntegro e execução com MOD_010
-  (base real da RFB)
-- [ ] Implementar call_types novos: `validacao_planilha_rn` (Watson),
-  `validacao_planilha_rn_sherlock` (Sherlock), `mapear_pontos` (Mycroft)
-- [ ] Implementar detecção de Planilha de Verificação no manifesto e acionamento
-  condicional dos call_types correspondentes no Orquestrador
-- [ ] Implementar extração dos novos campos de cabeçalho nos parsers (ver seção
-  "Campos de cabeçalho monitorados")
-- [ ] Implementar verificação de completude das 11 seções do Relatório Estruturado
-  antes de `Mycroft.consolidar()`
-- [ ] Alinhar nomenclatura de fases em `agents_spec.yaml` (`fase_ativa: B` na
-  config atual que operacionalmente é Fase A com modelos pagos)
-- [ ] Resolver ~40 erros de mypy pré-existentes (dívida técnica, não bloqueante)
+A frente de trabalho corrente compara famílias de modelos no ChatTCU (`gpt-5.4`
+vs `gpt-5.5`, Claude) sobre MOD_010. Os relatórios `AUDITORIA_COMPARATIVA_*.md` e
+`AUDITORIA_BENCH_*.md` na raiz de `diogenes/` documentam essas execuções —
+consulte-os e o `ESTADO_DIOGENES.md`/`STATUS.md` para o estado vivo do piloto.
+
+Calibrações de prompt realizadas na auditoria sistemática (2026-06-03):
+- **Watson `soul.md`** — adicionada seção "Prevenção de Interceptação de Segurança (ChatTCU)": mascaramento de PII, não-transcrição de dados brutos, síntese de conteúdo para evitar recusas do filtro de segurança.
+- **Watson `skills.md`** — adicionada regra de formato numérico estrito para contadores de cabeçalho (`**Alertas CRITICA:** N` deve ser inteiro, não prosa) + regra de mascaramento/mitigação de segurança.
+- **Watson `heartbeat.md`** — adicionadas restrições ativas à seção `consolidar_watson`: contadores inteiros obrigatórios e proibição de PII literal.
+- **Sherlock `heartbeat.py`** — mapeamento `"validacao_inicial"` → `"validacao_inicial"` (era `"verificar_ponto"`). Corrige causa raiz do NV-GLOBAL-01: Sherlock recebia instrução `UM_PONTO_POR_CHAMADA` mas era chamado monoliticamente.
+- **Sherlock `heartbeat.md`** — adicionada seção `# Heartbeat de Sherlock — validacao_inicial` com protocolo monolítico multi-ponto.
+- **Sherlock `soul.md`** — adicionadas exceção de trace em 1ª pessoa (Art. 14) e seção "Prevenção de Interceptação de Segurança (ChatTCU)".
+- **Mycroft `soul.md`** — adicionada seção "Prevenção de Interceptação de Segurança (ChatTCU)": mascaramento de PII nos outputs de avaliação/decisão/consolidação.
+
+Dívida técnica conhecida (não bloqueante):
+- ~40 erros de mypy pré-existentes (`dict` sem type args, etc.)
+- `fase_ativa: B` em `agents_spec.yaml` é apenas rótulo de rastreabilidade
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*

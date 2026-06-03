@@ -112,7 +112,17 @@ def call(
         f"chat_id: {resp.system_fingerprint or 'N/A'}",
         title="Resultado",
     ))
-    console.print(f"\n{response_text[:3000]}")
+    
+    # Salvar a resposta completa para fins de auditoria
+    try:
+        runtime_dir.mkdir(parents=True, exist_ok=True)
+        response_file = runtime_dir / "response.md"
+        response_file.write_text(response_text, encoding="utf-8")
+        console.print(f"[dim]Resposta completa salva em: {response_file.as_uri()}[/dim]\n")
+    except Exception as e:
+        logger.warning("Falha ao salvar response.md: %s", e)
+
+    console.print(f"{response_text[:3000]}")
     if len(response_text) > 3000:
         console.print(f"\n[dim]... ({len(response_text) - 3000} chars truncados)[/dim]")
 
@@ -159,7 +169,9 @@ def pipeline(
     pre_report: bool = typer.Option(False, "--pre-report", help="Imprime pré-relatório após cada etapa"),
     sherlock_mode: str | None = typer.Option(None, "--sherlock-mode", help="Modo Sherlock da bancada"),
     output_dir: str | None = typer.Option(None, "--output", "-o", help="Diretório de output (default: workspace/_bench/pipeline_<ts>)"),
-    limit: int | None = typer.Option(None, "--limit", "-l", help="Limita o número de arquivos CSV analisados"),
+    limit: int | None = typer.Option(None, "--limit", "-l", help="Limita o número de arquivos analisados (amostra ≥1 por tipo)"),
+    delivery: str | None = typer.Option(None, "--delivery", help="Pasta da entrega a varrer (default: workspace/input/<module>). Aceita um pacote preparado, ex: workspace/_teste_inputs/<modulo>/<data>"),
+    legal_corpus: str | None = typer.Option(None, "--legal-corpus", help="Raiz do arcabouço jurídico curado (cat. D); o recorte do módulo é derivado por contexto_metodologico"),
 ) -> None:
     """Pipeline ponta a ponta com prompts reduzidos. Encadeia Irene→Mycroft→Watson→Sherlock."""
     from diogenes.bench.pipeline import BenchPipeline
@@ -168,6 +180,8 @@ def pipeline(
         console.print(msg)
 
     out_path = Path(output_dir).expanduser().resolve() if output_dir else None
+    delivery_path = Path(delivery).expanduser().resolve() if delivery else None
+    legal_corpus_path = Path(legal_corpus).expanduser().resolve() if legal_corpus else None
     try:
         pipe = BenchPipeline(
             module=module,
@@ -179,6 +193,8 @@ def pipeline(
             sherlock_mode=sherlock_mode,
             output_dir=out_path,
             limit=limit,
+            delivery_dir=delivery_path,
+            legal_corpus_dir=legal_corpus_path,
         )
     except (FileNotFoundError, ValueError) as e:
         console.print(f"[red]Erro:[/red] {e}")
@@ -292,7 +308,12 @@ def _resolve_user_prompt(fixture: str | None, user_prompt: str | None) -> str:
         if not path.is_file():
             console.print(f"[red]Fixture não encontrada:[/red] {path}")
             raise typer.Exit(1)
-        return path.read_text(encoding="utf-8")
+        from diogenes.agents.file_prep import preparar_arquivo
+        try:
+            return preparar_arquivo(path)
+        except Exception as e:
+            console.print(f"[red]Erro ao processar fixture com preparar_arquivo:[/red] {e}")
+            raise typer.Exit(1)
     if user_prompt:
         return user_prompt
     console.print("[red]Informe --fixture ou --prompt[/red]")

@@ -18,6 +18,7 @@ from rich.panel import Panel
 from diogenes.cli import display
 from diogenes.cli.commands import (
     abort,
+    autorun,
     complete_sherlock,
     confirm_manifest,
     init,
@@ -55,6 +56,7 @@ def _root(ctx: typer.Context) -> None:
 # Registro dos subcomandos — um arquivo por comando conforme SDD Bloco 2.3.8
 app.command(name="init")(init.init)
 app.command(name="start")(start.start)
+app.command(name="autorun")(autorun.autorun)
 app.command(name="confirm-manifest")(confirm_manifest.confirm_manifest)
 app.command(name="status")(status.status)
 app.command(name="list")(list_cycles.list_cycles)

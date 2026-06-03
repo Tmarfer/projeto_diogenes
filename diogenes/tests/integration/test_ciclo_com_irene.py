@@ -223,7 +223,7 @@ def _all_llm_mocks(httpx_mock: HTTPXMock, n_arquivos: int = 4) -> None:
         [_TASKS]
         + [_ANALISE] * n_arquivos
         + [_CONSOLIDADO, _AVALIACAO, _DECISAO]
-        + [_PACOTE, _SHERLOCK, _AVALIACAO, _DECISAO_SH]
+        + [_PACOTE, _SHERLOCK, _SHERLOCK, _AVALIACAO, _DECISAO_SH]  # validar + consolidar_sherlock
         + [_CONSOLIDA]
     )
     for content in respostas:

@@ -12,12 +12,13 @@ from __future__ import annotations
 from pathlib import Path
 
 # Mapeamento call_type (código) → nome da seção no heartbeat.md
-# Necessário porque os nomes divergem em dois casos:
-#   analise_inicial  → analise_arquivo  (heartbeat usa terminologia per-file)
-#   validacao_inicial → verificar_ponto  (heartbeat usa terminologia per-point)
+# Necessário porque um nome diverge:
+#   analise_inicial → analise_arquivo  (heartbeat usa terminologia per-file)
 # Para Mycroft: avaliar_sherlock e fixar_decisao_sherlock reutilizam as
 # mesmas seções de avaliar_agente e fixar_decisao (o contexto da chamada
 # diferencia qual agente está sendo avaliado).
+# Sherlock: validacao_inicial tem seção própria no heartbeat.md (modo monolítico
+# de produção). verificar_ponto é reservada para chamadas isoladas per-ponto.
 CALL_TYPE_TO_SECTION: dict[str, str] = {
     # Watson
     "analise_inicial":               "analise_arquivo",
@@ -34,7 +35,7 @@ CALL_TYPE_TO_SECTION: dict[str, str] = {
     "montar_pacote_sherlock":        "montar_pacote_sherlock",
     "consolidar":                    "consolidar",
     # Sherlock
-    "validacao_inicial":             "verificar_ponto",
+    "validacao_inicial":             "validacao_inicial",
     "validacao_planilha_rn_sherlock": "validacao_planilha_rn_sherlock",
     "consolidar_sherlock":           "consolidar_sherlock",
     # resposta_r1 e resposta_r2 já coincidem com o nome da seção

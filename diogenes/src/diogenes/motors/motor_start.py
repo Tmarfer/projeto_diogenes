@@ -18,6 +18,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from diogenes.agents.file_prep import classificar
 from diogenes.config import DiogenesConfig
 from diogenes.models import CycleManifest, CycleRecord, InputFileInfo
 from diogenes.motors.exceptions import (
@@ -28,6 +29,11 @@ from diogenes.motors.exceptions import (
 )
 from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
+from diogenes.persistence.delivery import (
+    ler_manifesto_entrega,
+    reconciliar,
+    render_reconciliacao_md,
+)
 from diogenes.persistence.manifest import write_manifesto
 from diogenes.persistence.workspace import WorkspaceManager
 
@@ -76,12 +82,16 @@ def _collect_inputs(input_dir: Path) -> list[InputFileInfo]:
     for p in sorted(input_dir.rglob("*")):
         if not p.is_file():
             continue
+        rel = p.relative_to(input_dir)
+        analisavel, tipo = classificar(rel)
         files.append(InputFileInfo(
             name=p.name,
             extension=p.suffix.lower(),
             size_bytes=p.stat().st_size,
             sha256=_sha256_file(p),
-            rel_path=p.relative_to(input_dir),
+            rel_path=rel,
+            categoria="analisavel" if analisavel else "metadados",
+            tipo=tipo,
         ))
     return files
 
@@ -98,15 +108,30 @@ class MotorStart:
         self._audit = AuditIndex(self._ws)
         self._wm = WorkspaceManager(self._ws)
 
-    def run(self, module_id: str, activity: int) -> CycleManifest:
+    def run(
+        self,
+        module_id: str,
+        activity: int,
+        delivery_dir: Path | None = None,
+    ) -> CycleManifest:
         if activity not in (1, 2):
             raise ValueError(f"Atividade inválida: {activity}. Use 1 ou 2.")
 
-        input_dir = self._ws / "input" / module_id
+        # Origem da entrega: --delivery (pacote preparado externo) ou o default
+        # workspace/input/{module}. A intake/curadoria é externa ao Diógenes.
+        input_dir = delivery_dir.resolve() if delivery_dir else (self._ws / "input" / module_id)
         self._verificar_inputs(input_dir, module_id, activity)
 
         files = _collect_inputs(input_dir)
         package_hash = _sha256_package(files)
+
+        # Manifesto de entrega (best-effort): reconcilia o declarado externamente
+        # contra o que foi encontrado em disco. Nunca trava o ciclo.
+        manifesto_entrega = ler_manifesto_entrega(input_dir)
+        reconciliacao = reconciliar(
+            manifesto_entrega,
+            [(f.rel_path.as_posix(), f.sha256) for f in files],
+        )
 
         cycle_id = _generate_cycle_id(module_id, activity)
         self._audit.create_if_not_exists()
@@ -155,6 +180,8 @@ class MotorStart:
             python_version=sys.version.split()[0],
             openai_version=_package_version("openai"),
             cycle_num=cycle_num,
+            delivery_manifest_status=reconciliacao.status,
+            delivery_reconciliation=render_reconciliacao_md(reconciliacao),
         )
 
         write_manifesto(manifest, cycle_dir)

@@ -90,7 +90,9 @@ def test_pipeline_preflight_progress_retry_and_limitation(env_vars, workspace, t
     assert result.api_success is True
     assert result.success is True
     assert result.has_limitations is True
-    assert len(result.steps) == 12
+    # 5 CSVs + 1 XLSX agora são ingeridos via file_prep = 6 análises Watson.
+    # Total: irene + tasks + 6 watson + consolidar + avaliar + sherlock + avaliar + consolidar = 13.
+    assert len(result.steps) == 13
     assert result.steps[2].attempts == 2
     assert {step.model for step in result.steps} == {"gpt-5.4-thinking"}
 
@@ -98,7 +100,7 @@ def test_pipeline_preflight_progress_retry_and_limitation(env_vars, workspace, t
     assert (out_dir / "_live_status.json").is_file()
     assert (out_dir / "AUDITORIA_BENCH_GPT54_RERUN.md").is_file()
     progress_files = sorted((out_dir / "progress").glob("*.md"))
-    assert len(progress_files) == 12
+    assert len(progress_files) == 13
 
     audit = json.loads((out_dir / "_audit.json").read_text(encoding="utf-8"))
     assert audit["profile"] == "stable-gpt54"

@@ -115,6 +115,8 @@ class InputFileInfo:
     size_bytes: int
     sha256: str
     rel_path: Path
+    categoria: str = "analisavel"   # analisavel | metadados (file_prep.classificar)
+    tipo: str = ""                  # rótulo legível: csv, sql, notebook, ...
 
 
 @dataclass
@@ -135,6 +137,8 @@ class CycleManifest:
     confirmed_at_utc: str = ""
     prioridades_analise: str = ""
     alertas_lestrade: str = ""
+    delivery_manifest_status: str = "AUSENTE"   # AUSENTE | PRESENTE_OK | PRESENTE_COM_DIVERGENCIA
+    delivery_reconciliation: str = ""           # texto markdown pronto para o render
 
 
 # ---------------------------------------------------------------------------

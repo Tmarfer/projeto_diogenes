@@ -96,7 +96,9 @@ class DiogenesConfig(BaseModel):
     irene_habilitado: bool = False  # True ativa fase de catalogação Irene antes de Watson
     post_irene_cooldown_s: int = 0  # Pausa (segundos) após Irene antes de Mycroft/Watson
     irene_c4_sample_n: int = 0  # Dev mode: limita C4/C5 da Irene a N abas
+    irene_package_dir: Path | None = None  # raiz do pacote `irene` (standalone) a injetar no sys.path
     dev_mode: bool = False  # True → timeouts curtos, retries 1, fallbacks instantâneos
+    corpus_juridico_dir: Path | None = None  # raiz do arcabouço jurídico (cat. D, referenciado)
 
     @property
     def llm_provider(self) -> str:
@@ -228,7 +230,17 @@ def get_config() -> DiogenesConfig:
         irene_c4_sample_n=int(
             os.environ.get("IRENE_C4_SAMPLE_N", "0") or "0"
         ),
+        irene_package_dir=(
+            Path(_irene_pkg).expanduser().resolve()
+            if (_irene_pkg := os.environ.get("IRENE_PACKAGE_DIR", "").strip())
+            else None
+        ),
         dev_mode=os.environ.get(
             "DIOGENES_DEV_MODE", "false"
         ).lower() in ("true", "1"),
+        corpus_juridico_dir=(
+            Path(_corpus_dir).resolve()
+            if (_corpus_dir := os.environ.get("DIOGENES_CORPUS_JURIDICO_DIR", "").strip())
+            else None
+        ),
     )

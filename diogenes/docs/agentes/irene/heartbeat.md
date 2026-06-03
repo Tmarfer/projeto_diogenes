@@ -21,7 +21,7 @@ executar o pipeline completo agora.
 ## Protocolo de Mycroft para esta chamada
 
 **Passo 1: Verificar existência de catálogo anterior.**
-Existe `irene_catalog.yaml` em `IRENE_OUT/{modulo}/` com
+Existe `irene_catalog.yaml` na raiz do diretório do ciclo (`cycles/{cycle_id}/`) com
 `versao_irene >= 1.3.1`? Se sim, o catálogo pode ser reutilizado.
 Registrar: `irene_resultado: CATALOGO_REUTILIZADO`.
 Se não, prosseguir para o Passo 2.
@@ -30,10 +30,9 @@ Se não, prosseguir para o Passo 2.
 O manifesto do Diógenes contém a lista de arquivos no workspace.
 Construir `irene_manifesto.yaml` com:
 - `modulo`: identificador do módulo do ciclo
-- `raiz_projeto`: caminho do workspace
-- `arquivos_xlsx`: lista dos XLSXs em `input/{modulo}/XLSX/`
-- `catalogo_json`: `input/{modulo}/CSV/_CATALOGO/CATALOGO.json` se existir,
-  senão omitir (Irene adaptará o C3)
+- `raiz_projeto`: caminho do workspace (diretório do ciclo)
+- `arquivos_xlsx`: lista de todos os arquivos Excel varridos no diretório de inputs (`01_ENTRADA_COPIADA` e `04_TRANSFORMADO`)
+- `catalogo_json`: `CATALOGO.json` na pasta de inputs se existir, senão o Diógenes auto-gera um `CATALOGO.json` mínimo (`{"entradas": []}`) para viabilizar a execução do Irene.
 
 **Passo 3: Acionar Irene.**
 Chamar `executar_irene(caminho_manifesto)` via `src/diogenes/irene.py`.

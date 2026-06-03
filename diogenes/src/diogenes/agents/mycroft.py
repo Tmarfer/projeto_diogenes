@@ -55,8 +55,9 @@ class MycrooftAgent:
     def definir_tasks_watson(self, manifest: CycleManifest) -> DefinirTasksResult:
         call_type = "definir_tasks_watson"
         arquivos = "\n".join(
-            f"- {fi.name} ({fi.extension}, {fi.size_bytes} bytes)"
+            f"- {fi.name} ({fi.tipo or fi.extension}, {fi.size_bytes} bytes)"
             for fi in manifest.input_files
+            if fi.categoria == "analisavel"
         )
 
         # Ler catálogo do Irene (se disponível no diretório do ciclo)
@@ -159,12 +160,14 @@ class MycrooftAgent:
         self, manifest: CycleManifest, inputs_dir: Path, decisao_watson: DecisaoFinal,
         watson_apresentacao: str = "",
         nota_metodologica_detalhes: str = "",
+        metodologia: str = "",
+        corpus_juridico: str = "",
     ) -> str:
         call_type = "montar_pacote_sherlock"
-        from diogenes.agents.file_prep import preparar_arquivo
         inventario = "\n".join(
-            f"- {fi.name} ({fi.extension}, {fi.size_bytes} bytes)"
+            f"- {fi.name} ({fi.tipo or fi.extension}, {fi.size_bytes} bytes)"
             for fi in manifest.input_files
+            if fi.categoria == "analisavel"
         )
         # Para o LLM de Mycroft: apenas metadados + decisão Watson (sem docs completos)
         # Incluir nota metodológica quando Watson a sinalizou (Premissa 3 do skills.md de Sherlock)
@@ -209,20 +212,20 @@ class MycrooftAgent:
                 + watson_apresentacao
             )
 
-        # Documentos metodológicos do pacote (.md) injetados diretamente
-        # para que Sherlock possa identificar os pontos a verificar
-        docs_metodologicos: list[str] = []
-        for fi in manifest.input_files:
-            if fi.extension == ".md":
-                path = inputs_dir / fi.rel_path
-                if path.exists():
-                    docs_metodologicos.append(
-                        f"\n\n---\n\n[DOCUMENTO METODOLÓGICO: {fi.name}]\n\n"
-                        + preparar_arquivo(path)
-                    )
-        if docs_metodologicos:
-            partes.append("\n\n---\n\n## Documentos Metodológicos do Pacote")
-            partes.extend(docs_metodologicos)
+        # Régua metodológica (cat. C): metodologia / regra de negócio do módulo,
+        # selecionada e carregada pelo orquestrador (contexto_metodologico).
+        if metodologia:
+            partes.append(
+                "\n\n---\n\n## Metodologia e Regra de Negócio do Módulo\n\n" + metodologia
+            )
+
+        # Régua jurídica (cat. D): recorte curado do arcabouço para o módulo —
+        # dispositivos contra os quais Sherlock valida a aderência metodológica.
+        if corpus_juridico:
+            partes.append(
+                "\n\n---\n\n## Arcabouço Jurídico Curado — Dispositivos Aplicáveis\n\n"
+                + corpus_juridico
+            )
 
         return "".join(partes)
 
@@ -293,12 +296,22 @@ class MycrooftAgent:
     # ── consolidar ────────────────────────────────────────────
 
     def consolidar(self, manifest: CycleManifest, decisao_watson: DecisaoFinal,
-                   decisao_sherlock: DecisaoFinal) -> RelatorioOutput:
+                   decisao_sherlock: DecisaoFinal,
+                   watson_consolidado: str = "",
+                   sherlock_consolidado: str = "") -> RelatorioOutput:
         call_type = "consolidar"
         prefixo = "Relatório Preliminar" if manifest.activity == 1 else "Relatório Final"
+
+        bloco_documentos = ""
+        if watson_consolidado:
+            bloco_documentos += f"## Documento Original: watson_consolidado.md\n\n{watson_consolidado}\n\n"
+        if sherlock_consolidado:
+            bloco_documentos += f"## Documento Original: sherlock_consolidado.md\n\n{sherlock_consolidado}\n\n"
+
         user_base = (
             f"## Contexto do Ciclo\n\n"
             f"Módulo: {manifest.module_id} | Atividade: {manifest.activity}\n\n"
+            f"{bloco_documentos}"
             f"## Decisão Final — Integridade Técnica (Watson)\n\n{decisao_watson.texto}\n\n"
             f"## Decisão Final — Validação Metodológica (Sherlock)\n\n{decisao_sherlock.texto}\n\n"
             f"Produza o {prefixo} do módulo. Use o template 'consolidar' do skills.md. "

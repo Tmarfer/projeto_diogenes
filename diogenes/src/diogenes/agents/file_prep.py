@@ -7,7 +7,80 @@ from __future__ import annotations
 
 from pathlib import Path
 
-_SQL_MAX_CHARS = 8_000
+# ---------------------------------------------------------------------------
+# Tetos de truncamento (Etapa 2 — recalibrados para o pack real do MOD_010).
+# file_prep é a ÚNICA fonte de truncamento no fluxo oficial (Watson usa
+# preparar_arquivo direto). Estratégia para tabular grande: cabeça + cauda +
+# resumo, preservando cabeçalho/amostra E os totais que ficam no fim.
+# ---------------------------------------------------------------------------
+_SQL_MAX_CHARS = 40_000        # SQLs reais (~24k) passam inteiros
+_CSV_HEAD_LINHAS = 1_500       # CSV: primeiras N linhas (cabeçalho + amostra)
+_CSV_TAIL_LINHAS = 150         # CSV: últimas M linhas (totais/fechamentos)
+_CSV_MAX_CHARS = 120_000       # CSV: teto de chars (CSVs largos têm linhas longas)
+_XLSX_LINHAS_ABA = 80          # XLSX: cabeça por aba (mantém [FORMULA:...])
+_XLSX_TAIL_LINHAS = 20         # XLSX: cauda por aba (totais)
+_XLSX_MAX_CHARS = 60_000       # XLSX: teto global por arquivo (multi-aba)
+_NOTEBOOK_MAX_CHARS = 80_000   # Notebook: código extraído
+_TEXTO_MAX_CHARS = 60_000      # genérico p/ .txt/.md/.py e demais textos
+
+# ---------------------------------------------------------------------------
+# Classificação de arquivos da entrega (fonte única — reusada por bench e
+# pelo Motor de Start). Separa o que é analisável (cat. A+B+docs) do que é
+# metadado/manifesto de entrega (cat. E) e logs.
+# ---------------------------------------------------------------------------
+
+# Extensões aceitas para análise (convertidas via preparar_arquivo).
+EXTENSOES_ANALISE: set[str] = {
+    ".xlsx", ".csv", ".sql", ".ipynb", ".py", ".pdf", ".md", ".txt", ".docx", ".doc",
+}
+# Diretórios ignorados na varredura da entrega (logs, metadados, catálogos).
+DIRS_IGNORADOS: set[str] = {
+    "03_LOGS", "_LOGS", "02_INSUMOS_GERADOS", "_CATALOGO",
+    "progress", "_runtime", "__pycache__",
+}
+# Arquivos de metadados / manifesto de entrega — nunca analisados como conteúdo.
+ARQUIVOS_IGNORADOS: set[str] = {
+    "catalogo.json", "metadados.json", "hashes_integridade.txt",
+    "inventario.xlsx", "intake.log",
+}
+
+# Extensão → rótulo de tipo legível.
+_TIPO_POR_EXTENSAO: dict[str, str] = {
+    ".csv": "csv",
+    ".xlsx": "planilha",
+    ".xls": "planilha",
+    ".sql": "sql",
+    ".ipynb": "notebook",
+    ".py": "script",
+    ".pdf": "documento",
+    ".md": "documento",
+    ".txt": "documento",
+    ".docx": "documento",
+    ".doc": "documento",
+    ".json": "esquema",
+}
+
+
+def rotulo_tipo(filename: str) -> str:
+    """Rótulo de tipo do arquivo a partir da extensão (csv, sql, notebook, ...)."""
+    return _TIPO_POR_EXTENSAO.get(Path(filename).suffix.lower(), "documento")
+
+
+def classificar(rel_path: Path | str) -> tuple[bool, str]:
+    """Classifica um arquivo da entrega.
+
+    Retorna (analisavel, tipo): `analisavel` é False para arquivos sob diretórios
+    da denylist, arquivos de metadados, ou extensões fora da allowlist. `tipo` é o
+    rótulo legível (ver rotulo_tipo); para não-analisáveis, "metadados".
+    """
+    p = Path(rel_path)
+    if any(parte in DIRS_IGNORADOS for parte in p.parts[:-1]):
+        return False, "metadados"
+    if p.name.lower() in ARQUIVOS_IGNORADOS:
+        return False, "metadados"
+    if p.suffix.lower() not in EXTENSOES_ANALISE:
+        return False, "metadados"
+    return True, rotulo_tipo(p.name)
 
 
 def preparar_arquivo(path: Path) -> str:
@@ -15,17 +88,55 @@ def preparar_arquivo(path: Path) -> str:
     ext = path.suffix.lower()
     if ext == ".xlsx":
         return _ler_excel(path)
+    if ext == ".csv":
+        return _ler_csv(path)
     if ext == ".sql":
         return _ler_sql(path)
     if ext == ".ipynb":
         return _ler_notebook(path)
     if ext == ".pdf":
         return _ler_pdf(path)
-    # Markdown e texto puro
+    if ext in (".docx", ".doc"):
+        return _ler_docx(path)
+    # Markdown, scripts e texto puro — teto genérico de proteção
     try:
-        return path.read_text(encoding="utf-8")
+        return _truncar_texto(path.read_text(encoding="utf-8"), _TEXTO_MAX_CHARS)
     except Exception as e:
         return f"[ERRO AO LER ARQUIVO: {e}]"
+
+
+def _truncar_texto(texto: str, teto: int) -> str:
+    """Trunca texto no teto de chars com nota, preservando o início."""
+    if len(texto) <= teto:
+        return texto
+    return texto[:teto] + f"\n\n[TRUNCADO — {len(texto)} chars totais, exibidos {teto}]"
+
+
+def _ler_csv(path: Path) -> str:
+    """CSV: cabeça + cauda + resumo (preserva cabeçalho/amostra e totais finais)."""
+    try:
+        linhas = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception as e:
+        return f"[ERRO AO LER CSV: {e}]"
+    total = len(linhas)
+    if total <= _CSV_HEAD_LINHAS + _CSV_TAIL_LINHAS:
+        return _truncar_texto("\n".join(linhas), _CSV_MAX_CHARS)
+    cabeca = "\n".join(linhas[:_CSV_HEAD_LINHAS])
+    cauda = "\n".join(linhas[-_CSV_TAIL_LINHAS:])
+    omitidas = total - _CSV_HEAD_LINHAS - _CSV_TAIL_LINHAS
+    # Teto de chars: a cauda (totais) é prioritária; corta a cabeça se necessário
+    # (CSVs largos têm linhas longas — limitar por linhas não basta).
+    orcamento_cabeca = _CSV_MAX_CHARS - len(cauda) - 300
+    if len(cabeca) > orcamento_cabeca > 0:
+        cabeca = cabeca[:orcamento_cabeca] + "\n[... cabeça truncada por teto de chars]"
+    return (
+        f"[CSV: {total} linhas — exibindo {_CSV_HEAD_LINHAS} iniciais + "
+        f"{_CSV_TAIL_LINHAS} finais]\n"
+        f"{cabeca}\n\n"
+        f"⚠ {omitidas} linhas omitidas (meio do arquivo)\n\n"
+        f"--- últimas {_CSV_TAIL_LINHAS} linhas ---\n"
+        f"{cauda}"
+    )
 
 
 def _ler_excel(path: Path) -> str:
@@ -33,26 +144,52 @@ def _ler_excel(path: Path) -> str:
         import openpyxl
         wb = openpyxl.load_workbook(path, data_only=False)
         partes: list[str] = []
+        total_chars = 0
+        abas_omitidas = 0
         for sheet_name in wb.sheetnames:
+            if total_chars >= _XLSX_MAX_CHARS:
+                abas_omitidas += 1
+                continue
             ws = wb[sheet_name]
-            linhas: list[str] = []
-            for i, row in enumerate(ws.iter_rows(values_only=False)):
-                if i >= 15:   # primeiras 15 linhas + fórmulas
-                    break
-                celulas = []
-                for cell in row:
-                    val = cell.value
-                    if val is None:
-                        celulas.append("")
-                    elif isinstance(val, str) and val.startswith("="):
-                        celulas.append(f"[FORMULA:{val}]")
-                    else:
-                        celulas.append(str(val))
-                linhas.append("\t".join(celulas))
-            partes.append(f"--- Aba: {sheet_name} ---\n" + "\n".join(linhas))
+            bloco = _aba_para_texto(ws, sheet_name)
+            partes.append(bloco)
+            total_chars += len(bloco)
+        if abas_omitidas:
+            partes.append(
+                f"\n[⚠ {abas_omitidas} aba(s) omitida(s) — teto de "
+                f"{_XLSX_MAX_CHARS} chars por arquivo atingido]"
+            )
         return "\n\n".join(partes)
     except Exception as e:
         return f"[ERRO AO LER EXCEL: {e}]"
+
+
+def _fmt_celula(val: object) -> str:
+    if val is None:
+        return ""
+    if isinstance(val, str) and val.startswith("="):
+        return f"[FORMULA:{val}]"
+    return str(val)
+
+
+def _aba_para_texto(ws, sheet_name: str) -> str:
+    """Representa uma aba como cabeça + cauda de linhas (preserva fórmulas e totais)."""
+    linhas = [
+        "\t".join(_fmt_celula(c.value) for c in row)
+        for row in ws.iter_rows(values_only=False)
+    ]
+    n = len(linhas)
+    if n <= _XLSX_LINHAS_ABA + _XLSX_TAIL_LINHAS:
+        corpo = "\n".join(linhas)
+    else:
+        cabeca = "\n".join(linhas[:_XLSX_LINHAS_ABA])
+        cauda = "\n".join(linhas[-_XLSX_TAIL_LINHAS:])
+        omitidas = n - _XLSX_LINHAS_ABA - _XLSX_TAIL_LINHAS
+        corpo = (
+            f"{cabeca}\n⚠ {omitidas} linhas omitidas (meio)\n"
+            f"--- últimas {_XLSX_TAIL_LINHAS} linhas ---\n{cauda}"
+        )
+    return f"--- Aba: {sheet_name} ({n} linhas) ---\n{corpo}"
 
 
 def _ler_sql(path: Path) -> str:
@@ -77,7 +214,9 @@ def _ler_notebook(path: Path) -> str:
                 src = cell.source.strip()
                 if src:
                     celulas.append(f"# Célula {i+1}\n{src}")
-        return "\n\n".join(celulas) if celulas else "[Notebook sem células de código]"
+        if not celulas:
+            return "[Notebook sem células de código]"
+        return _truncar_texto("\n\n".join(celulas), _NOTEBOOK_MAX_CHARS)
     except Exception as e:
         return f"[ERRO AO LER NOTEBOOK: {e}]"
 
@@ -89,3 +228,30 @@ def _ler_pdf(path: Path) -> str:
         return texto.strip() if texto else "[PDF sem texto extraível]"
     except Exception as e:
         return f"[ERRO AO LER PDF: {e}]"
+
+
+def _ler_docx(path: Path) -> str:
+    """Lê documentos de Word (.docx e .doc) com fallback robusto."""
+    try:
+        import docx
+        doc = docx.Document(path)
+        paragrafos = [p.text for p in doc.paragraphs]
+        tabelas_texto = []
+        for table in doc.tables:
+            for row in table.rows:
+                linha = "\t".join(cell.text.strip() for cell in row.cells)
+                tabelas_texto.append(linha)
+        corpo = "\n".join(paragrafos)
+        if tabelas_texto:
+            corpo += "\n\n--- Tabelas no Documento ---\n" + "\n".join(tabelas_texto)
+        return _truncar_texto(corpo, _TEXTO_MAX_CHARS)
+    except Exception as e:
+        # Se falhar (ex: por ser .doc legado binário), tenta com docling
+        try:
+            from docling.document_converter import DocumentConverter
+            converter = DocumentConverter()
+            result = converter.convert(str(path))
+            texto = result.document.export_to_markdown()
+            return _truncar_texto(texto, _TEXTO_MAX_CHARS)
+        except Exception as e2:
+            return f"[ERRO AO LER DOCUMENTO: {e} | Fallback docling falhou: {e2}]"

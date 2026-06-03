@@ -720,6 +720,10 @@ registro.
 incluídas na Planilha preenchida e reportadas em seção específica. Mycroft avalia a pertinência
 de incorporação ao Motor de Regras.
 
+**Formato numérico estrito dos contadores:** Todos os campos de contagem nos cabeçalhos de análise isolada e consolidada (incluindo `Alertas CRITICA`, `Alertas ALTA`, `Total de alertas`, `Arquivos analisados` e `Arquivos não analisados`) devem ser preenchidos **exclusivamente com números inteiros** (ex.: `0`, `1`, `54`, `254`). É terminantemente proibido o uso de prosa nestes campos (como "múltiplos", "não quantificado", "distribuídos", etc.).
+
+**Mascaramento e mitigação de segurança (ChatTCU):** Para prevenir bloqueios automatizados pelos filtros de segurança do TCU (ChatTCU Safety Filter), Watson deve omitir ou mascarar (ex.: `***.***.***-**` ou `CNPJ **.***.***/****-**`) todos os dados pessoais, CPFs, CNPJs, nomes de contribuintes e chaves de acesso a NF-e/CT-e.Watson deve referenciar células (ex.: `célula E4` da `Aba X`) e linhas sem copiar e colar linhas de dados brutos ou blocos textuais extensos no corpo da resposta e do trace.
+
 ---
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6*

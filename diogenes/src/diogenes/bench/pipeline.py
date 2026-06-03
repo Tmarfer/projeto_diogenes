@@ -16,6 +16,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from diogenes.agents.contexto_metodologico import (
+    carregar_corpus_juridico,
+    carregar_metodologia_modulo,
+)
+from diogenes.agents.file_prep import (
+    EXTENSOES_ANALISE,
+    classificar,
+    preparar_arquivo,
+    rotulo_tipo,
+)
 from diogenes.bench.prompt_builder import (
     build_reduced_system,
     build_user_irene_catalog,
@@ -30,6 +40,9 @@ from diogenes.bench.prompt_builder import (
 from diogenes.config import get_config
 from diogenes.llm.chattcu import ChatTCUClient
 from diogenes.models import LLMCall, LLMMessage, LLMResponse
+
+# Teto de caracteres do manifesto de entrega exibido no preflight.
+_MAX_CHARS_DELIVERY_MANIFEST = 6_000
 
 
 @dataclass(frozen=True)
@@ -125,6 +138,8 @@ class BenchPipeline:
         sherlock_mode: str | None = None,
         output_dir: Path | None = None,
         limit: int | None = None,
+        delivery_dir: Path | None = None,
+        legal_corpus_dir: Path | None = None,
     ):
         bench_profile = resolve_bench_profile(profile)
         self._module = module
@@ -140,9 +155,15 @@ class BenchPipeline:
         workspace = cfg.workspace.path
 
         self._input_dir = workspace / "input" / module
-        if not self._input_dir.is_dir():
+        # Pasta da entrega a varrer. Default: workspace/input/{module}; --delivery
+        # permite apontar direto para um pacote preparado (ex: _teste_inputs/.../<data>).
+        self._delivery_dir = Path(delivery_dir).expanduser().resolve() if delivery_dir else self._input_dir
+        self._legal_corpus_dir = (
+            Path(legal_corpus_dir).expanduser().resolve() if legal_corpus_dir else None
+        )
+        if not self._delivery_dir.is_dir():
             raise FileNotFoundError(
-                f"Diretório de input não encontrado: {self._input_dir}"
+                f"Diretório de entrega não encontrado: {self._delivery_dir}"
             )
 
         ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
@@ -175,33 +196,44 @@ class BenchPipeline:
 
         t0 = time.time()
 
-        # Load CSVs
-        csvs = self._load_csvs()
+        # Carrega o universo da entrega (cat. A+B+docs) via file_prep
+        files = self._load_delivery()
         if self._limit and self._limit > 0:
-            csvs = csvs[:self._limit]
+            files = self._amostrar_por_tipo(files, self._limit)
         catalog_json = self._load_catalog()
-        self._result.preflight = self._build_preflight(csvs, catalog_json)
+        module_docs = self._load_module_docs()
+        legal_corpus = self._load_legal_corpus()
+        delivery_manifest = self._load_delivery_manifest()
+        self._module_docs = module_docs
+        self._legal_corpus = legal_corpus
+
+        self._result.preflight = self._build_preflight(
+            files, catalog_json, module_docs, legal_corpus, delivery_manifest
+        )
         self._write_preflight()
         self._write_live_status("preflight", "completed")
-        _log(f"📂 Input: {len(csvs)} CSVs carregados")
+        _log(f"📂 Entrega: {len(files)} arquivos carregados ({self._contagem_por_tipo(files)})")
         _log(self._format_pre_report("Preflight", self._result.preflight))
+
+        # build_user_irene_catalog / inventário esperam pares (nome, conteúdo)
+        files_2t = [(name, content) for name, _tipo, content in files]
 
         # Step 1: Irene (catalog via LLM)
         _log("\n━━━ Passo 1/8: Irene — Classificação de abas ━━━")
-        irene_result = self._step_irene(csvs, catalog_json)
+        irene_result = self._step_irene(files_2t, catalog_json)
         self._save_step("01_irene_catalog.md", irene_result, console_callback)
 
         # Step 2: Mycroft definir_tasks_watson
         _log("\n━━━ Passo 2/8: Mycroft — Definir tarefas Watson ━━━")
-        tasks_result = self._step_mycroft_tasks(irene_result.response_text, csvs)
+        tasks_result = self._step_mycroft_tasks(irene_result.response_text, files, module_docs)
         self._save_step("02_mycroft_tasks.md", tasks_result, console_callback)
 
         # Step 3: Watson análise por arquivo
-        _log(f"\n━━━ Passo 3/8: Watson — Análise de {len(csvs)} arquivos ━━━")
+        _log(f"\n━━━ Passo 3/8: Watson — Análise de {len(files)} arquivos ━━━")
         watson_analises = []
-        for i, (filename, content) in enumerate(csvs, 1):
-            _log(f"  [{i}/{len(csvs)}] {filename}")
-            step = self._step_watson_analise(filename, content, i)
+        for i, (filename, tipo, content) in enumerate(files, 1):
+            _log(f"  [{i}/{len(files)}] {filename} ({tipo})")
+            step = self._step_watson_analise(filename, content, tipo, i)
             self._save_step(f"03_watson_{i:02d}_{filename[:40]}.md", step, console_callback)
             watson_analises.append((filename, step.response_text if step.success else f"[ERRO: {step.error}]"))
 
@@ -267,17 +299,26 @@ class BenchPipeline:
         user = build_user_irene_catalog(csvs, catalog_json)
         return self._call("irene_catalog", "mycroft", "definir_tasks_watson", system, user)
 
-    def _step_mycroft_tasks(self, irene_output: str, csvs: list[tuple[str, str]]) -> StepResult:
+    def _step_mycroft_tasks(
+        self,
+        irene_output: str,
+        files: list[tuple[str, str, str]],
+        module_docs: str,
+    ) -> StepResult:
         system = build_reduced_system("mycroft", "definir_tasks_watson")
-        catalog_summary = "\n".join(f"- {name} ({content.count(chr(10))} linhas)" for name, content in csvs)
-        user = build_user_mycroft_tasks(catalog_summary, self._module)
+        catalog_summary = "\n".join(
+            f"- {name} [{tipo}] ({content.count(chr(10))} linhas)"
+            for name, tipo, content in files
+        )
+        docs_resumo = module_docs[:4000] if module_docs else None
+        user = build_user_mycroft_tasks(catalog_summary, self._module, docs_resumo)
         if irene_output:
             user += f"\n\n## Classificação Irene\n{irene_output[:3000]}"
         return self._call("mycroft_tasks", "mycroft", "definir_tasks_watson", system, user)
 
-    def _step_watson_analise(self, filename: str, csv_content: str, idx: int) -> StepResult:
+    def _step_watson_analise(self, filename: str, content: str, tipo: str, idx: int) -> StepResult:
         system = build_reduced_system("watson", "analise_inicial")
-        user = build_user_watson_analise(filename, csv_content)
+        user = build_user_watson_analise(filename, content, tipo)
         return self._call(f"watson_analise_{idx:02d}", "watson", "analise_inicial", system, user)
 
     def _step_watson_consolidar(self, analises: list[tuple[str, str]]) -> StepResult:
@@ -293,7 +334,9 @@ class BenchPipeline:
 
     def _step_sherlock(self, watson_consolidado: str, mycroft_decisao: str) -> StepResult:
         system = build_reduced_system("sherlock", "validacao_inicial")
-        user = build_user_sherlock(watson_consolidado, mycroft_decisao)
+        metodologia = getattr(self, "_module_docs", "") or None
+        corpus = getattr(self, "_legal_corpus", "") or None
+        user = build_user_sherlock(watson_consolidado, mycroft_decisao, metodologia, corpus)
         if self._sherlock_mode == "freeform_aux_only":
             user = (
                 "# Modo de bancada: sherlock_freeform_aux_only\n\n"
@@ -415,85 +458,166 @@ class BenchPipeline:
 
     # ── I/O ──────────────────────────────────────────────────────────────────
 
-    def _load_csvs(self) -> list[tuple[str, str]]:
-        csv_dir = self._input_dir / "CSV"
-        if not csv_dir.is_dir():
-            raise FileNotFoundError(f"CSV dir not found: {csv_dir}")
-        csvs: list[tuple[str, str]] = []
-        for p in sorted(csv_dir.glob("*.csv")):
-            csvs.append((p.name, p.read_text(encoding="utf-8", errors="replace")))
-        return csvs
+    def _iter_arquivos_analise(self):
+        """Itera arquivos da entrega elegíveis para análise (cat. A+B+docs)."""
+        for p in sorted(self._delivery_dir.rglob("*")):
+            if not p.is_file():
+                continue
+            analisavel, _tipo = classificar(p.relative_to(self._delivery_dir))
+            if analisavel:
+                yield p
+
+    def _load_delivery(self) -> list[tuple[str, str, str]]:
+        """Carrega o universo da entrega como (nome_relativo, tipo, texto).
+
+        Usa file_prep.preparar_arquivo para converter cada arquivo (xlsx/sql/ipynb/pdf)
+        ou ler texto (csv/md/py). Varre recursivamente respeitando allowlist de
+        extensões e denylist de diretórios/arquivos de metadados.
+        """
+        arquivos: list[tuple[str, str, str]] = []
+        for p in self._iter_arquivos_analise():
+            rel = p.relative_to(self._delivery_dir).as_posix()
+            tipo = rotulo_tipo(p.name)
+            texto = preparar_arquivo(p)
+            arquivos.append((rel, tipo, texto))
+        if not arquivos:
+            raise FileNotFoundError(
+                f"Nenhum arquivo analisável encontrado em {self._delivery_dir} "
+                f"(extensões aceitas: {sorted(EXTENSOES_ANALISE)})."
+            )
+        # Ordem: tipo (cadeia de produção) e depois nome.
+        ordem_tipo = {"documento": 0, "sql": 1, "notebook": 2, "script": 3,
+                      "esquema": 4, "planilha": 5, "csv": 6}
+        arquivos.sort(key=lambda t: (ordem_tipo.get(t[1], 9), t[0]))
+        return arquivos
+
+    @staticmethod
+    def _amostrar_por_tipo(
+        files: list[tuple[str, str, str]], limit: int
+    ) -> list[tuple[str, str, str]]:
+        """Amostra até `limit` arquivos garantindo ≥1 de cada tipo (round-robin)."""
+        if limit <= 0 or len(files) <= limit:
+            return files[:limit] if limit > 0 else files
+        por_tipo: dict[str, list[tuple[str, str, str]]] = {}
+        for entry in files:
+            por_tipo.setdefault(entry[1], []).append(entry)
+        selecionados: list[tuple[str, str, str]] = []
+        # round-robin entre os tipos até atingir o limite
+        while len(selecionados) < limit and any(por_tipo.values()):
+            for tipo in list(por_tipo.keys()):
+                if por_tipo[tipo]:
+                    selecionados.append(por_tipo[tipo].pop(0))
+                    if len(selecionados) >= limit:
+                        break
+        # preserva a ordem original (cadeia de produção)
+        selecionados_set = set(id(e) for e in selecionados)
+        return [e for e in files if id(e) in selecionados_set]
+
+    @staticmethod
+    def _contagem_por_tipo(files: list[tuple[str, str, str]]) -> str:
+        contagem: dict[str, int] = {}
+        for _name, tipo, _content in files:
+            contagem[tipo] = contagem.get(tipo, 0) + 1
+        return ", ".join(f"{t}={n}" for t, n in sorted(contagem.items()))
 
     def _load_catalog(self) -> str | None:
-        catalog_path = self._input_dir / "CSV" / "CATALOGO.json"
-        if catalog_path.is_file():
-            return catalog_path.read_text(encoding="utf-8")
+        """Catálogo Irene (CATALOGO.json) — busca em todos os layouts conhecidos."""
+        # Busca rglob primeiro: acha _CATALOGO/CATALOGO.json em qualquer subpasta da entrega
+        for p in sorted(self._delivery_dir.rglob("CATALOGO.json")):
+            return p.read_text(encoding="utf-8")
+        for candidate in (
+            self._delivery_dir / "CSV" / "_CATALOGO" / "CATALOGO.json",
+            self._delivery_dir / "CSV" / "CATALOGO.json",
+            self._input_dir / "CSV" / "CATALOGO.json",
+        ):
+            if candidate.is_file():
+                return candidate.read_text(encoding="utf-8")
         return None
+
+    def _load_module_docs(self) -> str:
+        """Metodologia/RN do módulo (cat. C) — fonte única em contexto_metodologico."""
+        return carregar_metodologia_modulo(self._delivery_dir)
+
+    def _load_legal_corpus(self) -> str:
+        """Recorte curado do arcabouço jurídico do módulo (cat. D) — fonte única."""
+        return carregar_corpus_juridico(self._legal_corpus_dir, self._module)
+
+    def _load_delivery_manifest(self) -> str:
+        """Manifesto de entrega (cat. E): protocolo_recebimento / metadados, se houver."""
+        partes: list[str] = []
+        for nome in ("protocolo_recebimento.md", "metadados.json"):
+            matches = sorted(self._delivery_dir.rglob(nome))
+            if matches:
+                texto = matches[0].read_text(encoding="utf-8", errors="replace")
+                partes.append(f"### {nome}\n{texto}")
+        manifesto = "\n\n".join(partes)
+        return manifesto[:_MAX_CHARS_DELIVERY_MANIFEST]
 
     def _build_preflight(
         self,
-        csvs: list[tuple[str, str]],
+        files: list[tuple[str, str, str]],
         catalog_json: str | None,
+        module_docs: str = "",
+        legal_corpus: str = "",
+        delivery_manifest: str = "",
     ) -> dict[str, Any]:
-        xlsx_dir = self._input_dir / "XLSX"
-        xlsx_files = sorted(xlsx_dir.glob("*.xlsx")) if xlsx_dir.is_dir() else []
-        csv_dir = self._input_dir / "CSV"
-        csv_files = sorted(csv_dir.glob("*.csv")) if csv_dir.is_dir() else []
+        by_type: dict[str, int] = {}
+        for _name, tipo, _content in files:
+            by_type[tipo] = by_type.get(tipo, 0) + 1
         warnings: list[str] = []
-        module_normalized = self._module.upper().replace("_", "")
-        if module_normalized.startswith("MOD010") and len(csvs) != 5:
-            warnings.append(f"Esperados 5 CSVs para AUX_MOD_10; encontrados {len(csvs)}.")
-        if module_normalized.startswith("MOD010") and len(xlsx_files) != 1:
-            warnings.append(f"Esperada 1 planilha AUX_MOD_10; encontradas {len(xlsx_files)}.")
+        if module_docs == "":
+            warnings.append("Documentação do módulo (cat. C) não encontrada — Sherlock sem metodologia.")
+        if legal_corpus == "":
+            warnings.append("Corpus jurídico (cat. D) ausente — informe --legal-corpus para validação metodológica plena.")
         return {
             "module": self._module,
             "input_dir": str(self._input_dir),
+            "delivery_dir": str(self._delivery_dir),
+            "legal_corpus_dir": str(self._legal_corpus_dir) if self._legal_corpus_dir else None,
             "profile": self._profile,
             "model_override": self._model_override,
             "timeout": self._timeout,
             "max_retries": self._max_retries,
             "sherlock_mode": self._sherlock_mode,
-            "csv_count": len(csvs),
-            "xlsx_count": len(xlsx_files),
+            "total_files": len(files),
+            "by_type": by_type,
+            # Mantidos para compatibilidade com _write_final_audit:
+            "csv_count": by_type.get("csv", 0),
+            "xlsx_count": by_type.get("planilha", 0),
             "catalog_present": catalog_json is not None,
-            "csv_files": [
-                {
-                    "name": p.name,
-                    "size_bytes": p.stat().st_size,
-                    "lines": content.count("\n"),
-                }
-                for p, (_, content) in zip(csv_files, csvs, strict=False)
-            ],
-            "xlsx_files": [
-                {"name": p.name, "size_bytes": p.stat().st_size}
-                for p in xlsx_files
-            ],
+            "module_docs_chars": len(module_docs),
+            "legal_corpus_chars": len(legal_corpus),
+            "delivery_manifest_present": bool(delivery_manifest),
+            "files": [{"name": name, "tipo": tipo, "chars": len(content)} for name, tipo, content in files],
             "warnings": warnings,
         }
 
     def _write_preflight(self) -> None:
         preflight = self._result.preflight
+        by_type = preflight.get("by_type", {})
         lines = [
             "# Preflight — Pipeline de Bancada",
             "",
             f"**Módulo:** {preflight['module']}",
+            f"**Entrega:** {preflight['delivery_dir']}",
+            f"**Corpus jurídico:** {preflight.get('legal_corpus_dir') or '(não fornecido)'}",
             f"**Perfil:** {preflight['profile']}",
             f"**Modelo override:** {preflight['model_override'] or '(agents_spec.yaml)'}",
             f"**Timeout:** {preflight['timeout']}s",
             f"**Retries:** {preflight['max_retries']}",
             f"**Modo Sherlock:** {preflight['sherlock_mode']}",
-            f"**CSVs:** {preflight['csv_count']}",
-            f"**XLSX:** {preflight['xlsx_count']}",
+            f"**Total de arquivos:** {preflight['total_files']}",
+            f"**Por tipo:** {', '.join(f'{t}={n}' for t, n in sorted(by_type.items())) or '—'}",
             f"**CATALOGO.json:** {'sim' if preflight['catalog_present'] else 'não'}",
+            f"**Doc. módulo (cat. C):** {preflight['module_docs_chars']:,} chars",
+            f"**Corpus jurídico (cat. D):** {preflight['legal_corpus_chars']:,} chars",
+            f"**Manifesto de entrega:** {'sim' if preflight['delivery_manifest_present'] else 'não'}",
             "",
-            "## Arquivos XLSX",
+            "## Arquivos por análise",
             "",
         ]
-        for item in preflight["xlsx_files"]:
-            lines.append(f"- {item['name']} ({item['size_bytes']} bytes)")
-        lines.extend(["", "## Arquivos CSV", ""])
-        for item in preflight["csv_files"]:
-            lines.append(f"- {item['name']} ({item['lines']} linhas, {item['size_bytes']} bytes)")
+        for item in preflight["files"]:
+            lines.append(f"- [{item['tipo']}] {item['name']} ({item['chars']:,} chars)")
         if preflight["warnings"]:
             lines.extend(["", "## Avisos", ""])
             for warning in preflight["warnings"]:
@@ -571,9 +695,13 @@ class BenchPipeline:
 
     def _format_pre_report(self, label: str, preflight: dict[str, Any]) -> str:
         warnings = len(preflight.get("warnings") or [])
+        by_type = preflight.get("by_type", {})
+        tipos = ", ".join(f"{t}={n}" for t, n in sorted(by_type.items())) or "—"
         return (
             f"Pré-relatório — {label}: "
-            f"{preflight['csv_count']} CSVs, {preflight['xlsx_count']} XLSX, "
+            f"{preflight['total_files']} arquivos ({tipos}), "
+            f"doc_modulo={preflight['module_docs_chars']}c, "
+            f"corpus_juridico={preflight['legal_corpus_chars']}c, "
             f"perfil={preflight['profile']}, modelo={preflight['model_override'] or 'spec'}, "
             f"avisos={warnings}"
         )
@@ -635,8 +763,8 @@ class BenchPipeline:
 
         # Human-readable report
         lines = [
-            f"# Auditoria — Pipeline de Bancada",
-            f"",
+            "# Auditoria — Pipeline de Bancada",
+            "",
             f"**Pipeline:** {self._bench_id}",
             f"**Módulo:** {self._module}",
             f"**Início:** {self._result.started_at}",
@@ -645,11 +773,11 @@ class BenchPipeline:
             f"**Tokens input:** {self._result.total_prompt_tokens:,}",
             f"**Tokens output:** {self._result.total_completion_tokens:,}",
             f"**Status:** {'✅ Completo' if self._result.success else '⚠ Com erros'}",
-            f"",
-            f"## Passos",
-            f"",
-            f"| # | Passo | Agente | Modelo | Duração | Tokens | Status |",
-            f"|---|-------|--------|--------|---------|--------|--------|",
+            "",
+            "## Passos",
+            "",
+            "| # | Passo | Agente | Modelo | Duração | Tokens | Status |",
+            "|---|-------|--------|--------|---------|--------|--------|",
         ]
         for i, step in enumerate(self._result.steps, 1):
             status = "✅" if step.api_success else f"❌ {step.error[:30]}"

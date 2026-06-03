@@ -1,247 +1,188 @@
 # ESTADO DO PROJETO DIÓGENES
-## Snapshot para onboarding do Claude Code
-**Data:** 2026-05-30
-**Executor:** Diagnóstico automático — Claude Code (claude-sonnet-4-6)
-**Repositório:** `/Users/tmarfer_mac/Documents/Projetos/projeto_diogenes/diogenes`
+## Snapshot para onboarding
+**Data:** 2026-06-03
+**Processo:** TC 015.848/2025-6 | DVA-CBS | SecexContas/TCU
 
 ---
 
-> **Nota de atualização — 2026-05-31:** este documento é um snapshot histórico.
-> O código atual já contém integração Irene, estados `VERIFICANDO_EXISTENCIA`,
-> `AGUARDANDO_IRENE`, `IRENE_CONCLUIDA`, colunas `irene_*`, cliente ChatTCU,
-> `diogenes bench` e `DIOGENES_DEV_MODE`. Para o estado operacional corrente,
-> confira `README.md`, `AUDITORIA_SPRINT_PILOTO.md`, `agents_spec.yaml` e a
-> suíte de testes.
-
----
-
-## 1. Versão e identidade
+## 1. Estado operacional atual
 
 | Campo | Valor |
 |---|---|
 | Versão do pacote | 0.1.0 |
-| Python requerido | >=3.11 (executando 3.13.13) |
-| Último sprint concluído | Ciclo completo Watson→Sherlock→Mycroft + Motor de Saída (Bloco 4 do SDD) |
-| Fase piloto ativa | B (modelos baratos — openrouter) |
+| Python requerido | ≥ 3.11 (executando 3.14) |
+| Provider LLM (produção) | ChatTCU (infra interna TCU) |
+| Modelo ativo (todos os agentes) | `gpt-5.5-thinking` via `agents_spec.yaml` |
+| Fase piloto ativa | Fase D — módulo real MOD_010 (Pessoa Física) |
+| Teto de custo por ciclo | USD 0.00 (ChatTCU — custo institucional zero) |
+| Suite de testes | **187 testes passando** (0 falhas, 0 skips) |
+| Último ciclo completo | `MOD_010_A1_20260602T202655Z` — 10/10 passos OK |
 
 ---
 
-## 2. Suite de testes
+## 2. Arquitetura de agentes
+
+Quatro agentes, dois papéis:
+
+| Agente | Tipo | Função |
+|---|---|---|
+| **Irene Adler** | Biblioteca Python (C1–C5) | Catalogação semântica de XLSX/CSV via LLM (estágio C4) |
+| **Watson** | LLM (ChatTCU) | Integridade técnica — consistência de dados, scripts e planilhas |
+| **Sherlock** | LLM (ChatTCU) | Validação metodológica — aderência ao Acórdão 2833/2025-Plenário |
+| **Mycroft** | LLM (ChatTCU) | Orquestrador-chefe — tasking, revisão, integração e consolidação |
+
+Cada agente tem 4 arquivos de definição em `docs/agentes/{agente}/`:
+- `soul.md` — identidade, valores, limites constitucionais
+- `skills.md` — templates de output, critérios, formatos
+- `heartbeat.md` — protocolo operacional por call_type
+- `agent.md` — parâmetros de runtime (modelos e configurações reais vêm de `agents_spec.yaml`)
+
+**Os arquivos são lidos do filesystem a cada chamada — editar Markdown tem efeito imediato.**
+
+---
+
+## 3. Fluxo do ciclo
+
+```
+diogenes start → confirm-manifest →
+  [Irene]  catalogação semântica dos XLSX/CSV
+  [Mycroft] definir tarefas Watson
+  [Watson]  análise de integridade por arquivo (×N)
+  [Watson]  consolidação cross-file
+  [Mycroft] avaliar Watson (Stranger Room, até 2 rodadas)
+  [Mycroft] montar pacote Sherlock
+  [Sherlock] validação metodológica monolítica (validacao_inicial)
+  [Mycroft] avaliar Sherlock (Stranger Room, até 2 rodadas)
+  [Mycroft] consolidação final → relatorio_preliminar_*.md
+→ verify-output → seal
+```
+
+---
+
+## 4. Calibrações aplicadas (auditoria sistemática 2026-06-03)
+
+A auditoria comparou o contrato projetado com o comportamento real de cada agente
+e calibrou os prompts onde havia desvio. Registro completo em `docs/auditoria_agentes/`.
+
+### Watson
+- `soul.md` — adicionada seção "Prevenção de Interceptação de Segurança (ChatTCU)":
+  mascaramento de PII, não-transcrição de dados brutos, síntese de conteúdo.
+- `skills.md` — formato numérico estrito para contadores de cabeçalho
+  (`**Alertas CRITICA:** N` deve ser inteiro, nunca prosa).
+- `heartbeat.md` — restrições ativas na seção `consolidar_watson`: contadores
+  inteiros obrigatórios, proibição de PII literal.
+
+### Sherlock
+- `src/diogenes/agents/heartbeat.py` — mapeamento `"validacao_inicial"` corrigido
+  de `"verificar_ponto"` para `"validacao_inicial"`. Causa raiz do NV-GLOBAL-01:
+  Sherlock recebia instrução `UM_PONTO_POR_CHAMADA` mas era chamado monoliticamente.
+- `heartbeat.md` — adicionada seção `# Heartbeat de Sherlock — validacao_inicial`
+  com protocolo de validação monolítica multi-ponto.
+- `soul.md` — exceção de trace em 1ª pessoa (Art. 14) + seção "Prevenção de
+  Interceptação de Segurança (ChatTCU)".
+
+### Mycroft
+- `agent.md` — modelo atualizado de `claude-sonnet-4-6` para `gpt-5.5-thinking`
+  (alinhamento com produção real via ChatTCU).
+- `soul.md` — adicionada seção "Prevenção de Interceptação de Segurança (ChatTCU)":
+  mascaramento de PII nos outputs de avaliação, decisão e consolidação.
+
+### Irene
+- `agent.md` — modelo atualizado de `Claude 4.6 Sonnet` para `gpt-5.5-thinking`.
+- `heartbeat.md` — passo 1 e passo 2 atualizados para refletir busca do catálogo
+  em `cycles/{cycle_id}/` e geração automática de `CATALOGO.json` mínimo se ausente.
+
+---
+
+## 5. Bancada de testes (`diogenes bench`)
+
+| Comando | O que faz |
+|---|---|
+| `diogenes bench smoke` | Testa conectividade ChatTCU |
+| `diogenes bench validate-models` | Valida modelos do `agents_spec.yaml` |
+| `diogenes bench preview <agente> --call-type <ct> --prompt "..."` | Monta prompt exato sem chamar LLM (custo zero) |
+| `diogenes bench call <agente> --call-type <ct> --fixture <path>` | Chamada LLM isolada — 1 agente, 1 arquivo |
+| `diogenes bench pipeline <módulo> --delivery <pasta> [--limit N] [--timeout S]` | Pipeline completo com `_audit.json` |
+
+Resultado de referência pós-calibração:
+`bench pipeline MOD_010 --limit 3 --timeout 600` → **10/10 OK, ✅ SUCESSO**
+(Watson analisa 3 arquivos, Sherlock produz pontos metodológicos reais, Mycroft avalia sem bloqueio)
+
+---
+
+## 6. Suite de testes
 
 | Resultado | Quantidade |
 |---|---|
-| Total | 88 |
-| Passed | 88 |
+| Total | **187** |
+| Passed | **187** |
 | Failed | 0 |
 | Skipped | 0 |
-| Erros de import | 0 |
 
-Suite 100% verde. Tempo de execução: ~1.80s.
+Cobertura: unit tests em `tests/unit/` + integration tests em `tests/integration/`.
+Mocks LLM via `pytest-httpx`. Fixture global `clear_config_cache` em `conftest.py`.
 
----
-
-## 3. Módulos implementados
-
-### Infraestrutura
-
-| Módulo | Arquivo | Status | Linhas |
-|---|---|---|---|
-| Motor de Start | `motors/motor_start.py` | IMPLEMENTADO | 190 |
-| Motor de Saída | `motors/motor_saida.py` | IMPLEMENTADO | 243 |
-| Orquestrador | `orchestrator/orchestrator.py` | IMPLEMENTADO | 386 |
-| Stranger's Room | `orchestrator/stranger_room.py` | IMPLEMENTADO | 142 |
-| Estados (CycleState) | `orchestrator/states.py` | IMPLEMENTADO | 101 |
-| Eventos | `orchestrator/events.py` | IMPLEMENTADO | 27 |
-| Audit Index | `persistence/audit_index.py` | IMPLEMENTADO | 141 |
-| Manifest | `persistence/manifest.py` | IMPLEMENTADO | 104 |
-| Workspace | `persistence/workspace.py` | IMPLEMENTADO | 63 |
-| LLM Client (OpenRouter) | `llm/openrouter.py` | IMPLEMENTADO | 252 |
-| LLM Client (Azure Foundry) | `llm/azure_foundry.py` | IMPLEMENTADO | 33 |
-| LLM Base | `llm/base.py` | IMPLEMENTADO | 22 |
-| Config | `config.py` | IMPLEMENTADO | 184 |
-| Models / Domain | `models.py` | IMPLEMENTADO | 225 |
-| File Prep | `agents/file_prep.py` | IMPLEMENTADO | 88 |
-| Heartbeat loader | `agents/heartbeat.py` | IMPLEMENTADO | 107 |
-| CLI app | `cli/app.py` | IMPLEMENTADO | 62 |
-| CLI display | `cli/display.py` | IMPLEMENTADO | 103 |
-
-Utilitários menores (< 20 linhas, considerados infraestrutura):
-- `llm/call_id.py` — geração de ID de chamada
-- `llm/exceptions.py` — exceções LLM
-- `llm/seed.py` — seed reprodutível
-- `orchestrator/exceptions.py` — exceções do orquestrador
-
-### Agentes
-
-| Agente | Arquivo | Soul | Skills | Heartbeat | Agent | Linhas |
-|---|---|---|---|---|---|---|
-| Watson | `agents/watson.py` | S | S | S | S | 326 |
-| Sherlock | `agents/sherlock.py` | S | S | S | S | 186 |
-| Mycroft | `agents/mycroft.py` | S | S | S | S | 318 |
-
-Todos os agentes possuem os 4 documentos de definição em `docs/agentes/{watson,sherlock,mycroft}/`.
+```bash
+cd diogenes && pytest tests/ -q   # ~17-30s
+```
 
 ---
 
-## 4. Máquina de estados (CycleState)
+## 7. Provider LLM — governança crítica
 
-Estados presentes no código (`orchestrator/states.py`):
+**ChatTCU é o ÚNICO provider permitido em produção.** Dados fiscais do TC 015.848/2025-6
+não podem trafegar por serviços externos. `get_llm_client()` em `llm/base.py` é o guardião.
 
-| Estado | Valor |
+| Provider | Uso |
 |---|---|
-| PREPARADO | `"PREPARADO"` |
-| AGUARDANDO_CONFIRMACAO_MANIFESTO | `"AGUARDANDO_CONFIRMACAO_MANIFESTO"` |
-| EM_EXECUCAO_WATSON | `"EM_EXECUCAO_WATSON"` |
-| AGUARDANDO_REVISAO_MYCROFT_WATSON | `"AGUARDANDO_REVISAO_MYCROFT_WATSON"` |
-| AGUARDANDO_DECISAO_LESTRADE_ALERTA | `"AGUARDANDO_DECISAO_LESTRADE_ALERTA_CRITICO"` |
-| EM_EXECUCAO_SHERLOCK | `"EM_EXECUCAO_SHERLOCK"` |
-| AGUARDANDO_REVISAO_MYCROFT_SHERLOCK | `"AGUARDANDO_REVISAO_MYCROFT_SHERLOCK"` |
-| AGUARDANDO_COMPLETUDE | `"AGUARDANDO_COMPLETUDE"` |
-| AGUARDANDO_VERIFICACAO_SAIDA | `"AGUARDANDO_VERIFICACAO_SAIDA"` |
-| AGUARDANDO_CHANCELA_LESTRADE | `"AGUARDANDO_CHANCELA_LESTRADE"` |
-| ENCERRADO_CHANCELADO | `"ENCERRADO_CHANCELADO"` |
-| PAUSADO_LESTRADE | `"PAUSADO_LESTRADE"` |
-| ABORTADO_FALHA_AGENTE | `"ABORTADO_FALHA_AGENTE"` |
-| ABORTADO_LESTRADE | `"ABORTADO_LESTRADE"` |
-
-**Total: 14 estados.** O `runtime.yaml` espelha os mesmos 14 estados.
-
-Estados que precisarão ser adicionados para integração do Irene:
-- [ ] `VERIFICANDO_EXISTENCIA` — Mycroft verifica se ciclo anterior existe para o módulo
-- [ ] `AGUARDANDO_IRENE` — Irene em execução (verificação documental externa)
-- [ ] `IRENE_CONCLUIDA` — resultado da Irene disponível, aguardando consumo pelo Orquestrador
+| `chattcu` | Produção obrigatória — autenticação MSAL (browser na 1ª execução) |
+| `azure` | Alternativo institucional |
+| `openrouter` | Bloqueado em produção; permitido apenas em testes pytest com mock |
 
 ---
 
-## 5. Provider LLM atual
-
-| Campo | Valor |
-|---|---|
-| Provider | OpenRouter |
-| base_url | `https://openrouter.ai/api/v1` |
-| Modelo Mycroft | `meta-llama/llama-4-maverick` (Fase B) |
-| Modelo Watson | `google/gemini-2.5-flash-lite` (Fase B) |
-| Modelo Sherlock | `deepseek/deepseek-v4-flash` (Fase B) |
-| Temperatura Mycroft | 0.0 |
-| Temperatura Watson | 0.0 |
-| Temperatura Sherlock | 0.1 |
-| Teto custo/ciclo | USD 5.00 |
-| Seed base | 42 |
-| API key configurada | NÃO — `.env` não encontrado no repositório |
-
-> **Atenção:** o arquivo `.env` não está presente. O `.env.example` está disponível.
-> Para executar o sistema é necessário criar `.env` com `DIOGENES_LLM_API_KEY` e `DIOGENES_WORKSPACE`.
-
----
-
-## 6. Colunas do audit_index.csv
+## 8. Estrutura de código
 
 ```
-cycle_id, module_id, activity, status,
-opened_at_utc, ended_at_utc,
-is_sigilo_module, previous_cycle_id,
-watson_rodadas, sherlock_rodadas,
-mycroft_overruled_watson, mycroft_overruled_sherlock,
-watson_critical_alerts_count, sherlock_dilemmas_count,
-motor_saida_invocado_at_utc, motor_saida_occurrences, motor_saida_decision,
-lestrade_seal_at_utc, output_filename, output_hash,
-custo_total_usd, tokens_mycroft, tokens_watson, tokens_sherlock,
-ambiente, diogenes_version, git_commit
+src/diogenes/
+  agents/       — watson.py, sherlock.py, mycroft.py + heartbeat.py + file_prep.py
+  bench/        — core.py + pipeline.py + prompt_builder.py
+  cli/          — app.py + commands/ (start, confirm-manifest, bench/, autorun, …)
+  config.py     — get_config() com @lru_cache — ÚNICO ponto de config
+  irene.py      — wrapper pipeline Irene C1-C5
+  irene_chattcu.py — adaptador ChatTCU para Irene C4 (LLM)
+  llm/          — base.py + chattcu.py + openrouter.py + azure_foundry.py
+  models.py     — TODOS os dataclasses de domínio
+  motors/       — motor_start.py + motor_saida.py
+  orchestrator/ — orchestrator.py + states.py + stranger_room.py + events.py
+  persistence/  — audit_index.py + manifest.py + workspace.py + delivery.py
 ```
 
-**Total: 27 colunas.** Sem coluna de rastreamento para Irene ainda.
+---
+
+## 9. Máquina de estados (CycleState)
+
+17 estados implementados, incluindo os 3 de integração Irene:
+`PREPARADO` → `AGUARDANDO_CONFIRMACAO_MANIFESTO` → `VERIFICANDO_EXISTENCIA` →
+`AGUARDANDO_IRENE` → `IRENE_CONCLUIDA` → `EM_EXECUCAO_WATSON` → …
+→ `AGUARDANDO_VERIFICACAO_SAIDA` → `AGUARDANDO_CHANCELA_LESTRADE` → `ENCERRADO_CHANCELADO`
 
 ---
 
-## 7. CLI — subcomandos disponíveis
+## 10. Próximo passo recomendado
 
+Executar o ciclo completo em produção sobre o pacote real do MOD_010:
+```bash
+cd diogenes
+diogenes start --module MOD_010 --activity 1
+diogenes confirm-manifest --cycle <cycle_id>
+# ou
+diogenes autorun --module MOD_010 --activity 1
 ```
-diogenes init              — Inicializa workspace (cria estrutura + audit_index.csv)
-diogenes start             — Abre novo ciclo (Motor de Start)
-diogenes confirm-manifest  — Confirma manifesto e aciona Orquestrador
-diogenes status            — Exibe estado atual de um ciclo
-diogenes list              — Lista ciclos no audit_index.csv
-diogenes proceed           — Autoriza prosseguimento após alerta crítico de Watson
-diogenes pause             — Pausa ciclo após alerta crítico
-diogenes resume            — Retoma ciclo pausado por Lestrade
-diogenes abort             — Aborta ciclo por decisão de Lestrade
-diogenes verify-output     — Aciona Motor de Saída (verificação do documento)
-diogenes seal              — Chancela final de Lestrade
-diogenes show              — Exibe arquivos da Stranger's Room de um ciclo
-```
 
-**Total: 12 subcomandos — todos implementados.** Nenhum placeholder.
+Todos os prompts foram calibrados e testados via `bench pipeline 10/10 OK`.
 
 ---
 
-## 8. Mycroft — call_types implementados
-
-| call_type | Fase | Descrição |
-|---|---|---|
-| `definir_tasks_watson` | Watson | Mapeia arquivos e prioridades |
-| `avaliar_agente` | Watson/Sherlock | Revisão da resposta do agente |
-| `fixar_decisao` | Watson | Decisão final Watson |
-| `montar_pacote_sherlock` | Sherlock | Prepara pacote de entrada para Sherlock |
-| `avaliar_sherlock` | Sherlock | Revisão da validação metodológica |
-| `fixar_decisao_sherlock` | Sherlock | Decisão final Sherlock |
-| `consolidar` | Consolidação | Relatório final consolidado |
-
-**Ausente:** `acionar_irene` / `verificar_existencia` — necessário para integração do Irene.
-
----
-
-## 9. Irene — estado da integração
-
-| Verificação | Status |
-|---|---|
-| `executar_irene()` no Orquestrador | AUSENTE |
-| Estados `AGUARDANDO_IRENE` no CycleState | AUSENTE |
-| Estado `VERIFICANDO_EXISTENCIA` no CycleState | AUSENTE |
-| Estado `IRENE_CONCLUIDA` no CycleState | AUSENTE |
-| Call_type `acionar_irene` no Mycroft heartbeat | AUSENTE |
-| Referência a Irene no SDD atual | AUSENTE (SDD v0.1 não menciona Irene) |
-| Pacote `irene` instalado no venv | NÃO INSTALADO |
-| Variáveis `IRENE_*` no `.env` | AUSENTES (`.env` inexistente) |
-| Coluna `irene_*` no audit_index | AUSENTE |
-
-**Conclusão: Irene completamente ausente do código. Integração parte do zero.**
-
----
-
-## 10. O que falta para a integração do Irene
-
-Com base no diagnóstico, as ações necessárias em ordem lógica:
-
-1. **Instalar pacote Irene** — `pip install irene==1.3.1` e adicionar ao `pyproject.toml`
-2. **Adicionar estados ao CycleState** — `VERIFICANDO_EXISTENCIA`, `AGUARDANDO_IRENE`, `IRENE_CONCLUIDA` em `orchestrator/states.py`
-3. **Atualizar TRANSICOES_VALIDAS** — definir grafo de transições para os novos estados
-4. **Adicionar variáveis de ambiente** — `IRENE_*` no `.env.example` e em `config.py`
-5. **Implementar `executar_irene()`** no `orchestrator/orchestrator.py` — acionar Irene após Sherlock
-6. **Adicionar call_type `acionar_irene`** no `agents/mycroft.py` + seção correspondente em `docs/agentes/mycroft/heartbeat.md`
-7. **Estender audit_index** — adicionar colunas `irene_invocada_at_utc`, `irene_resultado` em `models.py` (AUDIT_INDEX_COLUMNS)
-8. **Atualizar `runtime.yaml`** — acrescentar novos estados à lista `ciclo.estados`
-9. **Escrever testes** — unitários para os novos estados e integração para o fluxo Irene
-10. **Atualizar CLI se necessário** — verificar se algum novo subcomando de controle da Irene é requerido
-
----
-
-## 11. Divergências identificadas em relação ao SDD v0.1
-
-| Item | SDD v0.1 | Código atual |
-|---|---|---|
-| Irene | Não mencionada | Não implementada — integração é sprint futuro |
-| Colunas audit_index para Irene | N/A | Ausentes |
-| Estados da máquina Irene | N/A | Ausentes |
-
-Nenhuma divergência estrutural encontrada entre o SDD v0.1 e o código implementado. O código está alinhado com o SDD na sua versão atual. A integração do Irene está além do escopo do SDD v0.1 e requer documento próprio (INTEGRACAO_DIOGENES.md).
-
----
-
-## 12. Próximo passo recomendado
-
-Ler o `INTEGRACAO_DIOGENES.md` e implementar os estados `VERIFICANDO_EXISTENCIA`, `AGUARDANDO_IRENE` e `IRENE_CONCLUIDA` em `orchestrator/states.py` — esse é o ponto de ancoragem de toda a integração.
-
----
-
-*DVA-CBS | Projeto Diógenes | TC 015.848/2025-6*
-*Documento gerado automaticamente pelo diagnóstico de estado — 2026-05-30*
+*DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*
+*Atualizado em 2026-06-03 — pós-auditoria sistemática dos 4 agentes*

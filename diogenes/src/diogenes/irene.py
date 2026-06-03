@@ -44,6 +44,8 @@ def executar_irene(
     dir_saida: Path | None = None,
     descricao_modulo: str = "",
     verbose: bool = False,
+    llm_client: object | None = None,
+    cycle_id: str = "",
 ) -> tuple[str, dict]:
     """
     Executa o pipeline Irene (C1-C5) e retorna (estado, metricas).
@@ -55,6 +57,9 @@ def executar_irene(
                            {raiz_projeto}/IRENE_OUT/{modulo}.
         descricao_modulo:  contexto adicional para o prompt de C4 (Semântica).
         verbose:           ativa logging DEBUG no pipeline Irene.
+        llm_client:        LLMClient do Diógenes (ChatTCU) para rotear o C4.
+                           Se fornecido, o C4 usa ChatTCU em vez do SDK OpenAI.
+        cycle_id:          id do ciclo (usado no call_id/seed das chamadas C4).
 
     Retorno:
         estado:  "IRENE_APROVADO" | "IRENE_ALERTA" | "IRENE_BLOQUEADO" | "IRENE_ERRO_FATAL"
@@ -78,6 +83,11 @@ def executar_irene(
         # Irene usará fallback openpyxl (leitura direta, sem dependência externa).
         os.environ["IRENE_EXCEL_MCP_COMMAND"] = ""
         logger.info("[Irene] MCP Excel forçadamente desabilitado — usando openpyxl")
+
+        # ── Garantir que o pacote `irene` (standalone) está importável ────────
+        from diogenes.config import get_config as _get_config
+        from diogenes.irene_chattcu import garantir_irene_no_path
+        garantir_irene_no_path(_get_config().irene_package_dir)
 
         from irene import __version__ as versao_irene
         from irene import amostragem as c3
@@ -167,6 +177,11 @@ def executar_irene(
         _t0_c4 = _time.time()
         try:
             from irene import semantica as c4
+            # Rotear o C4 pelo ChatTCU (LLMClient do Diógenes) quando disponível.
+            # Sem isso, semantica.executar usaria o SDK OpenAI (incompatível com ChatTCU).
+            if llm_client is not None:
+                from diogenes.irene_chattcu import patch_c4_para_chattcu
+                patch_c4_para_chattcu(llm_client, config.model, cycle_id)
             classificacoes = c4.executar(
                 perfis_c4, amostragens_c4,
                 modulo, descricao_modulo or f"Módulo {modulo}",
@@ -353,17 +368,48 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
     O CATALOGO.json é opcional — se não existir, C3 opera em modo degradado.
     """
     module_id = cycle_id.split("_A")[0]  # MOD_010_A1_... → MOD_010
-    input_dir = workspace_path / "input" / module_id
+
+    # Com --delivery, os arquivos ficam em cycles/{id}/inputs/ (não em input/{module}).
+    cycle_inputs = workspace_path / "cycles" / cycle_id / "inputs"
+    input_dir = cycle_inputs if cycle_inputs.is_dir() else workspace_path / "input" / module_id
 
     xlsx_dir = input_dir / "XLSX"
     csv_dir = input_dir / "CSV"
 
-    arquivos_xlsx = sorted(xlsx_dir.glob("*.xlsx")) if xlsx_dir.exists() else []
-    arquivos_csv = sorted(csv_dir.glob("*.csv")) if csv_dir.exists() else []
-    # CATALOGO.json pode estar direto em CSV/ ou em CSV/_CATALOGO/
-    catalogo_path = csv_dir / "CATALOGO.json"
-    if not catalogo_path.exists():
-        catalogo_path = csv_dir / "_CATALOGO" / "CATALOGO.json"
+    if xlsx_dir.exists() or csv_dir.exists():
+        arquivos_xlsx = sorted(xlsx_dir.glob("*.xlsx")) if xlsx_dir.exists() else []
+        arquivos_csv = sorted(csv_dir.glob("*.csv")) if csv_dir.exists() else []
+        # CATALOGO.json pode estar direto em CSV/ ou em CSV/_CATALOGO/
+        catalogo_path = csv_dir / "CATALOGO.json"
+        if not catalogo_path.exists():
+            catalogo_path = csv_dir / "_CATALOGO" / "CATALOGO.json"
+            if not catalogo_path.exists():
+                # Fallback: cria no CSV/ se o diretório existir, senão na raiz do módulo
+                catalogo_path = csv_dir / "CATALOGO.json" if csv_dir.exists() else input_dir / "CATALOGO.json"
+                import json
+                catalogo_path.parent.mkdir(parents=True, exist_ok=True)
+                catalogo_path.write_text(json.dumps({"entradas": []}), encoding="utf-8")
+                logger.info("[Irene] CATALOGO.json ausente auto-gerado em %s", catalogo_path)
+    else:
+        # Modo flexível/recursivo: estrutura hierárquica real (01_ENTRADA_COPIADA + 04_TRANSFORMADO).
+        # Usa rglob para achar XLSX e CSV em subpastas, excluindo DIRS_IGNORADOS.
+        from diogenes.agents.file_prep import DIRS_IGNORADOS as _DIRS_IGNORADOS
+
+        def _eh_ignorado(p: Path) -> bool:
+            return any(parte in _DIRS_IGNORADOS for parte in p.relative_to(input_dir).parts[:-1])
+
+        arquivos_xlsx = [p for p in sorted(input_dir.rglob("*.xlsx")) if not _eh_ignorado(p)]
+        arquivos_csv  = [p for p in sorted(input_dir.rglob("*.csv"))  if not _eh_ignorado(p)]
+        # CATALOGO.json: primeiro em _CATALOGO/ (saída de corrida anterior), depois raiz
+        cands = list(input_dir.rglob("CATALOGO.json"))
+        if cands:
+            catalogo_path = sorted(cands)[0]
+        else:
+            import json
+            catalogo_path = input_dir / "CATALOGO.json"
+            catalogo_path.parent.mkdir(parents=True, exist_ok=True)
+            catalogo_path.write_text(json.dumps({"entradas": []}), encoding="utf-8")
+            logger.info("[Irene] CATALOGO.json ausente auto-gerado em %s", catalogo_path)
 
     manifesto = {
         "modulo": module_id,
@@ -372,14 +418,14 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
         "arquivos_xlsx": [
             {
                 "nome": f.name,
-                "caminho_relativo": str(f.relative_to(workspace_path)),
+                "caminho_relativo": str(f.relative_to(workspace_path).as_posix()),
             }
             for f in arquivos_xlsx
         ],
         "arquivos_csv": [
             {
                 "nome": f.name,
-                "caminho_relativo": str(f.relative_to(workspace_path)),
+                "caminho_relativo": str(f.relative_to(workspace_path).as_posix()),
             }
             for f in arquivos_csv
         ],
@@ -387,7 +433,7 @@ def _derivar_manifesto_irene(cycle_id: str, workspace_path: Path) -> Path:
 
     if catalogo_path.exists():
         manifesto["catalogo_json"] = {
-            "caminho_relativo": str(catalogo_path.relative_to(workspace_path))
+            "caminho_relativo": str(catalogo_path.relative_to(workspace_path).as_posix())
         }
 
     # Gravar em cycles/{cycle_id}/irene_manifesto.yaml

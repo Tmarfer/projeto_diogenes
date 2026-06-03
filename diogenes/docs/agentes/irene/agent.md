@@ -21,7 +21,7 @@ versao: 1.3.1
 
 ```yaml
 provider: chattcu
-model: "Claude 4.6 Sonnet"   # piloto de teste — escalar para claude-4-7-opus em produção
+model: "gpt-5.5-thinking"     # configurado no .env (IRENE_MODEL) — alinhado com o TCU em produção
 temperatura: 0.1
 max_tokens: 8000
 timeout_segundos: 180

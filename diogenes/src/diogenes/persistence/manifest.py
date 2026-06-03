@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from diogenes.models import CycleManifest
+from diogenes.models import CycleManifest, InputFileInfo
 
 ACTIVITY_NAMES: dict[int, str] = {
     1: "Atividade 1 — Validação de Módulo",
@@ -25,20 +25,26 @@ def render_manifesto(manifest: CycleManifest) -> str:
     activity_name = ACTIVITY_NAMES.get(manifest.activity, f"Atividade {manifest.activity}")
     sala_str = "Sim" if manifest.is_sigilo_module else "Não"
 
-    # Tabela de arquivos
-    rows: list[str] = []
-    for f in manifest.input_files:
+    def _linha(f: InputFileInfo) -> str:
         size_str = (
             f"{f.size_bytes / 1_048_576:.2f} MB"
             if f.size_bytes >= 1_048_576
             else f"{f.size_bytes / 1_024:.1f} KB"
         )
         hash_short = f"{f.sha256[:16]}...{f.sha256[-8:]}"
-        rows.append(
-            f"| {f.name} | {f.extension or '—'} | {size_str} "
+        return (
+            f"| {f.name} | {f.tipo or f.extension or '—'} | {size_str} "
             f"| `{hash_short}` | `inputs/{f.rel_path}` |"
         )
-    table = "\n".join(rows)
+
+    analisaveis = [f for f in manifest.input_files if f.categoria == "analisavel"]
+    metadados = [f for f in manifest.input_files if f.categoria != "analisavel"]
+    cabec = (
+        "| Arquivo | Tipo | Tamanho | Hash SHA-256 | Caminho em inputs/ |\n"
+        "|---------|------|---------|--------------|--------------------|\n"
+    )
+    tabela_analise = cabec + ("\n".join(_linha(f) for f in analisaveis) or "| — | — | — | — | — |")
+    tabela_metadados = cabec + ("\n".join(_linha(f) for f in metadados) or "| — | — | — | — | — |")
 
     prioridades = manifest.prioridades_analise or "[não preenchido]"
     alertas = manifest.alertas_lestrade or "[Nenhuma condição especial identificada.]"
@@ -60,13 +66,18 @@ def render_manifesto(manifest: CycleManifest) -> str:
         f"Python {manifest.python_version} | openai {manifest.openai_version}\n"
         f"**Commit:** `{manifest.git_commit}`\n"
         f"\n---\n\n"
-        f"## Arquivos Recebidos\n\n"
-        f"| Arquivo | Formato | Tamanho | Hash SHA-256 | Caminho em inputs/ |\n"
-        f"|---------|---------|---------|--------------|--------------------|\n"
-        f"{table}\n\n"
-        f"**Total de arquivos:** {len(manifest.input_files)}\n"
-        f"**Inventário declarado pela RFB:** Não declarado — piloto local\n"
-        f"**Observação:** Nenhuma\n"
+        f"## Arquivos para Análise\n\n"
+        f"{tabela_analise}\n\n"
+        f"**Arquivos para análise:** {len(analisaveis)}\n"
+        f"\n---\n\n"
+        f"## Metadados / Manifesto de Entrega (não analisados)\n\n"
+        f"*Arquivos de logs, metadados e manifesto de entrega — registrados para "
+        f"integridade/auditoria, não enviados aos agentes.*\n\n"
+        f"{tabela_metadados}\n\n"
+        f"**Total recebido (todos os arquivos):** {len(manifest.input_files)}\n"
+        f"\n---\n\n"
+        f"## Reconciliação com Manifesto de Entrega\n\n"
+        f"{manifest.delivery_reconciliation or 'Não avaliada.'}\n"
         f"\n---\n\n"
         f"## Prioridades de Análise\n\n"
         f"*Campo a preencher por Lestrade antes de confirmar este manifesto.*\n\n"

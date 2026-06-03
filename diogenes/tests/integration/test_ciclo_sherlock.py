@@ -151,8 +151,9 @@ def test_ciclo_completo_sem_revisoes(httpx_mock: HTTPXMock, ciclo, cfg, workspac
         CONSOLIDADO_WATSON,                                                 # consolidar_watson (6)
         AVALIACAO_OK, DECISAO_WATSON,                                       # avaliar + fixar Watson (7-8)
         PACOTE_SH3,                                                         # montar_pacote_sherlock (9)
-        VALIDACAO_SHERLOCK, AVALIACAO_OK, DECISAO_SHERLOCK,                # Sherlock (10-12)
-        RELATORIO,                                                          # consolidação (13)
+        VALIDACAO_SHERLOCK, VALIDACAO_SHERLOCK,                            # validar + consolidar_sherlock (10-11)
+        AVALIACAO_OK, DECISAO_SHERLOCK,                                    # avaliar + fixar Sherlock (12-13)
+        RELATORIO,                                                          # consolidação (14)
     ]:
         httpx_mock.add_response(
             url="https://openrouter.ai/api/v1/chat/completions",

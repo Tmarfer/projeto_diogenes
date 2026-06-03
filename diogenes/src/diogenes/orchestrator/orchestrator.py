@@ -14,6 +14,10 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+from diogenes.agents.contexto_metodologico import (
+    carregar_corpus_juridico,
+    carregar_metodologia_modulo,
+)
 from diogenes.agents.mycroft import MycrooftAgent
 from diogenes.agents.sherlock import SherlockAgent
 from diogenes.agents.watson import WatsonAgent
@@ -193,7 +197,6 @@ class Orchestrator:
 
     def retomar_apos_alerta(self, manifest: CycleManifest) -> str:
         """Chamado por `diogenes proceed` após alerta crítico de Watson."""
-        self._transicionar(CycleState.EM_EXECUCAO_SHERLOCK)
         self._events.log("LESTRADE_PROCEED_AUTHORIZED")
         # Ao retomar após alerta, não temos tasks_result/output_watson em memória.
         # Usamos defaults seguros: sem planilha de verificação, sem nota metodológica.
@@ -306,6 +309,16 @@ class Orchestrator:
 
         # ── AGUARDANDO_IRENE ──────────────────────────────────────────────────
         self._transicionar(CycleState.AGUARDANDO_IRENE)
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+            Console().print(Panel(
+                "[bold cyan]🔍 IRENE — Catalogação Semântica[/bold cyan]\n"
+                f"Iniciando a catalogação semântica e a amostragem estruturada para o módulo: [bold]{manifest.module_id}[/bold]",
+                border_style="cyan"
+            ))
+        except Exception:  # noqa: BLE001
+            pass
         invocada_at_utc = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         self._events.log("IRENE_INICIO", details={"modulo": manifest.module_id})
 
@@ -318,6 +331,8 @@ class Orchestrator:
             caminho_manifesto=manifest_path,
             modulo=manifest.module_id,
             dir_saida=self._cfg.workspace.path,
+            llm_client=self._llm,
+            cycle_id=manifest.cycle_id,
         )
 
         self._events.log("IRENE_FIM", details={"estado": estado, **{
@@ -366,6 +381,16 @@ class Orchestrator:
         """
         fase = "watson_integridade"
         self._transicionar(CycleState.EM_EXECUCAO_WATSON)
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+            Console().print(Panel(
+                "[bold magenta]🧪 WATSON — Integridade Técnica[/bold magenta]\n"
+                f"Iniciando a análise técnica individualizada de arquivos do módulo: [bold]{manifest.module_id}[/bold]",
+                border_style="magenta"
+            ))
+        except Exception:  # noqa: BLE001
+            pass
         self._events.log("PHASE_STARTED", phase=fase, agent="watson")
 
         # Cache de tasks — evita chamada LLM cara quando Mycroft está saturado.
@@ -399,6 +424,8 @@ class Orchestrator:
         proximo_id = self._proximo_id_alerta(manifest.module_id, 1)
         analises_watson: list[WatsonOutput] = []
         for fi in manifest.input_files:
+            if fi.categoria != "analisavel":
+                continue
             ckpt = _watson_ckpt_carregar(ckpt_dir, fi.rel_path)
             if ckpt is not None:
                 analise_fi, proximo_id = ckpt
@@ -505,20 +532,52 @@ class Orchestrator:
                 or "[Nota metodológica com alteração identificada — ver watson_consolidado.md seção 2]"
             )
 
+        # Régua metodológica do Sherlock (Etapa 3):
+        #  - cat. C: metodologia / regra de negócio do módulo (copiada nos inputs do ciclo)
+        #  - cat. D: arcabouço jurídico curado por módulo (referenciado por config)
+        metodologia = carregar_metodologia_modulo(inputs_dir)
+        corpus_juridico = carregar_corpus_juridico(
+            self._cfg.corpus_juridico_dir, manifest.module_id
+        )
+        self._events.log("SHERLOCK_REGUA_CARREGADA", phase=fase, details={
+            "metodologia_chars": len(metodologia),
+            "corpus_juridico_chars": len(corpus_juridico),
+            "corpus_dir": str(self._cfg.corpus_juridico_dir or ""),
+        })
+        if not corpus_juridico:
+            self._events.log("SHERLOCK_CORPUS_AUSENTE", phase=fase, details={
+                "modulo": manifest.module_id,
+                "aviso": "Arcabouço jurídico não localizado — defina DIOGENES_CORPUS_JURIDICO_DIR.",
+            })
+
         pacote = self._mycroft.montar_pacote_sherlock(
             manifest, inputs_dir, decisao_watson, watson_apresentacao,
             nota_metodologica_detalhes=nota_metodologica_detalhes,
+            metodologia=metodologia,
+            corpus_juridico=corpus_juridico,
         )
 
         self._transicionar(CycleState.EM_EXECUCAO_SHERLOCK)
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+            Console().print(Panel(
+                "[bold green]🔎 SHERLOCK — Validação Metodológica[/bold green]\n"
+                f"Iniciando a verificação de regras de negócio e aderência metodológica baseada no corpus jurídico...",
+                border_style="green"
+            ))
+        except Exception:  # noqa: BLE001
+            pass
         self._events.log("PHASE_STARTED", phase=fase, agent="sherlock")
 
-        output_sherlock = self._sherlock.validar(pacote)
+        # Fase 1: verificação de ponto metodológico (call_type verificar_ponto).
+        output_pontos = self._sherlock.validar(pacote)
 
         # Frente 3a: validacao_planilha_rn_sherlock — acionado condicionalmente quando
         # a Planilha de Verificação está no manifesto e Watson já a validou.
         # Executado após verificar_ponto (embutido em validar()) e antes da avaliação
         # de Mycroft, para que Sherlock tenha perspectiva metodológica da planilha.
+        output_planilha_sherlock = None
         watson_planilha_rn_path = self._runtime_dir / "watson_planilha_rn.md"
         if tasks_result.planilha_verificacao_no_pacote and watson_planilha_rn_path.exists():
             watson_planilha_rn_texto = watson_planilha_rn_path.read_text(encoding="utf-8")
@@ -530,6 +589,13 @@ class Orchestrator:
                 output_planilha_sherlock.texto, encoding="utf-8"
             )
             self._events.log("SHERLOCK_PLANILHA_RN_CONCLUIDA", phase=fase)
+
+        # Fase 2: consolidação (call_type consolidar_sherlock) — produz o Relatório
+        # Estruturado com as 11 seções (10.1–10.11) + JSON de ocorrências. É este
+        # output (não o de uma verificação de ponto) que sofre review de Mycroft e
+        # passa pela verificação de completude.
+        output_sherlock = self._sherlock.consolidar(output_pontos, output_planilha_sherlock)
+        self._events.log("SHERLOCK_CONSOLIDADO", phase=fase)
 
         self._sr.escrever_apresentacao(fase=fase, author="sherlock",
                                         content=output_sherlock.texto)
@@ -561,7 +627,10 @@ class Orchestrator:
         # Frente 3c: verificar completude das 11 seções do Relatório Estruturado (10.1–10.11)
         # e do JSON de ocorrências (seção 11) antes de acionar Mycroft.consolidar().
         # Se incompleto: estado AGUARDANDO_COMPLETUDE e Lestrade notificado.
-        secoes_faltando = _verificar_completude_sherlock(output_sherlock.texto)
+        # Verifica a completude no relatório original (apresentação), já que as rodadas de
+        # resposta a críticas focam apenas nos pontos questionados e não repetem a estrutura toda.
+        relatorio_texto = self._sr.ler_apresentacao("sherlock_validacao") or output_sherlock.texto
+        secoes_faltando = _verificar_completude_sherlock(relatorio_texto)
         if secoes_faltando:
             self._transicionar(CycleState.AGUARDANDO_COMPLETUDE)
             self._events.log("SHERLOCK_COMPLETUDE_INSUFICIENTE", phase=fase,
@@ -594,7 +663,23 @@ class Orchestrator:
         decisao_watson: DecisaoFinal,
         decisao_sherlock: DecisaoFinal,
     ) -> Path:
-        relatorio = self._mycroft.consolidar(manifest, decisao_watson, decisao_sherlock)
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+            Console().print(Panel(
+                "[bold yellow]👑 MYCROFT — Consolidação e Relatório[/bold yellow]\n"
+                f"Orquestrador finalizando o ciclo. Gerando relatório preliminar do módulo: [bold]{manifest.module_id}[/bold]",
+                border_style="yellow"
+            ))
+        except Exception:  # noqa: BLE001
+            pass
+        watson_consolidado = self._sr.ler_apresentacao("watson_integridade")
+        sherlock_consolidado = self._sr.ler_apresentacao("sherlock_validacao")
+        relatorio = self._mycroft.consolidar(
+            manifest, decisao_watson, decisao_sherlock,
+            watson_consolidado=watson_consolidado,
+            sherlock_consolidado=sherlock_consolidado,
+        )
         prefixo = "relatorio_preliminar" if manifest.activity == 1 else "relatorio_final"
         output_filename = f"{prefixo}_{self._cycle_id}.md"
         output_path = self._cycle_dir / "output" / output_filename
@@ -648,6 +733,8 @@ def _localizar_planilha_verificacao(
     Usado para acionar watson.validacao_planilha_rn condicionalmente (Frente 3a).
     """
     for fi in manifest.input_files:
+        if fi.categoria != "analisavel":
+            continue
         if "verificacao" in fi.name.lower():
             candidate = inputs_dir / fi.rel_path
             if candidate.exists():

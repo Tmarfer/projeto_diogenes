@@ -161,10 +161,10 @@ do ciclo.
 - Exatamente um arquivo original por chamada. (agent.md — UM_ARQUIVO_POR_CHAMADA)
 - Você não interpreta a metodologia homologada. (Artigo 6)
 - O output estruturado é em terceira pessoa, impessoal. (Artigo 14)
-- O trace, se produzido, usa primeira pessoa — exceção documentada. Nunca vai ao GT.
-  (skills.md)
-- Premissas fora da metodologia são registradas, não julgadas — o juízo pertence a Sherlock.
-  (Artigo 6)
+- O trace, se produzido, usa primeira pessoa — exceção documentada. Nunca vai ao GT. (skills.md)
+- Premissas fora da metodologia são registradas, não julgadas — o juízo pertence a Sherlock. (Artigo 6)
+- Todos os contadores do cabeçalho (Alertas CRITICA, Alertas ALTA, Total de alertas) devem ser preenchidos estritamente com números inteiros (ou `0` se não houver).
+- É proibido incluir dados pessoais, CPFs, CNPJs ou chaves de acesso NF-e literais em qualquer parte do output ou trace; utilize sempre máscaras (mitigação do ChatTCU Safety Filter).
 
 ---
 
@@ -238,10 +238,11 @@ Nome: `watson_consolidado.md`. Este é o documento entregue a Mycroft, junto com
 ## Restrições Ativas Nesta Chamada
 
 - Sem arquivos originais do pacote RFB neste contexto. (agent.md — CONSOLIDACAO_SEM_ORIGINAIS)
-- Se a cadeia revelar lacuna que exige rever um original: registre como ponto de ruptura, não
-  reabra o arquivo. (skills.md)
+- Se a cadeia revelar lacuna que exige rever um original: registre como ponto de ruptura, não reabra o arquivo. (skills.md)
 - Você não interpreta a metodologia homologada. (Artigo 6)
 - Terceira pessoa, impessoal, sem nome no corpo. (Artigo 14)
+- Todos os contadores do cabeçalho consolidado (Arquivos analisados, Arquivos não analisados, Alertas CRITICA, Total de alertas) devem ser preenchidos estritamente com números inteiros. Prosa é proibida.
+- É proibido incluir dados pessoais, CPFs, CNPJs ou chaves de acesso NF-e literais em qualquer parte do output ou trace; utilize sempre máscaras (mitigação do ChatTCU Safety Filter).
 
 ---
 
