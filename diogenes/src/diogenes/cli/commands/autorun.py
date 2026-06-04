@@ -8,6 +8,7 @@ humana. Cada invocação cria um ciclo novo (igual ao `start`).
 """
 from __future__ import annotations
 
+import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -69,6 +70,7 @@ def autorun(
         f"Inputs verificados: {len(manifest.input_files)} arquivos ({n_analise} para análise)"
     )
     display.passo_ok(f"Ciclo criado: {cycle}")
+    _abrir_painel(cfg.workspace.path, cycle)
 
     # ── 2. Confirmação automática do manifesto ───────────────────────────────
     audit = AuditIndex(cfg.workspace.path)
@@ -146,6 +148,23 @@ def _resolver_pausas(
             break
         iteracoes += 1
     return resultado
+
+
+def _abrir_painel(workspace: Path, cycle: str) -> None:
+    """Gera o HTML inicial do painel e abre no browser (best-effort)."""
+    try:
+        from diogenes.reports.cycle_report import build_report
+        from diogenes.reports.render_html import render_html
+
+        data = build_report(cycle, workspace)
+        html = render_html(data)
+        html_path = workspace / "cycles" / cycle / "report.html"
+        html_path.write_text(html, encoding="utf-8")
+        url = html_path.resolve().as_uri()
+        display.console.print(f"  [dim]Painel:[/dim] {url}")
+        webbrowser.open(url)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _resumo_final(audit: AuditIndex, cycle: str) -> None:

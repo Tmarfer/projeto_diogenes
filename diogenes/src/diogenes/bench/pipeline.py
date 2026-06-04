@@ -158,9 +158,12 @@ class BenchPipeline:
         # Pasta da entrega a varrer. Default: workspace/input/{module}; --delivery
         # permite apontar direto para um pacote preparado (ex: _teste_inputs/.../<data>).
         self._delivery_dir = Path(delivery_dir).expanduser().resolve() if delivery_dir else self._input_dir
-        self._legal_corpus_dir = (
-            Path(legal_corpus_dir).expanduser().resolve() if legal_corpus_dir else None
-        )
+        # --legal-corpus tem prioridade; sem a flag, herda DIOGENES_CORPUS_JURIDICO_DIR
+        # do config para espelhar o caminho de produção (orquestrador lê do env var).
+        if legal_corpus_dir:
+            self._legal_corpus_dir: Path | None = Path(legal_corpus_dir).expanduser().resolve()
+        else:
+            self._legal_corpus_dir = cfg.corpus_juridico_dir
         if not self._delivery_dir.is_dir():
             raise FileNotFoundError(
                 f"Diretório de entrega não encontrado: {self._delivery_dir}"

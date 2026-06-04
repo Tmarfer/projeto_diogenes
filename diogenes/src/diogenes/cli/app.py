@@ -25,6 +25,7 @@ from diogenes.cli.commands import (
     list_cycles,
     pause,
     proceed,
+    report,
     resume,
     seal,
     show,
@@ -68,4 +69,5 @@ app.command(name="verify-output")(verify_output.verify_output)
 app.command(name="seal")(seal.seal)
 app.command(name="show")(show.show)
 app.command(name="complete-sherlock")(complete_sherlock.complete_sherlock)
+app.command(name="report")(report.report)
 app.add_typer(bench_app, name="bench")
