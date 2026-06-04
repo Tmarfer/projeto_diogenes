@@ -108,7 +108,13 @@ diogenes bench call watson --call-type analise_inicial --prompt "Responda OK" # 
 
 Subcomandos do ciclo: `init`, `start`, `confirm-manifest`, `status`, `list`,
 `show`, `proceed`, `pause`, `resume`, `abort`, `verify-output`, `seal`,
-`complete-sherlock`. Cada um vive em `cli/commands/{nome}.py`.
+`complete-sherlock`, `report`. Cada um vive em `cli/commands/{nome}.py`.
+
+```bash
+# Painel de acompanhamento local (equivalente ao LangSmith — dados ficam na máquina)
+diogenes report --cycle <id>                   # Markdown no terminal
+diogenes report --cycle <id> --format html     # HTML no browser (abre automaticamente)
+```
 
 ---
 
@@ -122,15 +128,19 @@ file_prep: openpyxl (xlsx) · sqlparse (sql) · nbformat (ipynb) · pdfminer.six
 ```
 src/diogenes/
   agents/      — Watson, MycrooftAgent, Sherlock + heartbeat + file_prep
+                 (file_prep: ARQUIVOS_SEMPRE_ANALISE libera protocolo_recebimento.md + inventario.xlsx)
   bench/       — bancada cirúrgica: core.py + pipeline.py + prompt_builder.py
-  cli/         — app.py + commands/ (um arquivo por subcomando) + commands/bench/
+                 (pipeline herda DIOGENES_CORPUS_JURIDICO_DIR do .env quando --legal-corpus ausente)
+  cli/         — app.py + commands/ (um arquivo por subcomando, incl. report.py) + commands/bench/
   config.py    — get_config() com @lru_cache — ÚNICO ponto de leitura de config
   irene.py     — wrapper do pipeline Irene (C1-C5); catalogação semântica pré-Watson
   llm/         — base.py (Protocol/factory) + chattcu.py + openrouter.py + azure_foundry.py + seed.py + call_id.py
   models.py    — TODOS os dataclasses de domínio (LLMCall, CycleRecord, etc.)
   motors/      — motor_start.py + motor_saida.py
   orchestrator/— orchestrator.py + states.py + stranger_room.py + events.py
+                 (EventLogger.log() regenera report.html em _cycle_dir/ após cada evento — best-effort)
   persistence/ — audit_index.py + manifest.py + workspace.py
+  reports/     — cycle_report.py + render_markdown.py + render_html.py (NOVO — painel de acompanhamento)
 ```
 
 ### Papéis dos módulos-chave
@@ -141,7 +151,8 @@ src/diogenes/
 | `models.py` | Todos os dataclasses de domínio — sem lógica, sem imports internos |
 | `agents/file_prep.py` | Converte xlsx/sql/ipynb/pdf/md em texto para incluir nos prompts de Watson |
 | `orchestrator/stranger_room.py` | Persiste arquivos imutáveis Markdown+frontmatter YAML da revisão Mycroft ↔ Watson/Sherlock |
-| `orchestrator/events.py` | `EventLogger` — grava JSONL de auditoria em `_runtime/events.jsonl` |
+| `orchestrator/events.py` | `EventLogger` — grava JSONL de auditoria + regenera `report.html` ao vivo (best-effort) |
+| `reports/cycle_report.py` | `build_report()` agrega eventos/LLM calls/audit_index em `CycleReportData` |
 | `persistence/audit_index.py` | Lê/grava `audit_index.csv` com escrita atômica (temp + rename) |
 | `llm/base.py` | `LLMClient` Protocol + factory `get_llm_client()` + guardião de governança de provider |
 | `irene.py` | `executar_irene()` chama os estágios C1-C5 do pipeline Irene como biblioteca e devolve `(estado, metricas)` ao Orquestrador |
@@ -215,6 +226,8 @@ DIOGENES_SSL_VERIFY=false        # em redes TCU com proxy de inspeção SSL
 DIOGENES_DEV_MODE=false          # true → retries/timeouts curtos, bloqueia seal, habilita IRENE_C4_SAMPLE_N
 IRENE_C4_SAMPLE_N=0              # limita catalogação C4/C5 a N abas (só honrado em DEV_MODE)
 DIOGENES_POST_IRENE_COOLDOWN_S=0 # pausa após Irene antes de Mycroft/Watson (ignorada em DEV_MODE)
+DIOGENES_CORPUS_JURIDICO_DIR=/caminho/ARCABOCO_JURIDICO  # arcabouço jurídico curado (cat. D)
+                                                          # recorte por módulo derivado automaticamente
 
 # Inicializar workspace (rodar de dentro de diogenes/)
 diogenes init
@@ -412,28 +425,47 @@ real, usado na Fase D.
 - Exceções em `except` clauses usam `raise ... from e` (B904)
 - Nenhuma semicolon em statements múltiplos (E702)
 
-**Estado atual:** 187 testes passando, ruff limpo nos arquivos tocados.
+**Estado atual:** 205 testes passando, 1 skipped (`docling` não instalado no Mac), ruff limpo nos arquivos tocados.
 
 ---
 
 ## Estado atual e itens pendentes
 
-A frente de trabalho corrente compara famílias de modelos no ChatTCU (`gpt-5.4`
-vs `gpt-5.5`, Claude) sobre MOD_010. Os relatórios `AUDITORIA_COMPARATIVA_*.md` e
-`AUDITORIA_BENCH_*.md` na raiz de `diogenes/` documentam essas execuções —
-consulte-os e o `ESTADO_DIOGENES.md`/`STATUS.md` para o estado vivo do piloto.
+Consulte `ESTADO_DIOGENES.md` para o estado vivo do piloto. `AUDITORIA_COMPARATIVA_*.md`
+e `AUDITORIA_BENCH_*.md` na raiz de `diogenes/` documentam as execuções comparativas
+entre famílias de modelo (`gpt-5.4`, `gpt-5.5`, Claude).
 
-Calibrações de prompt realizadas na auditoria sistemática (2026-06-03):
-- **Watson `soul.md`** — adicionada seção "Prevenção de Interceptação de Segurança (ChatTCU)": mascaramento de PII, não-transcrição de dados brutos, síntese de conteúdo para evitar recusas do filtro de segurança.
-- **Watson `skills.md`** — adicionada regra de formato numérico estrito para contadores de cabeçalho (`**Alertas CRITICA:** N` deve ser inteiro, não prosa) + regra de mascaramento/mitigação de segurança.
-- **Watson `heartbeat.md`** — adicionadas restrições ativas à seção `consolidar_watson`: contadores inteiros obrigatórios e proibição de PII literal.
-- **Sherlock `heartbeat.py`** — mapeamento `"validacao_inicial"` → `"validacao_inicial"` (era `"verificar_ponto"`). Corrige causa raiz do NV-GLOBAL-01: Sherlock recebia instrução `UM_PONTO_POR_CHAMADA` mas era chamado monoliticamente.
-- **Sherlock `heartbeat.md`** — adicionada seção `# Heartbeat de Sherlock — validacao_inicial` com protocolo monolítico multi-ponto.
-- **Sherlock `soul.md`** — adicionadas exceção de trace em 1ª pessoa (Art. 14) e seção "Prevenção de Interceptação de Segurança (ChatTCU)".
-- **Mycroft `soul.md`** — adicionada seção "Prevenção de Interceptação de Segurança (ChatTCU)": mascaramento de PII nos outputs de avaliação/decisão/consolidação.
+### Correções e funcionalidades entregues (2026-06-03/04)
 
-Dívida técnica conhecida (não bloqueante):
+**Calibrações de prompt (auditoria 2026-06-03):**
+- Watson `soul.md`/`skills.md`/`heartbeat.md` — segurança ChatTCU, formato numérico estrito.
+- Sherlock `heartbeat.py` — mapeamento `validacao_inicial` corrigido (causa raiz NV-GLOBAL-01).
+- Sherlock `heartbeat.md`/`soul.md` — protocolo monolítico multi-ponto.
+- Mycroft `soul.md` — segurança ChatTCU.
+
+**Correções pós-ciclo noturno (2026-06-04):**
+- `contexto_metodologico.py` — `_MAX_CHARS_METODOLOGIA` 20k→80k: RN de 28.5k chega
+  completa ao Sherlock. Antes só ~6.3k passavam (Metodologia_Foco esgotava o teto primeiro).
+- `motor_saida.py` — Etapa 2.5: remove `[arquivo_interno.md]` antes do split de filename.
+- `runtime.yaml` — padrões e substituições para `"Stranger Room"` (sem apóstrofo),
+  `MC_decisao`, `MC_consolidado`, `watson_consolidado`, `sherlock_consolidado`.
+- `sherlock/skills.md` — seção 10.10 "Deliberações Internas do Ciclo" (era "Stranger Room").
+- `agents/file_prep.py` — `ARQUIVOS_SEMPRE_ANALISE` libera `protocolo_recebimento.md` e
+  `inventario.xlsx` independentemente de `DIRS_IGNORADOS`.
+
+**Novas funcionalidades:**
+- `motors/motor_start.py` + `orchestrator/` + `agents/mycroft.py` — Atividade 2 (revalidação):
+  herda histórico A1, Watson recebe instrução de confronto, Mycroft classifica inconsistências.
+- `reports/` + `cli/commands/report.py` — `diogenes report`: painel HTML local ao vivo,
+  avatares dos 4 agentes, live auto-refresh, sem envio de dados externos.
+- `bench/pipeline.py` — fallback de corpus para `DIOGENES_CORPUS_JURIDICO_DIR` do `.env`.
+
+### Dívida técnica conhecida (não bloqueante)
 - ~40 erros de mypy pré-existentes (`dict` sem type args, etc.)
 - `fase_ativa: B` em `agents_spec.yaml` é apenas rótulo de rastreabilidade
+
+### Próximo passo
+Novo `autorun` completo com as correções — Sherlock agora recebe a RN inteira.
+O painel abre sozinho no browser durante a execução.
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*
