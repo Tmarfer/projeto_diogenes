@@ -142,6 +142,14 @@ class MotorStart:
             )
 
         cycle_num = self._audit.count_cycles_for_module(module_id) + 1
+
+        # Atividade 2 (revalidação): herdar o ciclo de Atividade 1 mais recente
+        # encerrado para o módulo (RF-MS-05). O confronto com o histórico é
+        # conduzido por Watson/Mycroft a partir dos artefatos copiados abaixo.
+        previous_cycle_id = ""
+        if activity == 2:
+            previous_cycle_id = self._resolver_ciclo_anterior(module_id)
+
         cycle_dir = self._wm.criar_estrutura_ciclo(cycle_id)
 
         # Copiar inputs (sem alterar originais — Art. 13)
@@ -157,6 +165,12 @@ class MotorStart:
                     f"Hash diverge após cópia de '{f.name}': "
                     f"esperado {f.sha256[:16]}…, obtido {copy_hash[:16]}…"
                 )
+
+        # Atividade 2: copiar os artefatos do ciclo anterior para _historico/
+        # (relatório consolidado + decisões finais de Watson e Sherlock). Esses
+        # arquivos são o insumo do confronto na revalidação (RF-MS-02, RF-MY-08).
+        if activity == 2 and previous_cycle_id:
+            self._copiar_historico_a1(previous_cycle_id, cycle_dir)
 
         now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         is_sigilo = module_id.upper() in [
@@ -180,6 +194,7 @@ class MotorStart:
             python_version=sys.version.split()[0],
             openai_version=_package_version("openai"),
             cycle_num=cycle_num,
+            previous_cycle_id=previous_cycle_id,
             delivery_manifest_status=reconciliacao.status,
             delivery_reconciliation=render_reconciliacao_md(reconciliacao),
         )
@@ -193,6 +208,7 @@ class MotorStart:
             status=CycleState.PREPARADO.value,
             opened_at_utc=now_utc,
             is_sigilo_module=str(is_sigilo).lower(),
+            previous_cycle_id=previous_cycle_id,
             diogenes_version=manifest.diogenes_version,
             git_commit=manifest.git_commit,
             ambiente=self._cfg.llm.env,
@@ -215,11 +231,59 @@ class MotorStart:
             )
         if activity == 2:
             # Verificar existência de ciclo A1 encerrado para o módulo
-            self._audit.create_if_not_exists()
-            ciclos = self._audit.list_cycles(module_id=module_id, status="ENCERRADO_CHANCELADO")
-            a1_encerrados = [c for c in ciclos if c["activity"] == "1"]
-            if not a1_encerrados:
-                raise NoPreviousCycleError(
-                    f"Atividade 2 requer ciclo de Atividade 1 encerrado para '{module_id}'. "
-                    f"Nenhum encontrado no audit_index."
-                )
+            # (levanta NoPreviousCycleError se ausente).
+            self._resolver_ciclo_anterior(module_id)
+
+    def _resolver_ciclo_anterior(self, module_id: str) -> str:
+        """
+        Retorna o cycle_id do ciclo de Atividade 1 ENCERRADO_CHANCELADO mais
+        recente do módulo (RF-MS-05). Levanta NoPreviousCycleError se não houver.
+        """
+        self._audit.create_if_not_exists()
+        ciclos = self._audit.list_cycles(
+            module_id=module_id, status="ENCERRADO_CHANCELADO"
+        )
+        a1_encerrados = [c for c in ciclos if c["activity"] == "1"]
+        if not a1_encerrados:
+            raise NoPreviousCycleError(
+                f"Atividade 2 requer ciclo de Atividade 1 encerrado para '{module_id}'. "
+                f"Nenhum encontrado no audit_index."
+            )
+        # Mais recente por opened_at_utc; cycle_id como desempate determinístico.
+        mais_recente = max(
+            a1_encerrados, key=lambda c: (c.get("opened_at_utc", ""), c["cycle_id"])
+        )
+        return mais_recente["cycle_id"]
+
+    def _copiar_historico_a1(self, previous_cycle_id: str, cycle_dir: Path) -> None:
+        """
+        Copia os artefatos do ciclo de Atividade 1 para `_historico/` do novo
+        ciclo: relatório consolidado e decisões finais de Watson e Sherlock.
+        Esses arquivos são o insumo do confronto na revalidação (RF-MS-02).
+        Best-effort: a ausência de um artefato individual não interrompe o ciclo.
+        """
+        prev_dir = self._wm.get_cycle_dir(previous_cycle_id)
+        historico = cycle_dir / "_historico"
+        historico.mkdir(parents=True, exist_ok=True)
+
+        # Relatório consolidado do ciclo anterior (relatorio_preliminar_*/final_*).
+        prev_outputs = sorted((prev_dir / "output").glob("relatorio_*.md"))
+        if prev_outputs:
+            shutil.copy2(prev_outputs[0], historico / "relatorio_anterior.md")
+
+        # Decisões finais de cada fase da Stranger's Room.
+        mapa = {
+            "watson_integridade": "watson_decisao_anterior.md",
+            "sherlock_validacao": "sherlock_decisao_anterior.md",
+        }
+        for fase, destino in mapa.items():
+            origem = prev_dir / "stranger_room" / fase / "99_decisao_final.md"
+            if origem.exists():
+                shutil.copy2(origem, historico / destino)
+
+        # Ponteiro de rastreabilidade do ciclo de origem.
+        (historico / "PROVENIENCIA.md").write_text(
+            f"# Histórico herdado — Atividade 2 (revalidação)\n\n"
+            f"Ciclo de origem (Atividade 1): `{previous_cycle_id}`\n",
+            encoding="utf-8",
+        )

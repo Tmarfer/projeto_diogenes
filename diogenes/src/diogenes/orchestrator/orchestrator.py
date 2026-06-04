@@ -406,6 +406,23 @@ class Orchestrator:
             self._events.log("TASKS_WATSON_CACHE_SAVED",
                              details={"module_id": manifest.module_id})
         tasks = tasks_result.tasks_text
+
+        # Atividade 2: anexar o histórico do ciclo anterior às tasks, com
+        # instrução explícita de confronto (RF-WA em contexto de revalidação).
+        historico_a1 = self._carregar_historico_a1(manifest)
+        if historico_a1:
+            tasks = (
+                f"{tasks}\n\n---\n\n"
+                f"## REVALIDAÇÃO (Atividade 2) — Confronto Obrigatório\n\n"
+                f"Este é um ciclo de revalidação. Para cada arquivo novo ou corrigido, "
+                f"confronte o conteúdo com o que foi identificado na Atividade 1: "
+                f"o que mudou, o que foi corrigido e o que permanece inconsistente. "
+                f"Registre o confronto de forma explícita.\n\n"
+                f"{historico_a1}"
+            )
+            self._events.log("REVALIDACAO_HISTORICO_INJETADO", phase=fase,
+                             details={"previous_cycle_id": manifest.previous_cycle_id})
+
         inputs_dir = self._cycle_dir / "inputs"
 
         # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
@@ -679,6 +696,7 @@ class Orchestrator:
             manifest, decisao_watson, decisao_sherlock,
             watson_consolidado=watson_consolidado,
             sherlock_consolidado=sherlock_consolidado,
+            historico_a1=self._carregar_historico_a1(manifest),
         )
         prefixo = "relatorio_preliminar" if manifest.activity == 1 else "relatorio_final"
         output_filename = f"{prefixo}_{self._cycle_id}.md"
@@ -706,6 +724,44 @@ class Orchestrator:
         if destino not in TRANSICOES_VALIDAS.get(atual, set()):
             raise InvalidTransitionError(atual, destino)
         self._audit.update_status(self._cycle_id, destino.value)
+
+    def _carregar_historico_a1(self, manifest: CycleManifest) -> str:
+        """
+        Atividade 2 (revalidação): carrega os artefatos do ciclo de Atividade 1
+        copiados para `_historico/` pelo Motor de Start (relatório consolidado e
+        decisões finais). Retorna bloco Markdown pronto para injeção no contexto
+        de Watson (confronto) e de Mycroft (incorporação no Relatório Final).
+
+        Retorna "" quando não é Atividade 2 ou o histórico está ausente.
+        """
+        if manifest.activity != 2:
+            return ""
+        historico_dir = self._cycle_dir / "_historico"
+        if not historico_dir.exists():
+            return ""
+
+        partes: list[str] = []
+        relatorio = historico_dir / "relatorio_anterior.md"
+        if relatorio.exists():
+            partes.append(
+                "### Relatório da Atividade 1 (ciclo anterior)\n\n"
+                + relatorio.read_text(encoding="utf-8")
+            )
+        for nome, rotulo in (
+            ("watson_decisao_anterior.md", "Decisão final — Integridade Técnica (Atividade 1)"),
+            ("sherlock_decisao_anterior.md", "Decisão final — Validação Metodológica (Atividade 1)"),
+        ):
+            arq = historico_dir / nome
+            if arq.exists():
+                partes.append(f"### {rotulo}\n\n" + arq.read_text(encoding="utf-8"))
+
+        if not partes:
+            return ""
+        previous = manifest.previous_cycle_id or "[ciclo anterior]"
+        return (
+            f"## Histórico da Atividade 1 — Ciclo `{previous}`\n\n"
+            + "\n\n---\n\n".join(partes)
+        )
 
     def _proximo_id_alerta(self, module_id: str, counter: int = 1) -> str:
         """Gera ID de alerta sequencial: W{codigo_modulo}-{counter:03d}."""

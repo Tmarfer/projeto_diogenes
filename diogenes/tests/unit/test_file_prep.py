@@ -5,6 +5,7 @@ Etapa 2: tetos de truncamento recalibrados + estratégia cabeça+cauda.
 from __future__ import annotations
 
 import json
+import pytest
 
 from diogenes.agents import file_prep
 from diogenes.agents.file_prep import preparar_arquivo
@@ -120,6 +121,7 @@ def test_docx_leitura_conteudo_e_tabela(tmp_path):
 
 
 def test_docx_fallback_docling_se_invalido(tmp_path, monkeypatch):
+    pytest.importorskip("docling")
     # Simula um arquivo .doc legado (que fará python-docx falhar e cair no docling)
     p = tmp_path / "legado.doc"
     p.write_text("Conteúdo binário simulado", encoding="utf-8")

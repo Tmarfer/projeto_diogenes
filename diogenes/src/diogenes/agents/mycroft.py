@@ -298,7 +298,8 @@ class MycrooftAgent:
     def consolidar(self, manifest: CycleManifest, decisao_watson: DecisaoFinal,
                    decisao_sherlock: DecisaoFinal,
                    watson_consolidado: str = "",
-                   sherlock_consolidado: str = "") -> RelatorioOutput:
+                   sherlock_consolidado: str = "",
+                   historico_a1: str = "") -> RelatorioOutput:
         call_type = "consolidar"
         prefixo = "Relatório Preliminar" if manifest.activity == 1 else "Relatório Final"
 
@@ -308,13 +309,30 @@ class MycrooftAgent:
         if sherlock_consolidado:
             bloco_documentos += f"## Documento Original: sherlock_consolidado.md\n\n{sherlock_consolidado}\n\n"
 
+        # Atividade 2: incorporar o histórico do ciclo anterior ao Relatório Final
+        # (RF-MY-08). Cada inconsistência da Atividade 1 deve ser classificada
+        # segundo a resposta da RFB.
+        bloco_historico = ""
+        instrucao_historico = ""
+        if historico_a1:
+            bloco_historico = f"{historico_a1}\n\n"
+            instrucao_historico = (
+                "Incorpore o histórico da Atividade 1 ao corpo do relatório: posicione "
+                "lado a lado o que foi identificado preliminarmente, o que a RFB respondeu "
+                "e classifique cada inconsistência anterior como Resolvida, Justificada de "
+                "forma aceitável, Em aberto ou Nova inconsistência. O documento deve permitir "
+                "reconstruir o diálogo técnico completo entre o Departamento e a RFB. "
+            )
+
         user_base = (
             f"## Contexto do Ciclo\n\n"
             f"Módulo: {manifest.module_id} | Atividade: {manifest.activity}\n\n"
+            f"{bloco_historico}"
             f"{bloco_documentos}"
             f"## Decisão Final — Integridade Técnica (Watson)\n\n{decisao_watson.texto}\n\n"
             f"## Decisão Final — Validação Metodológica (Sherlock)\n\n{decisao_sherlock.texto}\n\n"
             f"Produza o {prefixo} do módulo. Use o template 'consolidar' do skills.md. "
+            f"{instrucao_historico}"
             f"Terceira pessoa, impessoal, sem nomes de agentes no corpo."
         )
         user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
