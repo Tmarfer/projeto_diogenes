@@ -19,7 +19,7 @@ from diogenes.agents.file_prep import classificar, preparar_arquivo
 
 logger = logging.getLogger(__name__)
 
-_MAX_CHARS_METODOLOGIA = 20_000
+_MAX_CHARS_METODOLOGIA = 80_000  # RN (28k) + Metodologia (13k) + nota (até 39k restantes)
 _MAX_CHARS_CORPUS = 30_000
 
 # Palavras-chave que identificam documentos metodológicos/RN entre os .md da entrega.

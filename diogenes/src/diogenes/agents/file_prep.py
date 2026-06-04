@@ -41,7 +41,14 @@ DIRS_IGNORADOS: set[str] = {
 # Arquivos de metadados / manifesto de entrega — nunca analisados como conteúdo.
 ARQUIVOS_IGNORADOS: set[str] = {
     "catalogo.json", "metadados.json", "hashes_integridade.txt",
-    "inventario.xlsx", "intake.log",
+    "intake.log",
+}
+# Arquivos de inventário/protocolo que DEVEM ser analisados mesmo estando sob um
+# diretório de metadados (ex.: 02_INSUMOS_GERADOS). Os agentes precisam saber o que
+# foi de fato entregue, para organizar a redação e citar a origem dos achados.
+# A allowlist tem precedência sobre DIRS_IGNORADOS e ARQUIVOS_IGNORADOS.
+ARQUIVOS_SEMPRE_ANALISE: set[str] = {
+    "protocolo_recebimento.md", "inventario.xlsx",
 }
 
 # Extensão → rótulo de tipo legível.
@@ -74,6 +81,10 @@ def classificar(rel_path: Path | str) -> tuple[bool, str]:
     rótulo legível (ver rotulo_tipo); para não-analisáveis, "metadados".
     """
     p = Path(rel_path)
+    # Allowlist tem precedência: inventário/protocolo são analisados mesmo sob
+    # diretórios de metadados, desde que tenham extensão analisável.
+    if p.name.lower() in ARQUIVOS_SEMPRE_ANALISE and p.suffix.lower() in EXTENSOES_ANALISE:
+        return True, rotulo_tipo(p.name)
     if any(parte in DIRS_IGNORADOS for parte in p.parts[:-1]):
         return False, "metadados"
     if p.name.lower() in ARQUIVOS_IGNORADOS:
