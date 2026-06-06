@@ -159,6 +159,61 @@ def validate_models() -> None:
     console.print("[green]Todos os modelos validados.[/green]")
 
 
+@bench_app.command(name="validate-output")
+def validate_output(
+    cycle: str = typer.Argument(..., help="ID do ciclo (ex: MOD_010_A1_20260510T143000Z)"),
+    cycle_dir: str | None = typer.Option(None, "--dir", "-d", help="Diretório do ciclo (default: workspace/cycles/{cycle}/_work)"),
+) -> None:
+    """Valida estrutura dos outputs dos agentes num ciclo (sem LLM)."""
+    from diogenes.bench.output_validator import validate_cycle
+    from diogenes.config import get_config
+
+    if cycle_dir:
+        path = Path(cycle_dir).expanduser().resolve()
+    else:
+        cfg = get_config()
+        path = cfg.workspace.path / "cycles" / cycle / "_work"
+
+    console.print(f"[bold]Validando outputs do ciclo:[/bold] {cycle}")
+    console.print(f"[dim]Diretório: {path}[/dim]\n")
+
+    result = validate_cycle(path)
+
+    if result.files_checked == 0 and not result.passed:
+        console.print(f"[red]Erro:[/red] {result.violations[0].detail}")
+        raise typer.Exit(1)
+
+    console.print(f"Arquivos verificados: [bold]{result.files_checked}[/bold]")
+
+    if result.passed:
+        console.print(Panel(
+            f"[green]✅ PASSOU[/green] — {result.files_checked} arquivo(s) sem violações.",
+            title=f"validate-output | {cycle}",
+        ))
+        return
+
+    by_file = result.by_file()
+    table = Table(title=f"Violações — {cycle}", show_lines=True)
+    table.add_column("Arquivo", style="bold")
+    table.add_column("Regra", style="yellow")
+    table.add_column("Detalhe")
+
+    for file_name, violations in sorted(by_file.items()):
+        for i, v in enumerate(violations):
+            table.add_row(
+                file_name if i == 0 else "",
+                v.rule,
+                v.detail,
+            )
+
+    console.print(table)
+    console.print(Panel(
+        f"[red]⚠ FALHOU[/red] — {len(result.violations)} violação(ões) em {len(by_file)} arquivo(s).",
+        title=f"validate-output | {cycle}",
+    ))
+    raise typer.Exit(1)
+
+
 @bench_app.command(name="pipeline")
 def pipeline(
     module: str = typer.Argument(..., help="Nome do módulo em workspace/input/ (ex: MOD010MCP3)"),

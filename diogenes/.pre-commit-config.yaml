@@ -1,0 +1,20 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff lint
+        entry: ruff check src/ tests/
+        language: system
+        pass_filenames: false
+
+      - id: pytest-unit
+        name: pytest unit tests
+        entry: pytest tests/unit/ -x --tb=short -q
+        language: system
+        pass_filenames: false
+
+      - id: pytest-agent-definitions
+        name: agent definition consistency
+        entry: pytest tests/unit/test_agent_definitions.py -x --tb=short
+        language: system
+        pass_filenames: false
