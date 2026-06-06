@@ -39,11 +39,16 @@ class WatsonAgent:
         arquivo_info: InputFileInfo,
         tasks_mycroft: str = "",
         proximo_id_alerta: str = "",
+        perfis_dir: Path | None = None,
     ) -> WatsonOutput:
         """
         Analisa UM arquivo do pacote RFB em contexto isolado.
         Retorna WatsonOutput com ultimo_id_alerta preenchido para propagar
         o contador de IDs ao próximo arquivo.
+
+        perfis_dir: diretório com .perfil.yaml gerados pelo MotorPerfilamento.
+                    Se fornecido, o perfil analítico é prefixado ao conteúdo
+                    do arquivo (unicidade, nulos, ranges — sem truncamento).
         """
         call_type = "analise_inicial"
         hb = self._heartbeat.get_section(call_type)
@@ -53,8 +58,10 @@ class WatsonAgent:
             partes.append(f"**Próximo ID de alerta disponível:** `{proximo_id_alerta}`")
         if tasks_mycroft:
             partes.append(f"[TASKS DE MYCROFT]\n{tasks_mycroft}")
-        conteudo = preparar_arquivo(arquivo_path)
-        partes.append(f"[ARQUIVO: {arquivo_info.name}]\n{conteudo}")
+        conteudo = preparar_arquivo(arquivo_path, perfil_dir=perfis_dir)
+        # Inclui o caminho relativo para resolver ambiguidade de arquivos homônimos
+        cabecalho = f"[ARQUIVO: {arquivo_info.name} | CAMINHO: {arquivo_info.rel_path}]"
+        partes.append(f"{cabecalho}\n{conteudo}")
 
         user = injetar_heartbeat(hb, "\n\n".join(partes))
         try:

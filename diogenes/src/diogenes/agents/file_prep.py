@@ -94,26 +94,45 @@ def classificar(rel_path: Path | str) -> tuple[bool, str]:
     return True, rotulo_tipo(p.name)
 
 
-def preparar_arquivo(path: Path) -> str:
-    """Retorna representação textual do arquivo para inclusão em prompt."""
+def preparar_arquivo(path: Path, perfil_dir: Path | None = None) -> str:
+    """Retorna representação textual do arquivo para inclusão em prompt.
+
+    Se perfil_dir for fornecido, tenta prefixar com o perfil analítico
+    gerado pelo MotorPerfilamento (.perfil.yaml). O prefixo fornece a
+    Watson estatísticas completas (unicidade, nulos, ranges) independente
+    do truncamento da amostra textual.
+    """
+    prefixo = ""
+    if perfil_dir is not None:
+        try:
+            from diogenes.motors.motor_perfilamento import ler_perfil_texto
+            texto_perfil = ler_perfil_texto(Path(perfil_dir), path)
+            if texto_perfil:
+                prefixo = f"[PERFIL ANALÍTICO — {path.name}]\n{texto_perfil}\n\n"
+        except Exception:  # noqa: BLE001
+            pass  # falha silenciosa: arquivo sem perfil não bloqueia Watson
+
     ext = path.suffix.lower()
     if ext == ".xlsx":
-        return _ler_excel(path)
-    if ext == ".csv":
-        return _ler_csv(path)
-    if ext == ".sql":
-        return _ler_sql(path)
-    if ext == ".ipynb":
-        return _ler_notebook(path)
-    if ext == ".pdf":
-        return _ler_pdf(path)
-    if ext in (".docx", ".doc"):
-        return _ler_docx(path)
-    # Markdown, scripts e texto puro — teto genérico de proteção
-    try:
-        return _truncar_texto(path.read_text(encoding="utf-8"), _TEXTO_MAX_CHARS)
-    except Exception as e:
-        return f"[ERRO AO LER ARQUIVO: {e}]"
+        conteudo = _ler_excel(path)
+    elif ext == ".csv":
+        conteudo = _ler_csv(path)
+    elif ext == ".sql":
+        conteudo = _ler_sql(path)
+    elif ext == ".ipynb":
+        conteudo = _ler_notebook(path)
+    elif ext == ".pdf":
+        conteudo = _ler_pdf(path)
+    elif ext in (".docx", ".doc"):
+        conteudo = _ler_docx(path)
+    else:
+        # Markdown, scripts e texto puro — teto genérico de proteção
+        try:
+            conteudo = _truncar_texto(path.read_text(encoding="utf-8"), _TEXTO_MAX_CHARS)
+        except Exception as e:
+            conteudo = f"[ERRO AO LER ARQUIVO: {e}]"
+
+    return prefixo + conteudo
 
 
 def _truncar_texto(texto: str, teto: int) -> str:
