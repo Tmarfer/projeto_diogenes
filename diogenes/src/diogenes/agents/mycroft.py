@@ -8,6 +8,7 @@ Referência normativa: Bloco 9.2 (SDD v0.1)
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
 from pathlib import Path
@@ -355,6 +356,124 @@ class MycrooftAgent:
                                    overrule_watson=False,
                                    overrule_sherlock=False)
 
+    # ── Fase de Entrega ───────────────────────────────────────
+
+    def mapear_dados_modulo(self, manifest: CycleManifest, inventario: str,
+                            metodologia: str = "", ocorrencias_resumo: str = "") -> dict:
+        call_type = "mapear_dados_modulo"
+        contexto_metod = (
+            f"## Metodologia Homologada do Módulo\n\n"
+            f"Use este texto para redigir os cards de metodologia (o que foi homologado) e as "
+            f"narrativas das abas. NUNCA copie números daqui para o JSON.\n\n{metodologia}\n\n"
+            if metodologia else ""
+        )
+        contexto_ocorr = (
+            f"## Resumo das Ocorrências (auditoria)\n\n"
+            f"Contexto para a narrativa da aba de Inconsistências — não monte a aba (o motor a "
+            f"gera a partir do JSON do Sherlock):\n\n{ocorrencias_resumo}\n\n"
+            if ocorrencias_resumo else ""
+        )
+        user_base = (
+            f"## Contexto do Módulo\n\n"
+            f"Módulo: {manifest.module_id}\n"
+            f"Atividade: {manifest.activity}\n\n"
+            f"{contexto_metod}"
+            f"## Inventário da Planilha Principal\n\n"
+            f"{inventario}\n\n"
+            f"{contexto_ocorr}"
+            f"Você deve gerar o blueprint do dashboard (mapa de extração) JSON correspondente, "
+            f"seguindo o template `mapear_dados_modulo` do skills.md: a estrutura obrigatória de "
+            f"abas (Visão Geral com card de metodologia + abas analíticas + Sensibilidade), com "
+            f"localizações (aba/célula/intervalo) e textos curados — nunca números.\n"
+            f"IMPORTANTE: Você deve estruturar os campos exatamente conforme o template do skills.md. "
+            f"Não achate (não converta em strings simples ou listas simples) os dicionários aninhados. "
+            f"Em especial, garanta que:\n"
+            f"- O campo 'narrativa.proposta' seja um dicionário contendo 'descricao', 'contexto_narrativo' e 'fonte'.\n"
+            f"- O campo 'narrativa.arquivos' seja um dicionário contendo 'principal' (lista de objetos), 'auxiliares' (lista de objetos) e 'fontes' (lista de objetos).\n"
+            f"- O campo 'narrativa.notas_metodologicas' seja uma lista de objetos contendo 'nome', 'data', 'descricao', 'conteudo_resumo', 'situacao_inventario', 'observacao'.\n"
+            f"- O campo 'narrativa.testes' seja um dicionário contendo as chaves 'camada_1', 'camada_2' e 'camada_3', cada uma sendo uma lista de objetos com chaves 'id', 'descricao', 'resultado', 'status'.\n\n"
+            f"REGRA INEGOCIÁVEL: NUNCA transcreva valores numéricos lidos da planilha (por exemplo, valores monetários) no JSON. "
+            f"Apenas forneça as coordenadas (aba, célula, intervalo) para que o Motor possa lê-las.\n"
+        )
+        user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, "entrega", user))
+            mapa = _extrair_json_bloco(resp.content)
+            if mapa is None:
+                raise LLMCallError(f"Não foi possível extrair um JSON válido da resposta de Mycroft para {call_type}.")
+            return mapa
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] mapear_dados_modulo indisponível — retornando mapa vazio: %s", exc)
+            return {}
+
+    def avaliar_entrega(self, manifesto: dict) -> AvaliacaoMycroft:
+        call_type = "avaliar_entrega"
+        user_base = (
+            f"## Manifesto dos Artefatos Gerados\n\n"
+            f"{json.dumps(manifesto, ensure_ascii=False, indent=2)}\n\n"
+            f"Verifique a entrega e produza a avaliação final no formato definido no skills.md.\n"
+            f"O seu veredito deve ser APROVADO ou REQUER_AJUSTE.\n"
+        )
+        user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, "entrega", user))
+            return _parsear_avaliacao_entrega(resp.content)
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] avaliar_entrega indisponível — APROVADO automático: %s", exc)
+            return AvaliacaoMycroft(
+                tipo="APROVADO",
+                texto=(
+                    "**resultado:** APROVADO\n\n"
+                    "## Avaliação\n\nAPROVADO\n\n"
+                    "[Aprovação automática de fallback — Mycroft indisponível: ChatTCU timeout. "
+                    "Avaliação sem revisão LLM.]"
+                ),
+                critica="",
+            )
+
+    def redigir_apendice(self, manifest: CycleManifest, consolidado: str,
+                         ocorrencias_resumo: str = "", notas_metodologicas: str = "",
+                         metodologia: str = "") -> dict:
+        """Redige o conteúdo qualitativo do Apêndice (7 seções) reorganizando o
+        relatório consolidado validado. Devolve JSON no schema do ApendiceGerador —
+        sem valores monetários (entram deterministicamente). Fallback: {} se LLM indisponível."""
+        call_type = "redigir_apendice"
+        contexto_notas = (
+            f"## Notas Metodológicas do Ciclo\n\n{notas_metodologicas}\n\n"
+            if notas_metodologicas else ""
+        )
+        contexto_metod = (
+            f"## Metodologia Homologada (referência para rastreabilidade)\n\n{metodologia}\n\n"
+            if metodologia else ""
+        )
+        contexto_ocorr = (
+            f"## Ocorrências da Auditoria (§11 do Sherlock)\n\n"
+            f"Redija consequência e tratamento de cada uma, mantendo o código como id "
+            f"(o status é determinístico, derivado do nível):\n\n{ocorrencias_resumo}\n\n"
+            if ocorrencias_resumo else ""
+        )
+        user_base = (
+            f"## Contexto do Módulo\n\n"
+            f"Módulo: {manifest.module_id}\nAtividade: {manifest.activity}\n\n"
+            f"## Relatório Consolidado Validado (fonte primária — reorganize, não reanalise)\n\n"
+            f"{consolidado}\n\n"
+            f"{contexto_ocorr}{contexto_notas}{contexto_metod}"
+            f"Reorganize o conteúdo validado no schema `redigir_apendice` do skills.md (7 seções), "
+            f"em terceira pessoa, objetivo, com tabelas e rastreabilidade.\n"
+            f"REGRA INEGOCIÁVEL: NUNCA escreva valores monetários/macro — eles entram "
+            f"deterministicamente das células. Você redige texto qualitativo e status.\n"
+        )
+        user = injetar_heartbeat(self._heartbeat.get_section(call_type), user_base)
+        try:
+            resp = self._llm.complete(self._montar_call(call_type, "entrega", user))
+            conteudo = _extrair_json_bloco(resp.content)
+            if conteudo is None:
+                raise LLMCallError(f"JSON inválido na resposta de Mycroft para {call_type}.")
+            return conteudo
+        except (LLMCallError, LLMTimeoutError) as exc:
+            logger.warning("[Mycroft] redigir_apendice indisponível — conteúdo vazio: %s", exc)
+            return {}
+
     # ── Catálogo do Irene ────────────────────────────────────
 
     def _ler_catalogo_irene(self, cycle_dir: Path | None) -> dict | None:
@@ -425,7 +544,7 @@ class MycrooftAgent:
                 )
             if arq.get("requer_revisao_humana"):
                 orientacoes.append(
-                    f"  [ATENÇÃO LESTRADE] Irene sinalizou necessidade de revisão humana."
+                    "  [ATENÇÃO LESTRADE] Irene sinalizou necessidade de revisão humana."
                 )
 
         tabela_header = (
@@ -460,7 +579,7 @@ class MycrooftAgent:
             cycle_id=self._cycle_id, phase=phase,
             agent="mycroft", call_type=call_type,
             model=self._spec.modelo, temperature=self._spec.temperatura,
-            max_tokens=self._spec.max_tokens,
+            max_tokens=16384,  # Limita explicitamente para evitar tempo de resposta alto
             seed=calcular_seed(42, self._cycle_id, phase, call_type),
             messages=[
                 LLMMessage(role="system", content=self._system_prompt),
@@ -556,3 +675,61 @@ def _parsear_decisao_sherlock(content: str, sherlock_dilemas: int) -> DecisaoFin
         has_critical_alert=False, critical_alerts_count=0,
         has_dilemma=dilemmas > 0, dilemmas_count=dilemmas,
     )
+
+
+def _extrair_json_bloco(texto: str) -> dict | None:
+    """Extrai o primeiro bloco JSON delimitado por cercas markdown ou chaves."""
+    candidatos: list[str] = []
+    # Blocos markdown ```json ... ```
+    for bloco in re.findall(r"```(?:json)?\s*(.*?)```", texto, re.DOTALL | re.IGNORECASE):
+        candidatos.append(bloco)
+    if not candidatos:
+        candidatos.append(texto)
+
+    for bruto in candidatos:
+        bruto = bruto.strip()
+        try:
+            return json.loads(bruto)
+        except json.JSONDecodeError:
+            # Tolerância a vírgula final
+            limpo = re.sub(r",\s*([}\]])", r"\1", bruto)
+            try:
+                return json.loads(limpo)
+            except json.JSONDecodeError:
+                pass
+
+    # Última tentativa: acha o primeiro { e o último }
+    start = texto.find("{")
+    end = texto.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        sub = texto[start:end+1]
+        try:
+            return json.loads(sub)
+        except json.JSONDecodeError:
+            limpo = re.sub(r",\s*([}\]])", r"\1", sub)
+            try:
+                return json.loads(limpo)
+            except json.JSONDecodeError:
+                pass
+    return None
+
+
+def _parsear_avaliacao_entrega(content: str) -> AvaliacaoMycroft:
+    """Parseia a ficha de QA da Fase de Entrega."""
+    # Detecta o tipo (APROVADO ou REQUER_AJUSTE)
+    m = re.search(r"resultado:\*{0,2}\s*(APROVADO|REQUER_AJUSTE)", content, re.IGNORECASE)
+    if m:
+        tipo = "APROVADO" if m.group(1).upper() == "APROVADO" else "REQUER_AJUSTE"
+    else:
+        # Busca no corpo de ## Avaliação
+        secoes = _extrair_secoes(content)
+        av = secoes.get("Avaliação", "")
+        if "REQUER_AJUSTE" in av.upper() or "REQUER_AJUSTE" in content.upper():
+            tipo = "REQUER_AJUSTE"
+        else:
+            tipo = "APROVADO"
+
+    secoes = _extrair_secoes(content)
+    critica = secoes.get("Apontamentos", "")
+    return AvaliacaoMycroft(tipo=tipo, texto=content, critica=critica)
+

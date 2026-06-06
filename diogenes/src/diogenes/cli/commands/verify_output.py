@@ -34,9 +34,11 @@ def verify_output(
     except MotorSaidaError as e:
         display.passo_erro(str(e))
         raise typer.Exit(1) from e
-    except FileNotFoundError as e:
-        display.passo_erro(str(e))
-        raise typer.Exit(1) from e
+    try:
+        from diogenes.reports.render_html import atualizar_report_html
+        atualizar_report_html(cycle, get_config().workspace.path)
+    except Exception:
+        pass
 
     _exibir_relatorio(report, cycle)
 

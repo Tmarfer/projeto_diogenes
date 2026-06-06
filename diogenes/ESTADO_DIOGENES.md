@@ -15,7 +15,7 @@
 | Modelo ativo (todos os agentes) | `gpt-5.5-thinking` via `agents_spec.yaml` |
 | Fase piloto ativa | Fase D — módulo real MOD_010 (Pessoa Física) |
 | Teto de custo por ciclo | USD 0.00 (ChatTCU — custo institucional zero) |
-| Suite de testes | **205 passed, 1 skipped** (0 falhas) |
+| Suite de testes | **216 passed, 1 skipped** (0 falhas) |
 | Branch ativa | `feat/revalidacao-e-auditoria-prd` |
 | Último ciclo completo | `MOD_010_A1_20260604T013158Z` — ENCERRADO_CHANCELADO |
 | Duração do último ciclo | 13h 07min · 116 arquivos · 130 chamadas LLM |
@@ -57,11 +57,14 @@ diogenes autorun --module MOD_010 --activity 1
   [Sherlock] validação metodológica monolítica (validacao_inicial)
   [Mycroft] avaliar Sherlock (Stranger Room, até 2 rodadas)
   [Mycroft] consolidação final → relatorio_preliminar_*.md
-→ verify-output (Motor de Saída) → seal
+→ verify-output (Motor de Saída)
+→ Fase de Entrega (Mycroft mapeia dados → Motor de Entrega gera entregáveis → Mycroft QA)
+→ seal
 ```
 
 O `autorun` auto-resolve pausas de alerta crítico e completude (modo não-assistido
-para execução noturna). Para antes do `seal` — chancela humana de manhã.
+para execução noturna) e, ao final, aciona a Fase de Entrega automaticamente.
+Para antes do `seal` — chancela humana de manhã.
 
 ---
 
@@ -166,7 +169,43 @@ Novo módulo: `src/diogenes/reports/` (cycle_report.py · render_markdown.py · 
 
 ---
 
-## 8. Bancada de testes (`diogenes bench`)
+## 8. Fase de Entrega — entregáveis institucionais (`diogenes deliver`)
+
+Etapa pós-ciclo que transforma os artefatos do ciclo nos documentos do padrão
+GT Reforma Tributária. Roda após o Motor de Saída (excursão a partir de
+`AGUARDANDO_CHANCELA_LESTRADE`) e também automaticamente ao final do `autorun`.
+
+**Modelo híbrido (decisão de projeto):** Mycroft é o dono.
+1. `Mycroft.mapear_dados_modulo` (LLM) localiza, na planilha principal, **onde** estão
+   os dados (aba/célula/intervalo) e redige a narrativa — **nunca escreve números**.
+   Grava `output/entrega_mapa_extracao.json` (esquema em `delivery/MAPA_EXTRACAO.md`).
+2. **Motor de Entrega** (determinístico, sem LLM — espelha o Motor de Saída) lê os
+   **valores exatos** das células via openpyxl e gera, em `output/entrega/`:
+   `Dashboard.html`, `Apendice_Modulo*.docx`, `Relatorio_Narrativo/Consolidado/Pre_Atendimento_*.docx`,
+   `ficha_sintese_*.{html,pdf,png}` + `entrega_manifesto.json`.
+3. `Mycroft.avaliar_entrega` (LLM) faz o QA de aderência ao padrão e ao módulo
+   (`APROVADO | REQUER_AJUSTE`).
+
+```bash
+diogenes deliver --cycle <id>              # com mapeamento + QA do Mycroft (LLM)
+diogenes deliver --cycle <id> --no-qa      # só geração determinística
+diogenes deliver --cycle <id> --no-assets  # pula PDF/PNG da ficha (sem Playwright)
+```
+
+**Esquema canônico módulo-agnóstico** (`PacoteEntrega` em `models.py`) — escala para os
+18+ módulos sem driver por módulo. **Geradores TCU vendorizados** em
+`delivery/vendor/tcu/` (cópias de `01-BIBLIOTECAS_UTILITARIAS/`, nunca referenciadas via
+OneDrive em runtime — ver `VENDOR.md`).
+
+**Dependências** (já no `pyproject`): `python-docx`, `matplotlib`, `playwright`.
+Passo extra de install obrigatório: **`python -m playwright install chromium`**.
+
+Novo módulo: `src/diogenes/delivery/` + `motors/motor_entrega.py` +
+`orchestrator/entrega.py`. 11 testes em `tests/unit/test_motor_entrega.py`.
+
+---
+
+## 9. Bancada de testes (`diogenes bench`)
 
 | Comando | O que faz |
 |---|---|
@@ -185,12 +224,12 @@ Resultado de referência pós-correções:
 
 ---
 
-## 9. Suite de testes
+## 10. Suite de testes
 
 | Resultado | Quantidade |
 |---|---|
-| Total coletados | **206** |
-| Passed | **205** |
+| Total coletados | **217** |
+| Passed | **216** |
 | Skipped | 1 (`test_docx_fallback_docling_se_invalido` — `docling` não instalado no Mac) |
 | Failed | 0 |
 
@@ -200,7 +239,7 @@ cd diogenes && pytest tests/ -q   # ~3s
 
 ---
 
-## 10. Provider LLM — governança crítica
+## 11. Provider LLM — governança crítica
 
 **ChatTCU é o ÚNICO provider permitido em produção.** Dados fiscais do TC 015.848/2025-6
 não podem trafegar por serviços externos. `get_llm_client()` em `llm/base.py` é o guardião.
@@ -216,38 +255,43 @@ prompts e outputs contêm dados fiscais do TC 015.848/2025-6. Usar `diogenes rep
 
 ---
 
-## 11. Estrutura de código
+## 12. Estrutura de código
 
 ```
 src/diogenes/
   agents/       — watson.py, sherlock.py, mycroft.py + heartbeat.py + file_prep.py
-                  (file_prep: ARQUIVOS_SEMPRE_ANALISE libera protocolo+inventário)
+                  (mycroft: + mapear_dados_modulo / avaliar_entrega na Fase de Entrega)
   bench/        — core.py + pipeline.py + prompt_builder.py
                   (pipeline herda DIOGENES_CORPUS_JURIDICO_DIR do .env)
-  cli/          — app.py + commands/ (start, confirm-manifest, autorun, report, bench/, …)
+  cli/          — app.py + commands/ (start, confirm-manifest, autorun, report, deliver, bench/, …)
   config.py     — get_config() com @lru_cache — ÚNICO ponto de config
+  delivery/     — Fase de Entrega (NOVO): schema (em models), parsing, extractor (openpyxl),
+                  dashboard, builders, pacote + vendor/tcu/ (geradores TCU vendorizados)
   irene.py      — wrapper pipeline Irene C1-C5
   llm/          — base.py + chattcu.py + openrouter.py + azure_foundry.py
-  models.py     — TODOS os dataclasses de domínio
-  motors/       — motor_start.py + motor_saida.py (Etapa 2.5 + padrões atualizados)
-  orchestrator/ — orchestrator.py + states.py + stranger_room.py + events.py
+  models.py     — TODOS os dataclasses de domínio (+ PacoteEntrega / MotorEntregaReport)
+  motors/       — motor_start.py + motor_saida.py + motor_entrega.py (NOVO, determinístico)
+  orchestrator/ — orchestrator.py + states.py + stranger_room.py + events.py + entrega.py (NOVO)
                   (EventLogger atualiza report.html após cada evento)
   persistence/  — audit_index.py + manifest.py + workspace.py + delivery.py
-  reports/      — cycle_report.py + render_markdown.py + render_html.py (NOVO)
+  reports/      — cycle_report.py + render_markdown.py + render_html.py
 ```
 
 ---
 
-## 12. Máquina de estados (CycleState)
+## 13. Máquina de estados (CycleState)
 
-17 estados implementados:
+19 estados implementados:
 `PREPARADO` → `AGUARDANDO_CONFIRMACAO_MANIFESTO` → `VERIFICANDO_EXISTENCIA` →
 `AGUARDANDO_IRENE` → `IRENE_CONCLUIDA` → `EM_EXECUCAO_WATSON` → … →
 `AGUARDANDO_VERIFICACAO_SAIDA` → `AGUARDANDO_CHANCELA_LESTRADE` → `ENCERRADO_CHANCELADO`
 
+Fase de Entrega (excursão a partir de `AGUARDANDO_CHANCELA_LESTRADE`, não altera o
+caminho do seal): `EM_EXECUCAO_ENTREGA` ⇄ `AGUARDANDO_AJUSTE_ENTREGA` → volta à chancela.
+
 ---
 
-## 13. Próximo passo recomendado
+## 14. Próximo passo recomendado
 
 Executar novo ciclo `autorun` completo com as correções aplicadas (RN completa,
 Motor de Saída limpo, corpus jurídico ativo). O browser abre sozinho com o painel ao vivo:
@@ -271,4 +315,4 @@ Após chancelado, rodar Atividade 2 (revalidação) usando o ciclo A1 como hist�
 ---
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*
-*Atualizado em 2026-06-04 — pós-ciclo noturno MOD_010 e implementação do painel de acompanhamento*
+*Atualizado em 2026-06-04 — pós-ciclo noturno MOD_010, painel de acompanhamento e Fase de Entrega*

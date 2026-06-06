@@ -139,6 +139,17 @@ class AuditIndex:
             output_filename=output_filename,
         )
 
+    def update_entrega(self, cycle_id: str, invocado_at_utc: str,
+                       artefatos: int, veredito: str = "") -> None:
+        """Registra a invocação da Fase de Entrega no audit_index."""
+        extra = {
+            "entrega_invocado_at_utc": invocado_at_utc,
+            "entrega_artefatos": str(artefatos),
+        }
+        if veredito:
+            extra["entrega_veredito"] = veredito
+        self.update_status(cycle_id, self.get_cycle(cycle_id)["status"], **extra)
+
     def _read_all(self) -> list[dict]:
         if not self.path.exists():
             return []

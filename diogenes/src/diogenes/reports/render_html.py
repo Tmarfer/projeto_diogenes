@@ -6,14 +6,32 @@ CSS inline, Inter via Google Fonts (fallback: system-ui), sem frameworks JS.
 from __future__ import annotations
 
 import html as _html
+from pathlib import Path
 
+from .assets import carregar_retrato
 from .cycle_report import AgentCallStats, CycleReportData
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _e(s: object) -> str:
     return _html.escape(str(s))
+
+
+def _fmt_bytes(n: int) -> str:
+    if n >= 1_048_576:
+        return f"{n / 1_048_576:.1f} MB"
+    if n >= 1024:
+        return f"{n / 1024:.0f} KB"
+    return f"{n} B"
+
+
+def _entrega_verdito_class(v: str) -> str:
+    vu = v.upper()
+    if "APROVADO" in vu:
+        return "success"
+    if "REQUER" in vu or "AJUSTE" in vu:
+        return "warning"
+    return "muted"
 
 
 def _status_class(status: str) -> str:
@@ -50,7 +68,80 @@ def _motor_class(limpo: bool, occurrences: int) -> str:
     return "error"
 
 
+# ── Fase de Entrega ───────────────────────────────────────────────────────────
+
+def _entrega_html(data: CycleReportData) -> str:
+    """Seção da Fase de Entrega: entregáveis com links + call_types do Mycroft.
+    Renderiza só quando houve entrega (invocação ou artefatos)."""
+    if not (data.entrega_invocado_at or data.entrega_artefatos_list):
+        return ""
+
+    if data.entrega_artefatos_list:
+        linhas = "".join(
+            f'<tr><td><span class="entrega-tipo">{_e(a.get("tipo", ""))}</span></td>'
+            f'<td><a class="output-link" href="file://{_e(a.get("path", ""))}">'
+            f'{_e(a.get("nome", ""))} ↗</a></td>'
+            f'<td class="mono muted-text">{_e(_fmt_bytes(int(a.get("bytes", 0) or 0)))}</td></tr>'
+            for a in data.entrega_artefatos_list
+        )
+        artefatos_html = (
+            '<div class="table-wrap"><table><thead><tr>'
+            '<th>Tipo</th><th>Entregável</th><th>Tamanho</th></tr></thead>'
+            f'<tbody>{linhas}</tbody></table></div>'
+        )
+    else:
+        artefatos_html = ("<p class='muted-text'>Entrega invocada, mas nenhum artefato "
+                          "localizado em <code>output/entrega/</code>.</p>")
+
+    veredito = data.entrega_veredito or "—"
+    vc = _entrega_verdito_class(data.entrega_veredito)
+
+    calls = data.entrega_calls_by_type
+    if calls:
+        chips = "".join(
+            f'<span class="entrega-chip">{_e(ct)} <b>{n}</b></span>'
+            for ct, n in sorted(calls.items())
+        )
+        calls_html = (f'<div class="entrega-calls"><span class="entrega-calls-lbl">'
+                      f'Chamadas do Mycroft na entrega:</span> {chips}</div>')
+    else:
+        calls_html = ""
+
+    return f"""
+  <!-- Fase de Entrega -->
+  <div class="section">
+    <h2>Fase de Entrega</h2>
+    <div class="cards-row">
+      <div class="card">
+        <h3>Entregáveis</h3>
+        <div class="value">{len(data.entrega_artefatos_list)}</div>
+        <div class="sub">artefatos institucionais gerados</div>
+      </div>
+      <div class="card">
+        <h3>QA do Mycroft</h3>
+        <div class="sub" style="margin-top:8px">
+          <span class="badge badge-{vc}">{_e(veredito)}</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Invocada em</h3>
+        <div class="sub mono" style="margin-top:8px">{_e(data.entrega_invocado_at or '—')}</div>
+      </div>
+    </div>
+    {artefatos_html}
+    {calls_html}
+  </div>"""
+
+
 # ── Seção de agentes com avatares (estilo Sherlock Holmes) ────────────────────
+
+def _avatar_visual(nome: str, deco: str, letra: str) -> str:
+    """Retrato (ilustração Paget) como data URI; fallback ao avatar tipográfico."""
+    uri = carregar_retrato(nome)
+    if uri:
+        return f'<img class="avatar-img" src="{uri}" alt="{_e(nome)}" loading="lazy">'
+    return f'<div class="avatar-deco">{deco}</div><div class="avatar-letter">{letra}</div>'
+
 
 def _agent_cards_html(data: CycleReportData) -> str:
     watson = data.calls_by_agent.get("watson", AgentCallStats())
@@ -59,19 +150,6 @@ def _agent_cards_html(data: CycleReportData) -> str:
 
     ic = _irene_class(data.irene_resultado)
     irene_score_str = f"{data.irene_score:.4f}" if data.irene_score is not None else "—"
-
-    # Status badges por agente
-    def _agent_status(active: bool, terminal: bool) -> str:
-        if active:
-            return '<span class="badge badge-success">ativo</span>'
-        if terminal:
-            return '<span class="badge badge-muted">concluído</span>'
-        return '<span class="badge badge-muted">—</span>'
-
-    irene_active = bool(data.irene_resultado)
-    watson_active = data.arquivos_analisados > 0
-    sherlock_active = data.metodologia_chars > 0
-    mycroft_active = mycroft.calls > 0
 
     return f"""
   <!-- Equipe de Agentes -->
@@ -82,8 +160,7 @@ def _agent_cards_html(data: CycleReportData) -> str:
       <!-- Irene Adler — Catalogação Semântica -->
       <div class="agent-card">
         <div class="agent-avatar irene">
-          <div class="avatar-deco">✦</div>
-          <div class="avatar-letter">I</div>
+          {_avatar_visual("irene", "✦", "I")}
           <div class="avatar-title">Irene Adler</div>
           <div class="avatar-subtitle">A Catalogadora</div>
         </div>
@@ -108,8 +185,7 @@ def _agent_cards_html(data: CycleReportData) -> str:
       <!-- Dr. Watson — Integridade Técnica -->
       <div class="agent-card">
         <div class="agent-avatar watson">
-          <div class="avatar-deco">⚙</div>
-          <div class="avatar-letter">W</div>
+          {_avatar_visual("watson", "⚙", "W")}
           <div class="avatar-title">Dr. Watson</div>
           <div class="avatar-subtitle">O Analista</div>
         </div>
@@ -143,8 +219,7 @@ def _agent_cards_html(data: CycleReportData) -> str:
       <!-- Mycroft Holmes — Orquestrador-Chefe -->
       <div class="agent-card">
         <div class="agent-avatar mycroft">
-          <div class="avatar-deco">⚖</div>
-          <div class="avatar-letter">M</div>
+          {_avatar_visual("mycroft", "⚖", "M")}
           <div class="avatar-title">Mycroft Holmes</div>
           <div class="avatar-subtitle">O Orquestrador</div>
         </div>
@@ -169,7 +244,8 @@ def _agent_cards_html(data: CycleReportData) -> str:
             </div>
           </div>
           <div class="agent-note">
-            definir_tasks · avaliar · fixar_decisao · consolidar
+            definir_tasks · avaliar · fixar_decisao · consolidar ·
+            mapear_dados · redigir_apendice · avaliar_entrega
           </div>
         </div>
       </div>
@@ -177,8 +253,7 @@ def _agent_cards_html(data: CycleReportData) -> str:
       <!-- Sherlock Holmes — Validação Metodológica -->
       <div class="agent-card">
         <div class="agent-avatar sherlock">
-          <div class="avatar-deco">🔎</div>
-          <div class="avatar-letter">S</div>
+          {_avatar_visual("sherlock", "🔎", "S")}
           <div class="avatar-title">Sherlock Holmes</div>
           <div class="avatar-subtitle">O Metodologista</div>
         </div>
@@ -206,6 +281,31 @@ def _agent_cards_html(data: CycleReportData) -> str:
             {data.sherlock_rodadas} rodada{'s' if data.sherlock_rodadas != 1 else ''} ·
             {'⚠ overruled por Mycroft' if data.sherlock_overruled else 'aprovado por Mycroft'}
           </div>
+        </div>
+      </div>
+
+      <!-- Inspetor Lestrade — Comando do Ciclo -->
+      <div class="agent-card">
+        <div class="agent-avatar lestrade">
+          {_avatar_visual("lestrade", "★", "L")}
+          <div class="avatar-title">Insp. Lestrade</div>
+          <div class="avatar-subtitle">O Comando</div>
+        </div>
+        <div class="agent-body">
+          <div class="agent-role">Autoridade do Ciclo — Chancela &amp; Decisão</div>
+          <div class="agent-metrics">
+            <div class="metric">
+              <span class="metric-val metric-sm">
+                <span class="badge badge-{_status_class(data.status)}">{_e(data.status or '—')}</span>
+              </span>
+              <span class="metric-lbl">estado</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val">{'Sim' if data.is_terminal else 'Em curso'}</span>
+              <span class="metric-lbl">ciclo encerrado</span>
+            </div>
+          </div>
+          <div class="agent-note">Papel humano · abre, autoriza e chancela o ciclo</div>
         </div>
       </div>
 
@@ -299,6 +399,9 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     # Agent cards
     agent_cards = _agent_cards_html(data)
 
+    # Fase de Entrega
+    entrega_html = _entrega_html(data)
+
     # Watson progress
     watson_progress_html = f"""
         <div class="progress-wrap">
@@ -336,6 +439,7 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
       --watson-1: #1e2f5e; --watson-2: #1d4ed8; --watson-3: #60a5fa;
       --mycroft-1: #2d1b69; --mycroft-2: #6d28d9; --mycroft-3: #a78bfa;
       --sherlock-1: #78350f; --sherlock-2: #b45309; --sherlock-3: #fbbf24;
+      --lestrade-1: #3f2d18; --lestrade-2: #8a6d3b; --lestrade-3: #d4af6a;
     }}
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{
@@ -433,20 +537,35 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     }}
     .agent-avatar::before {{
       content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.06) 0%, transparent 70%);
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(180deg, var(--ava, rgba(255,255,255,0.2)) 0%, transparent 58%);
+      mix-blend-mode: overlay; opacity: 0.6;
       pointer-events: none;
     }}
     .agent-avatar::after {{
       content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 48px;
-      background: linear-gradient(to top, rgba(0,0,0,0.45), transparent);
+      position: absolute; bottom: 0; left: 0; right: 0; height: 88px; z-index: 1;
+      background: linear-gradient(to top, rgba(4,8,18,0.82) 8%, transparent);
       pointer-events: none;
     }}
-    .agent-avatar.irene   {{ background: linear-gradient(170deg, var(--irene-1) 0%, var(--irene-2) 100%); }}
-    .agent-avatar.watson  {{ background: linear-gradient(170deg, var(--watson-1) 0%, var(--watson-2) 100%); }}
-    .agent-avatar.mycroft {{ background: linear-gradient(170deg, var(--mycroft-1) 0%, var(--mycroft-2) 100%); }}
-    .agent-avatar.sherlock {{ background: linear-gradient(170deg, var(--sherlock-1) 0%, var(--sherlock-2) 100%); }}
+    .agent-avatar.irene   {{ background: linear-gradient(170deg, var(--irene-1) 0%, var(--irene-2) 100%); --ava: var(--irene-3); }}
+    .agent-avatar.watson  {{ background: linear-gradient(170deg, var(--watson-1) 0%, var(--watson-2) 100%); --ava: var(--watson-3); }}
+    .agent-avatar.mycroft {{ background: linear-gradient(170deg, var(--mycroft-1) 0%, var(--mycroft-2) 100%); --ava: var(--mycroft-3); }}
+    .agent-avatar.sherlock {{ background: linear-gradient(170deg, var(--sherlock-1) 0%, var(--sherlock-2) 100%); --ava: var(--sherlock-3); }}
+    .agent-avatar.lestrade {{ background: linear-gradient(170deg, var(--lestrade-1) 0%, var(--lestrade-2) 100%); --ava: var(--lestrade-3); }}
+
+    /* Retrato (ilustração Paget, domínio público) — tonalizado à paleta */
+    .avatar-img {{
+      position: absolute; inset: 0; z-index: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 20%;
+      filter: grayscale(1) sepia(0.45) brightness(1.03) contrast(1.04);
+    }}
+    .agent-avatar.mycroft  .avatar-img {{ object-position: center 10%; }}
+    .agent-avatar.watson   .avatar-img {{ object-position: 32% 18%; }}
+    .agent-avatar.sherlock .avatar-img {{ object-position: center 30%; }}
+    .agent-avatar.irene    .avatar-img {{ object-position: center 16%; }}
+    .agent-avatar.lestrade .avatar-img {{ object-position: center 18%; }}
 
     .avatar-deco {{
       font-size: 28px; opacity: 0.75;
@@ -485,6 +604,19 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
                     letter-spacing: 0.07em; margin-top: 2px; }}
     .agent-note {{ font-size: 11px; color: var(--muted); border-top: 1px solid var(--border2);
                     padding-top: 10px; font-style: italic; }}
+
+    /* ── Fase de Entrega ── */
+    .entrega-tipo {{ font-size: 10px; font-weight: 600; text-transform: uppercase;
+                      letter-spacing: 0.06em; color: var(--lestrade-3);
+                      background: rgba(212,175,106,0.10); border: 1px solid rgba(212,175,106,0.25);
+                      border-radius: 5px; padding: 2px 7px; white-space: nowrap; }}
+    .entrega-calls {{ margin-top: 12px; font-size: 12px; color: var(--muted);
+                       display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }}
+    .entrega-calls-lbl {{ text-transform: uppercase; font-size: 10px; letter-spacing: 0.07em; }}
+    .entrega-chip {{ font-size: 11px; font-family: 'SF Mono','Fira Code',monospace;
+                      color: var(--text); background: rgba(148,163,184,0.08);
+                      border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }}
+    .entrega-chip b {{ color: var(--mycroft-3); }}
 
     /* ── Progress bar ── */
     .progress-wrap {{ margin: 14px 0; }}
@@ -659,6 +791,7 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
       </div>
     </div>
   </div>
+  {entrega_html}
 
   <!-- Deliberações Internas -->
   <div class="section">
@@ -694,6 +827,18 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
   <span>DVA-CBS | TC 015.848/2025-6 | Uso Interno Restrito</span>
   <span>{"● Atualiza a cada 10s" if live_mode else "Ciclo concluído"} &nbsp;·&nbsp; Gerado em {_e(data.generated_at)} UTC</span>
 </footer>
-
 </body>
 </html>"""
+
+
+def atualizar_report_html(cycle_id: str, workspace: Path) -> None:
+    """Atualiza o arquivo report.html no diretório do ciclo (best-effort)."""
+    try:
+        from diogenes.reports.cycle_report import build_report
+        data = build_report(cycle_id, workspace)
+        html = render_html(data)
+        html_path = workspace / "cycles" / cycle_id / "report.html"
+        html_path.write_text(html, encoding="utf-8")
+    except Exception:
+        pass
+

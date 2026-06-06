@@ -39,9 +39,11 @@ logger = logging.getLogger(__name__)
 # ── Tabela de preços de referência (USD por 1M tokens) ──────────────────────
 _PRECOS = {
     "Claude 4.6 Sonnet":      (3.00, 15.00),
+    "claude-4-8-opus":        (5.00, 25.00),
     "claude-4-7-opus":        (5.00, 25.00),
     "claude-4-6-opus":        (5.00, 25.00),
     "gpt-5.5-thinking":       (5.00, 30.00),
+
     "gpt-5.4-thinking":       (2.50, 15.00),
     "gpt-5.3-instant":        (0.75,  4.50),
     "gpt-5.2-thinking":       (1.75, 14.00),

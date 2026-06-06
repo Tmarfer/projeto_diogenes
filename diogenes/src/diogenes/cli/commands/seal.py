@@ -49,6 +49,11 @@ def seal(
     if status == CycleState.AGUARDANDO_CHANCELA_LESTRADE.value:
         now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         audit.seal_cycle(cycle, "LIMPO", now)
+        try:
+            from diogenes.reports.render_html import atualizar_report_html
+            atualizar_report_html(cycle, cfg.workspace.path)
+        except Exception:
+            pass
         _exibir_chancela(cycle, "LIMPO", record.get("output_filename", ""))
         return
 
@@ -70,6 +75,11 @@ def seal(
         audit.update_status(cycle, CycleState.AGUARDANDO_CHANCELA_LESTRADE.value)
         now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         audit.seal_cycle(cycle, "ACEITO_JUSTIFICADO", now, notes=reason)
+        try:
+            from diogenes.reports.render_html import atualizar_report_html
+            atualizar_report_html(cycle, cfg.workspace.path)
+        except Exception:
+            pass
         _exibir_chancela(cycle, "ACEITO_JUSTIFICADO", record.get("output_filename", ""))
         display.console.print(f"  [dim]Justificativa registrada:[/dim] {reason}")
         return

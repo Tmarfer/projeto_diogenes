@@ -119,6 +119,26 @@ def autorun(
             "— requer decisão humana no seal."
         )
 
+    try:
+        from diogenes.reports.render_html import atualizar_report_html
+        atualizar_report_html(cycle, cfg.workspace.path)
+    except Exception:
+        pass
+
+
+    # ── 5. Fase de Entrega (gera os entregáveis; não bloqueia o seal) ─────────
+    display.passo_ok("Acionando Fase de Entrega...")
+    try:
+        from diogenes.orchestrator.entrega import executar_entrega
+        entrega = executar_entrega(cycle, rodar_qa=True, with_assets=True)
+        display.passo_ok(
+            f"Fase de Entrega: {entrega.total_artefatos} artefato(s) em {entrega.entrega_dir}"
+        )
+        for av in entrega.avisos[:6]:
+            display.aviso(av)
+    except Exception as e:  # noqa: BLE001
+        display.aviso(f"Fase de Entrega não concluída ({type(e).__name__}: {e}) — seguir manualmente com `diogenes deliver`.")
+
     _resumo_final(audit, cycle)
 
 

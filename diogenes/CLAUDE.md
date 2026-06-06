@@ -81,6 +81,10 @@ cd diogenes
 # Instalar
 pip install -e ".[dev]"
 
+# Fase de Entrega (geração dos entregáveis institucionais) — passo extra obrigatório:
+python -m playwright install chromium   # render HTML→PDF/PNG das fichas síntese
+# (python-docx e matplotlib já vêm nas dependências do pacote)
+
 # Rodar todos os testes
 pytest tests/
 
@@ -131,16 +135,18 @@ src/diogenes/
                  (file_prep: ARQUIVOS_SEMPRE_ANALISE libera protocolo_recebimento.md + inventario.xlsx)
   bench/       — bancada cirúrgica: core.py + pipeline.py + prompt_builder.py
                  (pipeline herda DIOGENES_CORPUS_JURIDICO_DIR do .env quando --legal-corpus ausente)
-  cli/         — app.py + commands/ (um arquivo por subcomando, incl. report.py) + commands/bench/
+  cli/         — app.py + commands/ (um arquivo por subcomando, incl. report.py, deliver.py) + commands/bench/
   config.py    — get_config() com @lru_cache — ÚNICO ponto de leitura de config
+  delivery/    — Fase de Entrega: parsing + extractor (openpyxl) + dashboard + builders + pacote
+                 (schema canônico em models.py; geradores TCU vendorizados em vendor/tcu/)
   irene.py     — wrapper do pipeline Irene (C1-C5); catalogação semântica pré-Watson
   llm/         — base.py (Protocol/factory) + chattcu.py + openrouter.py + azure_foundry.py + seed.py + call_id.py
-  models.py    — TODOS os dataclasses de domínio (LLMCall, CycleRecord, etc.)
-  motors/      — motor_start.py + motor_saida.py
-  orchestrator/— orchestrator.py + states.py + stranger_room.py + events.py
+  models.py    — TODOS os dataclasses de domínio (LLMCall, CycleRecord, PacoteEntrega, etc.)
+  motors/      — motor_start.py + motor_saida.py + motor_entrega.py (determinístico, sem LLM)
+  orchestrator/— orchestrator.py + states.py + stranger_room.py + events.py + entrega.py
                  (EventLogger.log() regenera report.html em _cycle_dir/ após cada evento — best-effort)
   persistence/ — audit_index.py + manifest.py + workspace.py
-  reports/     — cycle_report.py + render_markdown.py + render_html.py (NOVO — painel de acompanhamento)
+  reports/     — cycle_report.py + render_markdown.py + render_html.py (painel de acompanhamento)
 ```
 
 ### Papéis dos módulos-chave
@@ -339,6 +345,14 @@ diogenes verify-output --cycle {id}
   → Motor de Saída: varre 4 categorias de marcas internas
   → Status: AGUARDANDO_CHANCELA_LESTRADE (se limpo)
 
+diogenes deliver --cycle {id}            # Fase de Entrega (excursão antes do seal)
+  → Mycroft.mapear_dados_modulo (LLM) localiza dados na planilha → entrega_mapa_extracao.json
+  → Motor de Entrega (determinístico) gera output/entrega/: Dashboard.html, Apendice_*.docx,
+     Relatorio_Narrativo/Consolidado/Pre_Atendimento_*.docx, ficha_sintese_*.{html,pdf,png}
+  → Mycroft.avaliar_entrega (LLM) faz QA de aderência (APROVADO | REQUER_AJUSTE)
+  → `--no-qa` pula o LLM (só geração); `--no-assets` pula PDF/PNG da ficha
+  → Também roda automaticamente ao final do `autorun`
+
 diogenes seal --cycle {id}
   → Status: ENCERRADO_CHANCELADO
 ```
@@ -425,7 +439,7 @@ real, usado na Fase D.
 - Exceções em `except` clauses usam `raise ... from e` (B904)
 - Nenhuma semicolon em statements múltiplos (E702)
 
-**Estado atual:** 205 testes passando, 1 skipped (`docling` não instalado no Mac), ruff limpo nos arquivos tocados.
+**Estado atual:** 216 testes passando, 1 skipped (`docling` não instalado no Mac), ruff limpo nos arquivos tocados.
 
 ---
 
@@ -459,6 +473,17 @@ entre famílias de modelo (`gpt-5.4`, `gpt-5.5`, Claude).
 - `reports/` + `cli/commands/report.py` — `diogenes report`: painel HTML local ao vivo,
   avatares dos 4 agentes, live auto-refresh, sem envio de dados externos.
 - `bench/pipeline.py` — fallback de corpus para `DIOGENES_CORPUS_JURIDICO_DIR` do `.env`.
+
+**Fase de Entrega (2026-06-04) — `diogenes deliver` + hook no `autorun`:**
+- `delivery/` + `motors/motor_entrega.py` + `orchestrator/entrega.py` — gera os entregáveis
+  GT Reforma (dashboard HTML, apêndice/relatórios DOCX, ficha síntese PDF/PNG) em
+  `output/entrega/` a partir do `PacoteEntrega` canônico (models.py). Determinístico.
+- `agents/mycroft.py` — call_types `mapear_dados_modulo` (localiza dados na planilha, sem
+  transcrever números) e `avaliar_entrega` (QA de aderência); seções no `mycroft/heartbeat.md`.
+- Geradores TCU **vendorizados** em `delivery/vendor/tcu/` (cópias de
+  `01-BIBLIOTECAS_UTILITARIAS/` — não referenciar o OneDrive em runtime; ver `VENDOR.md`).
+- Deps obrigatórias novas: `python-docx`, `matplotlib`, `playwright` (+ `playwright install chromium`).
+- Esquema do mapa de extração: `delivery/MAPA_EXTRACAO.md`. Testes: `tests/unit/test_motor_entrega.py`.
 
 ### Dívida técnica conhecida (não bloqueante)
 - ~40 erros de mypy pré-existentes (`dict` sem type args, etc.)

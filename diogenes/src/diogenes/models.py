@@ -7,7 +7,7 @@ Referência normativa: Bloco 2.3.2, Bloco 6.3, Bloco 9 (SDD v0.1)
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -178,6 +178,10 @@ class CycleRecord:
     irene_resultado: str = ""   # IRENE_APROVADO | IRENE_ALERTA | IRENE_BLOQUEADO | IRENE_ERRO_FATAL
     irene_score: str = ""       # score_consolidado como string (ex: "0.9737")
     irene_dir_saida: str = ""   # caminho absoluto do IRENE_OUT/{modulo}
+    # Fase de Entrega — rastreamento da geração dos entregáveis
+    entrega_invocado_at_utc: str = ""
+    entrega_artefatos: str = ""   # nº de artefatos gerados com sucesso
+    entrega_veredito: str = ""    # APROVADO | REQUER_AJUSTE (QA de Mycroft)
 
 
 AUDIT_INDEX_COLUMNS: list[str] = [
@@ -192,6 +196,7 @@ AUDIT_INDEX_COLUMNS: list[str] = [
     "custo_total_usd", "tokens_mycroft", "tokens_watson", "tokens_sherlock",
     "ambiente", "diogenes_version", "git_commit",
     "irene_invocada_at_utc", "irene_resultado", "irene_score", "irene_dir_saida",
+    "entrega_invocado_at_utc", "entrega_artefatos", "entrega_veredito",
 ]
 
 
@@ -268,3 +273,183 @@ class MotorSaidaReport:
     verificado_em_utc: str
     total_ocorrencias: int
     documento_limpo: bool
+
+
+# ---------------------------------------------------------------------------
+# Fase de Entrega — esquema canônico do PacoteEntrega (módulo-agnóstico)
+#
+# Alimenta os geradores vendorizados (TCUFormatter / ApendiceGerador /
+# DashboardGenerator / ficha síntese). Mapeia 1:1 no dicionário de dados do
+# ApendiceGerador (ver delivery/vendor/tcu — README das bibliotecas) e no
+# template genérico do dashboard. Sem lógica, sem imports internos.
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class KPIEntrega:
+    """Cartão de indicador no dashboard / ficha síntese."""
+    rotulo: str
+    valor: str
+    nota: str = ""
+    destaque: str = ""   # "" | "red" | "green" | "amber" | "navy"
+    unidade: str = ""    # rótulo curto sob o valor, ex.: "R$ bi", "mil CPFs"
+    delta: str = ""      # variação formatada, ex.: "+5,2%" (calculada pelo extractor)
+    delta_tipo: str = "" # "" | "up" | "down" | "neutral" — cor/seta do delta
+
+
+@dataclass(frozen=True)
+class TabelaEntrega:
+    titulo: str
+    headers: list[str]
+    rows: list[list[str]]
+    fonte: str = ""
+    # Textos da primeira coluna que devem ser realçados como total-row (case-insensitive).
+    total_labels: list[str] = field(default_factory=list)
+    subtitulo: str = ""
+
+
+@dataclass(frozen=True)
+class GraficoEntrega:
+    tipo: str             # "barras" | "rosca" | "linha" | "barras_horizontais"
+    titulo: str
+    labels: list[str]
+    series: list[float]
+    nota: str = ""
+    subtitulo: str = ""   # linha de apoio sob o título do gráfico
+    layout: str = "grid"  # "grid" (meia-largura, par a par) | "full" (largura total)
+
+
+@dataclass(frozen=True)
+class MetodologiaCard:
+    """Card explicativo do que foi homologado (consome o texto da Metodologia)."""
+    tag: str              # ex.: "Seção 10.1 — Produtor Rural"
+    titulo: str
+    corpo: str
+    chips: list[str] = field(default_factory=list)   # ex.: ["DIRPF", "Arts. 164/165"]
+
+
+@dataclass(frozen=True)
+class CenarioSensibilidade:
+    """Cartão de cenário na aba de Sensibilidade (base vs. ajustado)."""
+    rotulo: str
+    valor: str
+    nota: str = ""
+    destaque: str = ""    # "" | "red" | "green" | "amber" | "navy"
+
+
+@dataclass
+class BlocoFinanceiro:
+    """Aba/seção financeira genérica do dashboard (acomoda 18 layouts distintos)."""
+    id: str
+    titulo: str
+    descricao: str = ""
+    # "visao_geral" | "analitica" | "sensibilidade" — dirige o render no dashboard.
+    tipo: str = "analitica"
+    narrativa: str = ""   # parágrafo analítico curado por Mycroft (texto, sem números)
+    kpis: list[KPIEntrega] = field(default_factory=list)
+    cards_metodologia: list[MetodologiaCard] = field(default_factory=list)
+    tabelas: list[TabelaEntrega] = field(default_factory=list)
+    graficos: list[GraficoEntrega] = field(default_factory=list)
+    cenarios: list[CenarioSensibilidade] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class OcorrenciaEntrega:
+    """Ocorrência do insumo_json_dashboard de Sherlock (skills.md §11)."""
+    codigo: str
+    titulo: str
+    nivel: str            # CRITICO | ALERTA | ATENCAO | RESOLVIDO
+    fundamento_violado: str = ""
+    descricao: str = ""
+    solicitacao_rfb: str = ""
+    status: str = "aberto"             # aberto | encaminhado | resolvido
+    status_resolucao: str | None = None
+
+
+@dataclass(frozen=True)
+class PendenciaSimulador:
+    codigo: str
+    descricao: str
+    verificacao_futura: str = ""
+
+
+@dataclass(frozen=True)
+class TesteRealizado:
+    id: str
+    descricao: str
+    resultado: str
+    status: str           # Atendido | Atendido Parcialmente | Divergência | ...
+
+
+@dataclass(frozen=True)
+class NotaMetodologica:
+    nome: str
+    data: str = ""
+    descricao: str = ""
+    conteudo_resumo: str = ""
+    situacao_inventario: str = ""
+    observacao: str = ""
+
+
+@dataclass
+class PacoteEntrega:
+    cycle_id: str
+    modulo: int
+    modulo_nome: str
+    versao: str = ""
+    timestamp_utc: str = ""
+    # Identificação institucional (defaults do TC 015.848/2025-6)
+    processo: str = "TC 015.848/2025-6"
+    acordao: str = "2833/2025-Plenário"
+    relator: str = "Ministro Vital do Rêgo"
+    unidade: str = "SecexContas / TCU"
+    # Apêndice — seções 1 e 2
+    proposta_descricao: str = ""
+    proposta_contexto: str = ""
+    proposta_fonte: str = ""
+    objetivo: str = ""
+    objetivo_detalhado: str = ""
+    # Apêndice — seção 3 (arquivos): cada item é dict {nome, descricao, tamanho|tipo}
+    arquivos_principal: list[dict] = field(default_factory=list)
+    arquivos_auxiliares: list[dict] = field(default_factory=list)
+    arquivos_fontes: list[dict] = field(default_factory=list)
+    # Camada financeira (genérica) — extraída deterministicamente da planilha
+    blocos_financeiros: list[BlocoFinanceiro] = field(default_factory=list)
+    valores_agregados: list[dict] = field(default_factory=list)   # {descricao, valor_2023, valor_2024}
+    sensibilidade_redutor: dict | None = None                     # {redutores:[int], valores:[float]}
+    # Camada de auditoria (Sherlock + Watson + Mycroft)
+    ocorrencias: list[OcorrenciaEntrega] = field(default_factory=list)
+    pendencias_simulador: list[PendenciaSimulador] = field(default_factory=list)
+    testes_camada_1: list[TesteRealizado] = field(default_factory=list)
+    testes_camada_2: list[TesteRealizado] = field(default_factory=list)
+    testes_camada_3: list[TesteRealizado] = field(default_factory=list)
+    notas_metodologicas: list[NotaMetodologica] = field(default_factory=list)
+    veredito: str = ""                # APROVADO | APROVADO_COM_RESSALVAS | ...
+    conclusao_conformidade: str = ""
+    conclusao_consistencia: str = ""
+    # Narrativa — markdown consolidado (higienizado) e ata RFB opcional
+    relatorio_markdown: str = ""
+    ata_rfb_markdown: str = ""
+    # Conteúdo qualitativo do Apêndice redigido por Mycroft (call_type redigir_apendice).
+    # Mescla-se com a camada numérica determinística em builders.dados_apendice.
+    apendice_conteudo: dict | None = None
+
+
+@dataclass(frozen=True)
+class ArtefatoEntrega:
+    """Um artefato gerado pela Fase de Entrega."""
+    tipo: str             # dashboard | apendice | narrativo | consolidado | pre_atendimento | ficha
+    nome: str
+    path: Path
+    hash: str
+    bytes: int
+    ok: bool
+    nota: str = ""
+
+
+@dataclass
+class MotorEntregaReport:
+    cycle_id: str
+    gerado_em_utc: str
+    artefatos: list[ArtefatoEntrega]
+    total_artefatos: int
+    entrega_dir: Path
+    avisos: list[str] = field(default_factory=list)

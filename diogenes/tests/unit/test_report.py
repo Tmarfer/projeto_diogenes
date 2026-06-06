@@ -246,3 +246,64 @@ def test_render_html_status_badge_success(workspace: tuple[Path, str]) -> None:
     data = build_report(cid, ws)
     html = render_html(data)
     assert "badge-success" in html  # ENCERRADO_CHANCELADO → success
+
+
+# ── Fase de Entrega + assets (painel v2) ──────────────────────────────────────
+
+def test_listar_entrega_coleta_e_ignora_temporarios(tmp_path: Path) -> None:
+    from diogenes.reports.cycle_report import _listar_entrega
+    entrega = tmp_path / "cycles" / "C" / "output" / "entrega"
+    entrega.mkdir(parents=True)
+    (entrega / "Dashboard.html").write_text("x" * 100)
+    (entrega / "Apendice_Modulo10.docx").write_bytes(b"y" * 2048)
+    (entrega / "~$Apendice_Modulo10.docx").write_text("tmp")          # temporário Office
+    (entrega / "entrega_manifesto.json").write_text("{}")             # insumo interno
+    itens = _listar_entrega(tmp_path / "cycles" / "C")
+    nomes = {i["nome"] for i in itens}
+    assert nomes == {"Dashboard.html", "Apendice_Modulo10.docx"}
+    tipos = {i["nome"]: i["tipo"] for i in itens}
+    assert tipos["Dashboard.html"] == "dashboard"
+    assert tipos["Apendice_Modulo10.docx"] == "apêndice"
+
+
+def test_calls_entrega_por_tipo() -> None:
+    from diogenes.reports.cycle_report import _calls_entrega_por_tipo
+    calls = [
+        {"agent": "mycroft", "call_type": "mapear_dados_modulo"},
+        {"agent": "mycroft", "call_type": "avaliar_entrega"},
+        {"agent": "mycroft", "call_type": "avaliar_entrega"},
+        {"agent": "mycroft", "call_type": "consolidar"},   # não é de entrega
+        {"agent": "watson", "call_type": "analise_inicial"},
+    ]
+    assert _calls_entrega_por_tipo(calls) == {"mapear_dados_modulo": 1, "avaliar_entrega": 2}
+
+
+def test_carregar_retrato() -> None:
+    from diogenes.reports.assets import carregar_retrato
+    assert carregar_retrato("mycroft").startswith("data:image/jpeg;base64,")
+    assert carregar_retrato("inexistente_zzz") == ""
+
+
+def test_render_html_secao_entrega_presente(workspace: tuple[Path, str]) -> None:
+    ws, cid = workspace
+    data = replace(
+        build_report(cid, ws),
+        entrega_invocado_at="2026-06-04T17:45:00Z", entrega_veredito="APROVADO",
+        entrega_artefatos_list=[{"nome": "Dashboard.html", "path": "/x/Dashboard.html",
+                                 "bytes": 17228, "tipo": "dashboard"}],
+        entrega_calls_by_type={"mapear_dados_modulo": 1, "avaliar_entrega": 3},
+    )
+    html = render_html(data)
+    assert "<h2>Fase de Entrega</h2>" in html
+    assert "Dashboard.html" in html and "avaliar_entrega" in html
+
+
+def test_render_html_secao_entrega_ausente(workspace: tuple[Path, str]) -> None:
+    ws, cid = workspace
+    assert "<h2>Fase de Entrega</h2>" not in render_html(build_report(cid, ws))
+
+
+def test_render_html_cards_com_retrato_e_lestrade(workspace: tuple[Path, str]) -> None:
+    html = render_html(build_report(workspace[1], workspace[0]))
+    assert html.count('class="avatar-img"') == 5   # Irene, Watson, Mycroft, Sherlock, Lestrade
+    assert "Insp. Lestrade" in html

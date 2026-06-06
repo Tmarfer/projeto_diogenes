@@ -99,6 +99,15 @@ def render_markdown(data: CycleReportData) -> str:
     row("Decisão", data.motor_saida_decision or "—")
     row("Documento limpo", "Sim" if data.motor_saida_limpo else "Não")
 
+    # ── Fase de Entrega ──────────────────────────────────────────────────────
+    if data.entrega_invocado_at:
+        h(2, "Fase de Entrega")
+        lines.append("| Campo | Valor |")
+        lines.append("|---|---|")
+        row("Artefatos gerados", str(data.entrega_artefatos))
+        row("Gerado em", data.entrega_invocado_at)
+        lines.append("\n*(dashboard, apêndice, relatórios e ficha em `output/entrega/`)*")
+
     # ── Stranger Room ────────────────────────────────────────────────────────
     h(2, "Deliberações Internas (Stranger Room)")
     if data.stranger_room_files:

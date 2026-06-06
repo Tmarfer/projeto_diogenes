@@ -5,13 +5,13 @@ Todas as funções são best-effort: exceções são suprimidas silenciosamente.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
 from diogenes.persistence.audit_index import AuditIndex
-
 
 # ── Modelos ──────────────────────────────────────────────────────────────────
 
@@ -91,6 +91,13 @@ class CycleReportData:
     is_terminal: bool
 
     generated_at: str = field(default_factory=lambda: datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+    # Fase de Entrega (defaults — backward-compatible)
+    entrega_artefatos: int = 0
+    entrega_invocado_at: str = ""
+    entrega_veredito: str = ""
+    entrega_artefatos_list: list[dict] = field(default_factory=list)   # {nome, path, bytes, tipo}
+    entrega_calls_by_type: dict[str, int] = field(default_factory=dict)
 
 
 _TERMINAL_STATES = frozenset({
@@ -218,6 +225,11 @@ def build_report(cycle_id: str, workspace: Path) -> CycleReportData:
         output_hash=output_hash,
         output_path=output_path,
         is_terminal=is_terminal,
+        entrega_artefatos=_safe_int(record.get("entrega_artefatos", 0)),
+        entrega_invocado_at=record.get("entrega_invocado_at_utc", ""),
+        entrega_veredito=record.get("entrega_veredito", ""),
+        entrega_artefatos_list=_listar_entrega(cycle_dir),
+        entrega_calls_by_type=_calls_entrega_por_tipo(calls),
     )
 
 
@@ -239,10 +251,8 @@ def _ler_events(runtime_dir: Path) -> list[dict]:
         for raw in path.read_text(encoding="utf-8").splitlines():
             raw = raw.strip()
             if raw:
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     lines.append(json.loads(raw))
-                except json.JSONDecodeError:
-                    pass
     except OSError:
         pass
     return lines
@@ -257,10 +267,8 @@ def _ler_llm_calls(runtime_dir: Path) -> list[dict]:
         for raw in path.read_text(encoding="utf-8").splitlines():
             raw = raw.strip()
             if raw:
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     lines.append(json.loads(raw))
-                except json.JSONDecodeError:
-                    pass
     except OSError:
         pass
     return lines
@@ -300,6 +308,55 @@ def _timeline_fases(events: list[dict]) -> list[FaseEntry]:
 
 def _key_events(events: list[dict]) -> list[dict]:
     return [e for e in events if e.get("event_type") in _KEY_EVENT_TYPES]
+
+
+_ENTREGA_CALL_TYPES = ("mapear_dados_modulo", "redigir_apendice", "avaliar_entrega")
+
+_ENTREGA_TIPO_POR_PADRAO = (
+    ("Dashboard", "dashboard"),
+    ("Apendice", "apêndice"),
+    ("Relatorio_Narrativo", "relatório narrativo"),
+    ("Relatorio_Consolidado", "relatório consolidado"),
+    ("Pre_Atendimento", "pré-atendimento"),
+    ("ficha_sintese", "ficha síntese"),
+)
+
+
+def _classificar_entrega(nome: str) -> str:
+    for prefixo, tipo in _ENTREGA_TIPO_POR_PADRAO:
+        if prefixo.lower() in nome.lower():
+            return tipo
+    return nome.rsplit(".", 1)[-1].lower() if "." in nome else "artefato"
+
+
+def _listar_entrega(cycle_dir: Path) -> list[dict]:
+    """Artefatos gerados em output/entrega/ (best-effort; ignora temporários ~$ e manifestos)."""
+    entrega_dir = cycle_dir / "output" / "entrega"
+    if not entrega_dir.is_dir():
+        return []
+    itens: list[dict] = []
+    for f in sorted(entrega_dir.iterdir()):
+        if not f.is_file() or f.name.startswith("~$") or f.name.startswith("."):
+            continue
+        if f.suffix.lower() == ".json":   # manifesto/insumos internos, não entregáveis
+            continue
+        try:
+            tamanho = f.stat().st_size
+        except OSError:
+            tamanho = 0
+        itens.append({"nome": f.name, "path": str(f), "bytes": tamanho,
+                      "tipo": _classificar_entrega(f.name)})
+    return itens
+
+
+def _calls_entrega_por_tipo(calls: list[dict]) -> dict[str, int]:
+    """Itemiza as call_types da Fase de Entrega (do Mycroft), antes escondidas no agregado."""
+    contagem: dict[str, int] = {}
+    for c in calls:
+        ct = c.get("call_type", "")
+        if ct in _ENTREGA_CALL_TYPES:
+            contagem[ct] = contagem.get(ct, 0) + 1
+    return contagem
 
 
 def _listar_stranger_room(cycle_dir: Path) -> dict[str, list[str]]:
