@@ -170,6 +170,7 @@ class TestBench:
             {"display_name": "gemini-3.1-flash-lite", "fornecedora": "Google"},
             {"id": "gpt-5.4-thinking", "fornecedora": "OpenAI"},
             {"model_id": "gpt-5.5-thinking", "fornecedora": "OpenAI"},
+            {"id": "claude-4-8-opus", "fornecedora": "Anthropic"},
         ]
         with patch("diogenes.llm.chattcu.ChatTCUClient.listar_modelos", return_value=catalogo):
             result = runner.invoke(app, ["bench", "validate-models"])

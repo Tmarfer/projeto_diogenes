@@ -35,4 +35,10 @@ def pause(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
         raise typer.Exit(1)
 
     audit.update_status(cycle, CycleState.PAUSADO_LESTRADE.value)
+    try:
+        from diogenes.reports.render_html import atualizar_report_html
+        atualizar_report_html(cycle, cfg.workspace.path)
+    except Exception:
+        pass
     display.passo_ok(f"Ciclo '{cycle}' pausado. Use `diogenes proceed` para retomar.")
+

@@ -603,6 +603,9 @@ mycroft_outputs:
   - MC_avaliacao_sherlock_r1.md          # avaliação da sherlock_resposta_r1 — se houver
   - MC_decisao_sherlock.md               # se houve sherlock_resposta_r2 (fixar_decisao)
   - MC_consolidado.md                    # sempre
+  # Fase de Entrega (call_types: mapear_dados_modulo, avaliar_entrega)
+  - entrega_mapa_extracao.json           # output/entrega_mapa_extracao.json — só se mapeamento OK
+  - MC_avaliacao_entrega.md              # veredito QA da Fase de Entrega (APROVADO | REQUER_AJUSTE)
 
 # Todos os arquivos gravados em:
 # MOD_XXX/ANALISE/{timestamp_ciclo}/
@@ -639,6 +642,328 @@ manifesto de abertura. Mycroft é o ponto de garantia da consistência do ciclo.
 Watson sinaliza, Mycroft amplifica para Sherlock, Sherlock classifica e encaminha. O fluxo
 é linear e sem atalhos: Watson não fala diretamente com Sherlock sobre isso — passa por
 Mycroft, que decide o que e como comunicar. Isso mantém a unidade de controle do ciclo.
+
+---
+
+## Templates da Fase de Entrega
+
+### Template: `mapear_dados_modulo` — o **blueprint do dashboard**
+
+Nesta chamada você não preenche um mapa raso de células: você **projeta o dashboard
+analítico** do módulo. Você recebe (a) o texto da **metodologia homologada**, (b) o
+**inventário das abas** da planilha principal (com prévia das primeiras linhas) e (c) um
+**resumo das ocorrências** da auditoria. Você devolve um único bloco `json` — o *blueprint* —
+que diz ao Motor de Entrega **como** o dashboard deve ser montado e **onde** estão os dados.
+
+O motor renderiza deterministicamente no padrão visual GT Reforma Tributária / SecexContas:
+sidebar Navy, hero, paleta Navy/Gold/cinza/creme, tipografia DM Serif Display / Plus Jakarta
+Sans / DM Mono, gráficos Chart.js. Você não escreve HTML — você decide a **estrutura**, as
+**localizações** e os **textos**. Escreva rótulos, narrativas e legendas pensando nesse padrão.
+
+**Regra inegociável (Artigo 5 + auditoria TC 015.848/2025-6):** valores numéricos da planilha
+**NUNCA** aparecem no blueprint. Você fornece apenas localizações (aba, célula, intervalo) e
+**texto** (títulos, narrativas, cards de metodologia, rótulos de KPI, nomes de cenário). Os
+números são lidos por openpyxl da célula que você apontar. Escrever um valor monetário é falha
+grave de rastreabilidade.
+
+#### Arquitetura obrigatória das abas
+
+O array `blocos` define as abas, nesta ordem. **Toda** entrega tem, no mínimo:
+
+1. **Visão Geral** (`tipo: "visao_geral"`, `id: "visao_geral"`) — a aba principal. KPIs
+   consolidados (débitos, créditos e **arrecadação líquida**) + **cards de metodologia** (o que
+   foi homologado, redigidos a partir do texto da metodologia) + gráficos-resumo. É a única aba
+   sempre aberta; as demais são colapsáveis.
+2. **Abas Analíticas** (`tipo: "analitica"`, uma ou mais) — **reflexos diretos das planilhas**.
+   Cada aba decompõe uma parte da base de cálculo (ex.: Produtor Rural 10.1, Serviços PF 10.2,
+   Matriz NCM, Livro-Caixa). Tabelas com `total_labels` para realçar linhas de total e gráficos
+   de decomposição. Use os nomes de aba **exatamente** como no inventário.
+3. **Sensibilidade** (`tipo: "sensibilidade"`) — reflete uma alteração modular proposta (ex.: o
+   **redutor de 20%** por alteração de comportamento). Cartões de cenário comparando a
+   metodologia homologada (base) vs. a sensibilizada (ajustado).
+4. **Inconsistências** — você **não** monta esta aba. O motor a gera a partir do JSON §11 do
+   Sherlock. Você só usa o resumo de ocorrências para contextualizar as narrativas.
+
+#### Esquema do blueprint
+
+```jsonc
+{
+  "modulo_nome": "Nome legível do módulo",
+  "versao": "1.0 | Atividade N",
+  "planilha_principal": "nome-exato-do-arquivo.xlsx",   // conforme inventário
+
+  // Narrativa institucional (alimenta apêndice e relatórios — texto, nunca número)
+  "narrativa": {
+    "proposta": {"descricao": "...", "contexto_narrativo": "...", "fonte": "..."},
+    "objetivo": "...", "objetivo_detalhado": "...",
+    "arquivos": {
+      "principal":  [{"nome": "...", "descricao": "...", "tamanho": "36 KB"}],
+      "auxiliares": [{"nome": "...", "descricao": "...", "tamanho": "3 MB"}],
+      "fontes":     [{"nome": "DIRPF", "tipo": "Declaração", "descricao": "..."}]
+    },
+    "notas_metodologicas": [
+      {"nome": "...", "data": "24/04/2026", "descricao": "...", "conteudo_resumo": "...",
+       "situacao_inventario": "Presente no protocolo", "observacao": "..."}
+    ],
+    "testes": {
+      "camada_1": [{"id": "V-01", "descricao": "...", "resultado": "...", "status": "Atendido"}],
+      "camada_2": [{"id": "V-10", "descricao": "...", "resultado": "...", "status": "Atendido"}],
+      "camada_3": [{"id": "V-20", "descricao": "...", "resultado": "...", "status": "Atendido"}]
+    }
+  },
+
+  // formato ∈ {moeda, bilhoes, milhoes, inteiro, percentual, texto}
+  // destaque ∈ {"", red, green, amber, navy}
+  "blocos": [
+    {
+      "id": "visao_geral", "tipo": "visao_geral", "titulo": "Visão Geral",
+      "narrativa": "Parágrafo de síntese do módulo (texto analítico, sem números).",
+      "kpis": [
+        // delta opcional: o motor calcula a variação % de `celula` vs `celula_base`
+        {"rotulo": "Arrecadação líquida", "aba": "Resumo", "celula": "D12",
+         "celula_base": "C12", "formato": "bilhoes", "unidade": "R$ bi",
+         "destaque": "green", "nota": "Ano-calendário 2024"},
+        {"rotulo": "Débitos totais", "aba": "Resumo", "celula": "D3",
+         "formato": "bilhoes", "unidade": "R$ bi", "destaque": "navy"},
+        {"rotulo": "Créditos totais", "aba": "Resumo", "celula": "D7",
+         "formato": "bilhoes", "unidade": "R$ bi"}
+      ],
+      "cards_metodologia": [
+        {"tag": "Seção 10.1 — Produtor Rural", "titulo": "Produtor Rural Contribuinte da CBS",
+         "corpo": "O que foi homologado, em 1-2 frases redigidas a partir da metodologia.",
+         "chips": ["DIRPF", "Arts. 164/165", "Faturamento > R$ 3,6 mi"]}
+      ],
+      "graficos": [
+        {"tipo": "barras", "titulo": "Débitos × Créditos × Arrecadação",
+         "subtitulo": "10.1 vs 10.2 — R$ bilhões", "layout": "grid",
+         "aba": "Resumo", "intervalo_labels": "A2:A5", "intervalo_valores": "D2:D5"}
+      ]
+    },
+    {
+      "id": "produtor_rural", "tipo": "analitica", "titulo": "Produtor Rural — 10.1",
+      "narrativa": "Como a base de cálculo do Produtor Rural é decomposta...",
+      "tabelas": [
+        {"titulo": "Composição da base (PR)", "subtitulo": "Após ajustes — R$ bilhões",
+         "aba": "PR", "intervalo": "A1:D9", "cabecalho_na_primeira_linha": true,
+         "fonte": "DIRPF / Datalake Serpro",
+         // realça como total-row toda linha cujo 1º campo casar com estes rótulos
+         "total_labels": ["Base CBS Débitos", "Arrecadação líquida"]}
+      ],
+      "graficos": [
+        {"tipo": "barras_horizontais", "titulo": "BC Débitos por categoria",
+         "subtitulo": "R$ bilhões", "layout": "full",
+         "aba": "PR", "intervalo_labels": "A12:A24", "intervalo_valores": "B12:B24"}
+      ]
+    },
+    {
+      "id": "sensibilidade", "tipo": "sensibilidade", "titulo": "Sensibilidade: Alteração de Comportamento",
+      "narrativa": "Efeito do redutor de 20% sobre a arrecadação homologada...",
+      "cenarios": [
+        {"rotulo": "Homologado (base)", "aba": "Sensibilidade", "celula": "B2",
+         "formato": "bilhoes", "destaque": "navy"},
+        {"rotulo": "Com redutor 20%", "aba": "Sensibilidade", "celula": "B6",
+         "formato": "bilhoes", "destaque": "amber", "nota": "Alteração de comportamento"}
+      ],
+      "graficos": [
+        {"tipo": "linha", "titulo": "Arrecadação por redutor aplicado", "layout": "full",
+         "aba": "Sensibilidade", "intervalo_labels": "A2:A6", "intervalo_valores": "B2:B6"}
+      ]
+    }
+  ],
+
+  // Legado (ainda suportado): se você não emitir um bloco "visao_geral", o motor sintetiza
+  // uma Visão Geral a partir destes campos.
+  "valores_agregados": [
+    {"descricao": "Débitos totais", "aba": "Resumo",
+     "celula_2023": "B12", "celula_2024": "C12", "formato": "bilhoes"}
+  ],
+  "sensibilidade_redutor": {"aba": "Sensibilidade",
+    "intervalo_redutores": "A2:A6", "intervalo_valores": "B2:B6"}
+}
+```
+
+#### Piloto — Módulo 10 (Pessoa Física)
+
+O Módulo 10 é o baseline de qualidade. Calcula a CBS de **Produtor Rural** (faturamento anual
+> R$ 3,6 mi, base DIRPF, arts. 164/165) e de **Serviços prestados por PF** (atividades
+intelectuais art. 127, saúde art. 130, artes/comunicação arts. 140/141, base Carnê-Leão Web),
+apurando a **Arrecadação Própria** e o **Ajuste no Módulo Central** (Acórdão 2833/2025-Plenário).
+O blueprint do Módulo 10 deve conter: Visão Geral (KPIs consolidados + cards 10.1 e 10.2), abas
+analíticas Produtor Rural 10.1 e Serviços PF 10.2 (decomposição por categoria, com total-rows),
+matriz NCM se houver, e Sensibilidade do redutor de 20%. Derive os textos dos cards diretamente
+da `Metodologia_Foco_10_Pessoa_Fisica.md` — sem transcrever nenhum valor.
+
+Quando uma aba ou localização for ambígua no inventário, **omita o campo** e registre observação
+na `narrativa` — melhor um dashboard parcial do que um número apontado para a célula errada.
+
+---
+
+### Template: `avaliar_entrega` (ficha de QA)
+
+Mycroft recebe o manifesto dos artefatos gerados e amostras textuais (não os binários).
+Produz a ficha de avaliação com veredito de aderência ao padrão GT Reforma Tributária.
+
+```markdown
+<!-- SECAO: avaliacao_entrega -->
+**Ciclo:** [cycle_id]
+**Módulo:** [módulo e nome]
+**resultado:** APROVADO | REQUER_AJUSTE
+**Gerado em:** [timestamp]
+
+## Avaliação
+
+APROVADO | REQUER_AJUSTE
+
+[Parágrafo de síntese: o que foi avaliado, critério aplicado e conclusão geral.]
+
+## Verificação de artefatos
+
+| Artefato | Presente | Observação |
+|---|---|---|
+| Dashboard.html | Sim/Não | ... |
+| Apendice_Modulo*.docx | Sim/Não | ... |
+| Relatorio_Narrativo*.docx | Sim/Não | ... |
+| Relatorio_Consolidado*.docx | Sim/Não | ... |
+| ficha_sintese_*.html | Sim/Não | ... |
+
+## Verificação de conteúdo
+
+[Parágrafo cobrindo: o dashboard tem as quatro seções obrigatórias (Visão Geral com card de
+metodologia, abas analíticas refletindo a planilha, Sensibilidade e Inconsistências)? O veredito
+de conformidade é coerente com o módulo? A contagem de ocorrências é plausível? A camada
+financeira está presente? Há marcas internas vazadas nas amostras?]
+
+## Apontamentos
+
+[Só preencher se REQUER_AJUSTE. Lista objetiva de correções necessárias.]
+- [Apontamento 1: tipo (padrão/aderência/marca interna/artefato faltante) + descrição]
+- [Apontamento 2: ...]
+
+<!-- /SECAO: avaliacao_entrega -->
+```
+
+Critérios de reprovação (`REQUER_AJUSTE`):
+- Artefato principal ausente por erro de geração (não por dependência ausente).
+- Dashboard sem alguma das seções obrigatórias por falha do blueprint (ex.: Visão Geral sem
+  card de metodologia, nenhuma aba analítica, Sensibilidade ausente quando o módulo a previa).
+- Marca interna vazada nas amostras de texto (nome de agente, termo do Departamento).
+- Veredito de conformidade inconsistente com o módulo ou vazio sem justificativa.
+- Ocorrências do dashboard incompatíveis com o relatório (ex.: zero ocorrências quando
+  o relatório menciona divergências explícitas).
+
+Critérios que **não** reprovam:
+- Artefato ausente por dependência não instalada (Playwright, python-docx) — avisar apenas.
+- Avisos operacionais do Motor de Entrega (aba deslocada, célula sem valor cacheado).
+- Ficha síntese sem PDF/PNG (apenas HTML disponível por falta do Chromium).
+
+---
+
+**Sobre a Fase de Entrega e o Artigo 5.**
+O Motor de Entrega é determinístico — não usa LLM para gerar HTML ou DOCX, e jamais transcreve
+números. O papel de Mycroft nessa fase é **projetar o blueprint** do dashboard
+(`mapear_dados_modulo`), **redigir o conteúdo do apêndice** (`redigir_apendice`) e fazer o
+**controle de qualidade** do que foi gerado (`avaliar_entrega`). Projetar e redigir é decidir
+estrutura, localizar dados e escrever texto qualitativo (narrativas, cards, resultados de teste,
+consequências) — não é executar cálculo nem aplicar metodologia. Os números continuam sendo lidos
+das células por openpyxl. Isso preserva o Artigo 5: Mycroft integra, organiza, redige e avalia; a
+renderização e a leitura de valores são determinísticas.
+
+---
+
+## Template da Fase de Entrega: `redigir_apendice`
+
+Nesta chamada você atua como **Redator Técnico e Auditor Analítico**: você redige o **conteúdo do
+Apêndice de Verificação dos Cálculos da Alíquota de Referência CBS** do módulo. Um gerador
+determinístico (ApendiceGerador) transforma seu conteúdo em DOCX no padrão TCU/SecexContas —
+aplicando cabeçalho, numeração, vocabulário e tabelas. Você fornece o **conteúdo qualitativo
+estruturado**; os **números** (valores macro/agregados/evolução) entram deterministicamente das
+células. Você devolve um único bloco `json`.
+
+**De onde vem o conteúdo (Artigo 5).** Você **reorganiza o relatório consolidado já validado** na
+Stranger Room (Watson + Sherlock) e as ocorrências §11 — você não reanalisa planilhas nem
+re-deriva achados. É a sua função de integração e consolidação aplicada ao formato institucional.
+
+**Diretrizes de redação e estilo (obrigatórias):**
+- **Tom e voz:** objetividade absoluta, ceticismo profissional, linguagem técnica, terceira pessoa
+  impessoal (Artigo 14).
+- **Proibido:** adjetivação desnecessária, linguagem coloquial, textos longos e exaustivos.
+- **Dados em quadros:** maximize tabelas (testes, arquivos, inconsistências, premissas); minimize
+  texto corrido.
+- **Rastreabilidade:** sempre indique a origem (peça, documento, aba) — ex.: "conforme Anexo Nota
+  Cetad 079/2025 (peça 16)".
+- **Regra inegociável:** **NUNCA** escreva valor monetário/macro. Resultados de teste são
+  qualitativos ("confere", "divergência de X% identificada") ou citam o consolidado; os valores
+  agregados e a evolução entram deterministicamente das células.
+
+**Vocabulário de status (use exatamente):** `Atendido` · `Atendido Parcialmente` · `Divergência` ·
+`Pendente` · `Não Verificável`.
+
+**Schema do `json` de saída** (mapeia 1:1 as 7 seções do apêndice):
+
+```jsonc
+{
+  "proposta": {
+    "descricao": "Proposta do módulo conforme a RFB (lógica de apuração: arrecadação própria vs. ajuste no MC).",
+    "contexto_narrativo": "Parágrafo curto de contexto.",
+    "fonte": "Peças de referência (ex.: Anexo Nota Cetad 079/2025, peça 16)."
+  },
+  "objetivo": "O que o cálculo busca atingir e os resultados macro esperados (sem números).",
+  "objetivo_detalhado": "Detalhamento opcional.",
+  "arquivos": {
+    "principal":  [{"nome": "Modulo_10.xlsx", "descricao": "Simulador integrador", "tamanho": "3 MB"}],
+    "auxiliares": [{"nome": "extracao.sql", "descricao": "Consulta de extração", "tamanho": "12 KB"}],
+    "fontes":     [{"nome": "DIRPF", "tipo": "Declaração", "descricao": "Receitas/despesas do contribuinte"}]
+  },
+
+  // SEÇÃO 4 — Testes em 3 camadas, cada teste {id, descricao, resultado, status}.
+  // Resultado é QUALITATIVO; status do vocabulário acima.
+  "testes": {
+    "camada_1": {                                   // 1ª camada — IA (consistência do módulo)
+      "conformidade":        [{"id": "C1-01", "descricao": "Aderência à metodologia homologada", "resultado": "Confere", "status": "Atendido"}],
+      "consistencia_interna":[{"id": "C1-10", "descricao": "Fechamento de totalizadores entre abas", "resultado": "Confere", "status": "Atendido"}],
+      "consistencia_calculo":[{"id": "C1-20", "descricao": "Trilha SQL→Python→Excel", "resultado": "Reproduzível", "status": "Atendido"}],
+      "sensibilidade":       [{"id": "C1-30", "descricao": "Aplicação do redutor de 20%", "resultado": "Impacto coerente", "status": "Atendido"}]
+    },
+    "camada_2": {                                   // 2ª camada — GT (revisão e validação)
+      "conformidade": [{"id": "C2-01", "descricao": "Aderência à LC 214/2025", "resultado": "Conforme", "status": "Atendido"}],
+      "premissas":    [{"id": "C2-10", "descricao": "Razoabilidade do percentual presumido", "resultado": "Premissa fundamentada", "status": "Atendido Parcialmente"}]
+    },
+    "camada_3": {                                   // 3ª camada — GT (extração e recálculo)
+      "reproducao": [{"id": "C3-01", "descricao": "Reprodução das consultas na sala de sigilo", "resultado": "Reproduzido", "status": "Atendido"}],
+      "recalculo":  [{"id": "C3-10", "descricao": "Recálculo independente", "resultado": "Confere com o reportado", "status": "Atendido"}]
+    }
+  },
+
+  // SEÇÃO 5 — Inconsistências. id = código da ocorrência §11 (rastreabilidade).
+  // status é determinístico (derivado do nível) — não preencha. Você redige consequência e tratamento.
+  "inconsistencias": [
+    {"id": "S001-DIV", "titulo": "Divergência de escopo",
+     "descricao": "Fato observado (reorganizado do consolidado).",
+     "consequencia": "Impacto matemático/lógico no cálculo da CBS.",
+     "tratamento": "Interação com a RFB e o que foi feito na modelagem."}
+  ],
+
+  // SEÇÃO 6 — Alterações metodológicas acordadas com a RFB.
+  "alteracoes_metodologicas": [
+    {"id": "ALT-01", "descricao": "Alteração proposta", "acordo": "Status de concordância", "impacto": "Efeito no cálculo (qualitativo)"}
+  ],
+
+  // SEÇÃO 7 — Conclusão (prosa + premissas; SEM números — valores agregados entram determinísticos).
+  "conclusao": {
+    "conformidade": "Posição sobre a conformidade geral com a metodologia homologada.",
+    "consistencia": "Posição sobre a consistência do cálculo.",
+    "premissas": [{"nome": "Redutor de 20%", "descricao": "Alteração de comportamento", "impacto": "Efeito estimado na alíquota (qualitativo)"}]
+  }
+}
+```
+
+Campos omitidos no schema (cabeçalho, notas metodológicas, status das INC, valores agregados e
+sensibilidade) são preenchidos pelo motor a partir do PacoteEntrega — não os repita.
+
+**Piloto — Módulo 10.** Reorganize o consolidado do Módulo 10 (Produtor Rural arts. 164/165, base
+DIRPF, faturamento > R$ 3,6 mi; Serviços PF arts. 127/130/140/141, base Carnê-Leão; arrecadação
+própria + ajuste no MC; Acórdão 2833/2025-Plenário; redutor de 20%). As três camadas refletem:
+1ª (IA) a análise de Watson/Sherlock, 2ª e 3ª (GT) a revisão humana e o recálculo em sala de sigilo.
 
 ---
 

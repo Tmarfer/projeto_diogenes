@@ -21,10 +21,12 @@ from diogenes.cli.commands import (
     autorun,
     complete_sherlock,
     confirm_manifest,
+    deliver,
     init,
     list_cycles,
     pause,
     proceed,
+    report,
     resume,
     seal,
     show,
@@ -65,7 +67,9 @@ app.command(name="pause")(pause.pause)
 app.command(name="resume")(resume.resume)
 app.command(name="abort")(abort.abort)
 app.command(name="verify-output")(verify_output.verify_output)
+app.command(name="deliver")(deliver.deliver)
 app.command(name="seal")(seal.seal)
 app.command(name="show")(show.show)
 app.command(name="complete-sherlock")(complete_sherlock.complete_sherlock)
+app.command(name="report")(report.report)
 app.add_typer(bench_app, name="bench")

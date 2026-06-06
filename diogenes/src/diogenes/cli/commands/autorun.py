@@ -8,6 +8,7 @@ humana. Cada invocação cria um ciclo novo (igual ao `start`).
 """
 from __future__ import annotations
 
+import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -69,6 +70,7 @@ def autorun(
         f"Inputs verificados: {len(manifest.input_files)} arquivos ({n_analise} para análise)"
     )
     display.passo_ok(f"Ciclo criado: {cycle}")
+    _abrir_painel(cfg.workspace.path, cycle)
 
     # ── 2. Confirmação automática do manifesto ───────────────────────────────
     audit = AuditIndex(cfg.workspace.path)
@@ -117,6 +119,26 @@ def autorun(
             "— requer decisão humana no seal."
         )
 
+    try:
+        from diogenes.reports.render_html import atualizar_report_html
+        atualizar_report_html(cycle, cfg.workspace.path)
+    except Exception:
+        pass
+
+
+    # ── 5. Fase de Entrega (gera os entregáveis; não bloqueia o seal) ─────────
+    display.passo_ok("Acionando Fase de Entrega...")
+    try:
+        from diogenes.orchestrator.entrega import executar_entrega
+        entrega = executar_entrega(cycle, rodar_qa=True, with_assets=True)
+        display.passo_ok(
+            f"Fase de Entrega: {entrega.total_artefatos} artefato(s) em {entrega.entrega_dir}"
+        )
+        for av in entrega.avisos[:6]:
+            display.aviso(av)
+    except Exception as e:  # noqa: BLE001
+        display.aviso(f"Fase de Entrega não concluída ({type(e).__name__}: {e}) — seguir manualmente com `diogenes deliver`.")
+
     _resumo_final(audit, cycle)
 
 
@@ -146,6 +168,23 @@ def _resolver_pausas(
             break
         iteracoes += 1
     return resultado
+
+
+def _abrir_painel(workspace: Path, cycle: str) -> None:
+    """Gera o HTML inicial do painel e abre no browser (best-effort)."""
+    try:
+        from diogenes.reports.cycle_report import build_report
+        from diogenes.reports.render_html import render_html
+
+        data = build_report(cycle, workspace)
+        html = render_html(data)
+        html_path = workspace / "cycles" / cycle / "report.html"
+        html_path.write_text(html, encoding="utf-8")
+        url = html_path.resolve().as_uri()
+        display.console.print(f"  [dim]Painel:[/dim] {url}")
+        webbrowser.open(url)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _resumo_final(audit: AuditIndex, cycle: str) -> None:

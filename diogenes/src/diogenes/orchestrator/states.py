@@ -34,6 +34,11 @@ class CycleState(StrEnum):
     AGUARDANDO_COMPLETUDE                  = "AGUARDANDO_COMPLETUDE"
     AGUARDANDO_VERIFICACAO_SAIDA           = "AGUARDANDO_VERIFICACAO_SAIDA"
     AGUARDANDO_CHANCELA_LESTRADE           = "AGUARDANDO_CHANCELA_LESTRADE"
+    # Fase de Entrega — excursão a partir de AGUARDANDO_CHANCELA_LESTRADE.
+    # Mycroft localiza dados (mapa de extração) → Motor de Entrega gera os
+    # entregáveis → Mycroft avalia aderência (QA). Retorna à chancela para o seal.
+    EM_EXECUCAO_ENTREGA                    = "EM_EXECUCAO_ENTREGA"
+    AGUARDANDO_AJUSTE_ENTREGA              = "AGUARDANDO_AJUSTE_ENTREGA"
     ENCERRADO_CHANCELADO                   = "ENCERRADO_CHANCELADO"
     # Interrupção
     PAUSADO_LESTRADE                       = "PAUSADO_LESTRADE"
@@ -104,7 +109,18 @@ TRANSICOES_VALIDAS: dict[CycleState, set[CycleState]] = {
         CycleState.ABORTADO_LESTRADE,
     },
     CycleState.AGUARDANDO_CHANCELA_LESTRADE: {
+        CycleState.EM_EXECUCAO_ENTREGA,        # excursão opcional: gera entregáveis antes do seal
         CycleState.ENCERRADO_CHANCELADO,
+        CycleState.ABORTADO_LESTRADE,
+    },
+    CycleState.EM_EXECUCAO_ENTREGA: {
+        CycleState.AGUARDANDO_CHANCELA_LESTRADE,  # QA aprovou → volta para o seal
+        CycleState.AGUARDANDO_AJUSTE_ENTREGA,     # QA reprovou → aguarda ajuste/regeneração
+        CycleState.ABORTADO_LESTRADE,
+    },
+    CycleState.AGUARDANDO_AJUSTE_ENTREGA: {
+        CycleState.EM_EXECUCAO_ENTREGA,           # nova rodada de geração
+        CycleState.AGUARDANDO_CHANCELA_LESTRADE,  # Lestrade aceita assim mesmo → segue para o seal
         CycleState.ABORTADO_LESTRADE,
     },
     CycleState.PAUSADO_LESTRADE: {

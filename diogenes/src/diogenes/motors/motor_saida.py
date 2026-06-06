@@ -148,6 +148,14 @@ class MotorSaida:
         # Etapa 2: remover linha de metadado de arquivos internos
         resultado = re.sub(r"^\*\*Arquivos que compõem este consolidado:\*\*.*$\n?", "", resultado, flags=re.MULTILINE)
 
+        # Etapa 2.5: remover referências a arquivos internos em notação de colchetes.
+        # [MC_decisao_watson.md], [watson_consolidado.md], [sherlock_consolidado.md], etc.
+        # O split de filename na etapa 3 preserva essas referências de propósito — este
+        # pré-passo remove-as ANTES do split, quando ainda são texto contínuo.
+        # O padrão [NOME.md] não captura referências legítimas como [Acórdão … | …]
+        # (que contêm espaços/pipes) — apenas snake_case puro.
+        resultado = re.sub(r"\[[A-Za-z_][A-Za-z0-9_]*\.md\]", "", resultado)
+
         # Etapa 3: substituições de nomes (apenas fora de nomes de arquivo)
         for par in self._ms_cfg.substituicoes_higienizacao:
             if len(par) != 2:

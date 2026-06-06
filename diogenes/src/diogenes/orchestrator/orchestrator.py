@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from diogenes.agents.contexto_metodologico import (
@@ -22,16 +23,29 @@ from diogenes.agents.mycroft import MycrooftAgent
 from diogenes.agents.sherlock import SherlockAgent
 from diogenes.agents.watson import WatsonAgent
 from diogenes.config import get_config
-from diogenes.irene import executar_irene, verificar_catalogo_existente, _derivar_manifesto_irene, copiar_catalogo_para_ciclo
+from diogenes.irene import (
+    _derivar_manifesto_irene,
+    copiar_catalogo_para_ciclo,
+    executar_irene,
+    verificar_catalogo_existente,
+)
 from diogenes.llm.base import get_llm_client
 from diogenes.llm.exceptions import LLMCallError, LLMCostLimitError, LLMTimeoutError
-from diogenes.models import CycleManifest, DecisaoFinal, DefinirTasksResult, SherlockOutput, WatsonOutput
+from diogenes.models import (
+    CycleManifest,
+    DecisaoFinal,
+    DefinirTasksResult,
+    SherlockOutput,
+    WatsonOutput,
+)
 from diogenes.orchestrator.events import EventLogger
 from diogenes.orchestrator.exceptions import CorruptedStateError, OrchestratorError
 from diogenes.orchestrator.states import TRANSICOES_VALIDAS, CycleState, InvalidTransitionError
 from diogenes.orchestrator.stranger_room import StrangerRoom
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.workspace import WorkspaceManager
+
+logger = logging.getLogger(__name__)
 
 _TASKS_CACHE_MAX_DIAS = 30
 _TASKS_CACHE_NOME = "mycroft_tasks_watson.json"
@@ -51,8 +65,8 @@ def _carregar_tasks_cache(
         dados = json.loads(cache_path.read_text(encoding="utf-8"))
         criado_em = datetime.fromisoformat(dados["criado_em"])
         if criado_em.tzinfo is None:
-            criado_em = criado_em.replace(tzinfo=timezone.utc)
-        idade_dias = (datetime.now(timezone.utc) - criado_em).days
+            criado_em = criado_em.replace(tzinfo=UTC)
+        idade_dias = (datetime.now(UTC) - criado_em).days
         if idade_dias > _TASKS_CACHE_MAX_DIAS:
             return None
         if dados.get("module_id") != module_id:
@@ -75,7 +89,7 @@ def _salvar_tasks_cache(
         "module_id": module_id,
         "tasks_text": result.tasks_text,
         "planilha_verificacao_no_pacote": result.planilha_verificacao_no_pacote,
-        "criado_em": datetime.now(timezone.utc).isoformat(),
+        "criado_em": datetime.now(UTC).isoformat(),
     }
     (cache_dir / _TASKS_CACHE_NOME).write_text(
         json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -132,6 +146,7 @@ class Orchestrator:
         self._wm = WorkspaceManager(ws)
         self._cycle_dir = self._wm.get_cycle_dir(cycle_id)
         self._runtime_dir = self._cycle_dir / "_runtime"
+        self._perfis_dir = self._runtime_dir / "perfis"   # Motor de Perfilamento
         self._sr_dir = self._cycle_dir / "stranger_room"
         self._audit = AuditIndex(ws)
         self._events = EventLogger(self._runtime_dir, cycle_id)
@@ -162,6 +177,12 @@ class Orchestrator:
             })
         self._events.log("CYCLE_STARTED", details={"cycle_id": manifest.cycle_id})
         try:
+            # Motor de Perfilamento — análise estatística determinística (CSV/XLSX)
+            # Roda antes de Irene/Watson; grava .perfil.yaml por arquivo em _runtime/perfis/.
+            # Best-effort: falha total não aborta o ciclo.
+            self._perfis_dir = self._runtime_dir / "perfis"
+            self._executar_motor_perfilamento(manifest)
+
             # Fase Irene — catalogação semântica antes de Watson (requer DIOGENES_IRENE_HABILITADO=true)
             if self._cfg.irene_habilitado:
                 irene_executou = self._executar_fase_irene(manifest)
@@ -269,6 +290,33 @@ class Orchestrator:
         self._transicionar(CycleState.ABORTADO_LESTRADE)
         self._events.log("CYCLE_ABORTED", details={"razao": razao})
 
+    # ── Motor de Perfilamento ────────────────────────────────
+
+    def _executar_motor_perfilamento(self, manifest: CycleManifest) -> None:
+        """
+        Perfilamento estatístico determinístico de CSV/XLSX via DuckDB.
+        Grava .perfil.yaml por arquivo em _runtime/perfis/.
+        Best-effort: falha total não aborta o ciclo.
+        """
+        from diogenes.motors.motor_perfilamento import perfilar_diretorio
+        inputs_dir = self._cycle_dir / "inputs"
+        if not inputs_dir.is_dir():
+            return
+        self._events.log("PERFILAMENTO_INICIADO",
+                         details={"inputs_dir": str(inputs_dir),
+                                  "perfis_dir": str(self._perfis_dir)})
+        try:
+            pacote = perfilar_diretorio(inputs_dir, self._perfis_dir)
+            self._events.log("PERFILAMENTO_CONCLUIDO", details={
+                "arquivos_perfilados": len(pacote.arquivos_perfilados),
+                "arquivos_com_erro": len(pacote.arquivos_com_erro),
+                "alertas_criticos": pacote.total_alertas_criticos,
+                "colunas_compartilhadas": len(pacote.colunas_compartilhadas),
+            })
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[Orchestrator] Motor de perfilamento falhou (best-effort): %s", exc)
+            self._events.log("PERFILAMENTO_ERRO", details={"error": str(exc)})
+
     # ── Fase Irene ───────────────────────────────────────────
 
     def _executar_fase_irene(self, manifest: CycleManifest) -> bool:
@@ -290,7 +338,7 @@ class Orchestrator:
         IRENE_BLOQUEADO não é tratado como fatal aqui — Watson recebe o catálogo
         e decide como ponderar a recomendação (conforme INTEGRACAO_DIOGENES.md §5.1).
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         # ── VERIFICANDO_EXISTENCIA ────────────────────────────────────────────
         self._transicionar(CycleState.VERIFICANDO_EXISTENCIA)
@@ -319,7 +367,7 @@ class Orchestrator:
             ))
         except Exception:  # noqa: BLE001
             pass
-        invocada_at_utc = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        invocada_at_utc = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         self._events.log("IRENE_INICIO", details={"modulo": manifest.module_id})
 
         # Derivar manifesto do Irene a partir do workspace
@@ -406,6 +454,23 @@ class Orchestrator:
             self._events.log("TASKS_WATSON_CACHE_SAVED",
                              details={"module_id": manifest.module_id})
         tasks = tasks_result.tasks_text
+
+        # Atividade 2: anexar o histórico do ciclo anterior às tasks, com
+        # instrução explícita de confronto (RF-WA em contexto de revalidação).
+        historico_a1 = self._carregar_historico_a1(manifest)
+        if historico_a1:
+            tasks = (
+                f"{tasks}\n\n---\n\n"
+                f"## REVALIDAÇÃO (Atividade 2) — Confronto Obrigatório\n\n"
+                f"Este é um ciclo de revalidação. Para cada arquivo novo ou corrigido, "
+                f"confronte o conteúdo com o que foi identificado na Atividade 1: "
+                f"o que mudou, o que foi corrigido e o que permanece inconsistente. "
+                f"Registre o confronto de forma explícita.\n\n"
+                f"{historico_a1}"
+            )
+            self._events.log("REVALIDACAO_HISTORICO_INJETADO", phase=fase,
+                             details={"previous_cycle_id": manifest.previous_cycle_id})
+
         inputs_dir = self._cycle_dir / "inputs"
 
         # Fase 1: análise por arquivo — sequencialidade absoluta (Artigo 3)
@@ -437,6 +502,7 @@ class Orchestrator:
                 arquivo_info=fi,
                 tasks_mycroft=tasks,
                 proximo_id_alerta=proximo_id,
+                perfis_dir=self._perfis_dir,
             )
             analises_watson.append(analise_fi)
             proximo_id = _avancar_id_alerta(proximo_id, analise_fi)
@@ -563,7 +629,7 @@ class Orchestrator:
             from rich.panel import Panel
             Console().print(Panel(
                 "[bold green]🔎 SHERLOCK — Validação Metodológica[/bold green]\n"
-                f"Iniciando a verificação de regras de negócio e aderência metodológica baseada no corpus jurídico...",
+                "Iniciando a verificação de regras de negócio e aderência metodológica baseada no corpus jurídico...",
                 border_style="green"
             ))
         except Exception:  # noqa: BLE001
@@ -596,6 +662,7 @@ class Orchestrator:
         # passa pela verificação de completude.
         output_sherlock = self._sherlock.consolidar(output_pontos, output_planilha_sherlock)
         self._events.log("SHERLOCK_CONSOLIDADO", phase=fase)
+        self._persistir_ocorrencias_sherlock(output_sherlock.texto)
 
         self._sr.escrever_apresentacao(fase=fase, author="sherlock",
                                         content=output_sherlock.texto)
@@ -657,6 +724,26 @@ class Orchestrator:
                          details={"output": str(output_path)})
         return str(output_path)
 
+    def _persistir_ocorrencias_sherlock(self, texto_sherlock: str) -> None:
+        """
+        Extrai o insumo_json_dashboard (skills.md §11) do consolidado de Sherlock e
+        grava output/sherlock_ocorrencias.json — insumo da Fase de Entrega.
+        Best-effort: ausência de JSON não interrompe o ciclo.
+        """
+        try:
+            import json
+
+            from diogenes.delivery import parsing
+            obj = parsing.extrair_json_dashboard(texto_sherlock)
+            if obj is not None:
+                out = self._cycle_dir / "output" / "sherlock_ocorrencias.json"
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
+                self._events.log("SHERLOCK_OCORRENCIAS_JSON_GRAVADO",
+                                 details={"ocorrencias": len(obj.get("ocorrencias", []))})
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Falha ao persistir sherlock_ocorrencias.json: %s", exc)
+
     def _consolidar_output_final(
         self,
         manifest: CycleManifest,
@@ -679,6 +766,7 @@ class Orchestrator:
             manifest, decisao_watson, decisao_sherlock,
             watson_consolidado=watson_consolidado,
             sherlock_consolidado=sherlock_consolidado,
+            historico_a1=self._carregar_historico_a1(manifest),
         )
         prefixo = "relatorio_preliminar" if manifest.activity == 1 else "relatorio_final"
         output_filename = f"{prefixo}_{self._cycle_id}.md"
@@ -706,6 +794,44 @@ class Orchestrator:
         if destino not in TRANSICOES_VALIDAS.get(atual, set()):
             raise InvalidTransitionError(atual, destino)
         self._audit.update_status(self._cycle_id, destino.value)
+
+    def _carregar_historico_a1(self, manifest: CycleManifest) -> str:
+        """
+        Atividade 2 (revalidação): carrega os artefatos do ciclo de Atividade 1
+        copiados para `_historico/` pelo Motor de Start (relatório consolidado e
+        decisões finais). Retorna bloco Markdown pronto para injeção no contexto
+        de Watson (confronto) e de Mycroft (incorporação no Relatório Final).
+
+        Retorna "" quando não é Atividade 2 ou o histórico está ausente.
+        """
+        if manifest.activity != 2:
+            return ""
+        historico_dir = self._cycle_dir / "_historico"
+        if not historico_dir.exists():
+            return ""
+
+        partes: list[str] = []
+        relatorio = historico_dir / "relatorio_anterior.md"
+        if relatorio.exists():
+            partes.append(
+                "### Relatório da Atividade 1 (ciclo anterior)\n\n"
+                + relatorio.read_text(encoding="utf-8")
+            )
+        for nome, rotulo in (
+            ("watson_decisao_anterior.md", "Decisão final — Integridade Técnica (Atividade 1)"),
+            ("sherlock_decisao_anterior.md", "Decisão final — Validação Metodológica (Atividade 1)"),
+        ):
+            arq = historico_dir / nome
+            if arq.exists():
+                partes.append(f"### {rotulo}\n\n" + arq.read_text(encoding="utf-8"))
+
+        if not partes:
+            return ""
+        previous = manifest.previous_cycle_id or "[ciclo anterior]"
+        return (
+            f"## Histórico da Atividade 1 — Ciclo `{previous}`\n\n"
+            + "\n\n---\n\n".join(partes)
+        )
 
     def _proximo_id_alerta(self, module_id: str, counter: int = 1) -> str:
         """Gera ID de alerta sequencial: W{codigo_modulo}-{counter:03d}."""

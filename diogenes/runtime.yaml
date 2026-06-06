@@ -68,6 +68,7 @@ motor_saida:
   # Estruturas internas que não devem aparecer em documentos externos
   padroes_estruturas_internas:
     - "Stranger's Room"
+    - "Stranger Room"
     - "Sala dos Estrangeiros"
     - "Clube Diógenes"
     - "Projeto Diógenes"
@@ -75,6 +76,10 @@ motor_saida:
     - "Motor de Start"
     - "Motor de Saída"
     - "stranger_room"
+    - "MC_decisao"
+    - "MC_consolidado"
+    - "watson_consolidado"
+    - "sherlock_consolidado"
   # Regex para identificadores de ciclo (não devem vazar para o output)
   regex_cycle_id: 'MOD_\w+_A\d+_\d{8}T\d{6}Z'
 
@@ -104,6 +109,7 @@ motor_saida:
     - ["Projeto Diógenes", "DVA-CBS"]
     - ["Clube Diógenes", "DVA-CBS"]
     - ["Stranger's Room", "protocolo de revisão interna"]
+    - ["Stranger Room", "protocolo de revisão interna"]
     - ["Sala dos Estrangeiros", "protocolo de revisão interna"]
     - ["stranger_room", "protocolo de revisão interna"]
     - ["Motor de Start", "sistema de controle"]

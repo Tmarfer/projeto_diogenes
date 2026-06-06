@@ -48,6 +48,16 @@ def test_classificar_metadados_e_denylist():
     assert classificar(".DS_Store") == (False, "metadados")
 
 
+def test_classificar_allowlist_inventario_protocolo():
+    # protocolo_recebimento.md e inventario.xlsx são analisados mesmo sob
+    # 02_INSUMOS_GERADOS — os agentes precisam saber o que foi entregue.
+    assert classificar("2026_04_27/02_INSUMOS_GERADOS/protocolo_recebimento.md") == (True, "documento")
+    assert classificar("2026_04_27/02_INSUMOS_GERADOS/inventario.xlsx") == (True, "planilha")
+    # metadados.json e hashes seguem ignorados (usados só na reconciliação)
+    assert classificar("2026_04_27/02_INSUMOS_GERADOS/metadados.json")[0] is False
+    assert classificar("2026_04_27/02_INSUMOS_GERADOS/hashes_integridade.txt")[0] is False
+
+
 # ── manifesto de entrega (best-effort) ───────────────────────────────────────
 
 def _delivery_tree(root: Path, com_manifesto: bool = True, hash_errado: bool = False) -> Path:

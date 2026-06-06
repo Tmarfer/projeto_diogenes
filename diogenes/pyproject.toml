@@ -24,6 +24,10 @@ dependencies = [
     "pdfminer.six>=20221105",         # extração de texto de PDFs (adicionado Bloco 9 do SDD)
     "msal>=1.28,<2.0",                # autenticação MSAL para ChatTCU (Bearer JWT)
     "requests>=2.31,<3.0",            # cliente HTTP para API proprietária do ChatTCU
+    "python-docx>=1.1.0",             # Fase de Entrega: geração dos DOCX institucionais (tcu_formatter)
+    "matplotlib>=3.8.0",              # Fase de Entrega: gráficos do Apêndice e dashboard
+    "playwright>=1.40.0",             # Fase de Entrega: render HTML→PDF/PNG das Fichas Síntese (Chromium)
+    "duckdb>=1.0,<2.0",               # Motor de Perfilamento: análise estatística determinística de CSV/XLSX
 ]
 
 [project.optional-dependencies]

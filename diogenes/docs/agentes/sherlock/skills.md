@@ -536,10 +536,10 @@ verificação criada além das RNs originais."]
 
 [Lista das pendências identificadas na seção 9 desta consolidação.]
 
-### 10.10 Decisões da Stranger Room
+### 10.10 Deliberações Internas do Ciclo
 
-[Registro sintético dos dilemas interpretativos deliberados por Mycroft, com os argumentos
-considerados e a posição fixada. Se nenhum: "Nenhum dilema encaminhado à Stranger Room
+[Registro sintético dos dilemas interpretativos deliberados internamente, com os argumentos
+considerados e a posição fixada. Se nenhum: "Nenhum dilema deliberado internamente
 neste ciclo."]
 
 ### 10.11 Histórico de Revalidações

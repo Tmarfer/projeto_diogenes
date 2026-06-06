@@ -12,13 +12,10 @@ from diogenes.persistence.audit_index import AuditIndex
 
 app = typer.Typer()
 
-ESTADOS_ABORTAVEIS = {
-    CycleState.PREPARADO.value,
-    CycleState.AGUARDANDO_CONFIRMACAO_MANIFESTO.value,
-    CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA.value,
-    CycleState.PAUSADO_LESTRADE.value,
-    CycleState.AGUARDANDO_VERIFICACAO_SAIDA.value,
-    CycleState.AGUARDANDO_CHANCELA_LESTRADE.value,
+ESTADOS_TERMINAIS = {
+    CycleState.ENCERRADO_CHANCELADO.value,
+    CycleState.ABORTADO_LESTRADE.value,
+    CycleState.ABORTADO_FALHA_AGENTE.value,
 }
 
 @app.command()
@@ -39,10 +36,9 @@ def abort(
         display.erro(f"Ciclo '{cycle}' não encontrado.")
         raise typer.Exit(1)
 
-    if record["status"] not in ESTADOS_ABORTAVEIS:
+    if record["status"] in ESTADOS_TERMINAIS:
         display.erro(
-            f"Ciclo '{cycle}' está em '{record['status']}' e não pode ser abortado. "
-            f"Ciclos em EM_EXECUCAO precisam aguardar a conclusão da chamada LLM corrente."
+            f"Ciclo '{cycle}' está em estado terminal '{record['status']}' e não pode ser abortado."
         )
         raise typer.Exit(1)
 
@@ -51,6 +47,12 @@ def abort(
         cycle, CycleState.ABORTADO_LESTRADE.value,
         ended_at_utc=now, notes=reason[:200],
     )
+    try:
+        from diogenes.reports.render_html import atualizar_report_html
+        atualizar_report_html(cycle, cfg.workspace.path)
+    except Exception:
+        pass
     display.passo_ok(f"Ciclo '{cycle}' abortado.")
     display.console.print(f"  Razão: {reason}")
     display.console.print("  O diretório de trabalho foi preservado (Art. 16).")
+

@@ -29,13 +29,14 @@ agentes:
   mycroft:
     # Auditor Chefe — síntese, delegação, decisão, consolidação
     # ChatTCU (piloto de teste):
-    modelo: "gpt-5.5-thinking"
+    modelo: "claude-4-8-opus"
+
     # OpenRouter Fase B (fallback):
     # modelo: meta-llama/llama-4-maverick
     # OpenRouter Fase D:
     # modelo: anthropic/claude-sonnet-4-6
     temperatura: 0.0  # 0.0 = determinístico; elimina alucinações na síntese
-    max_tokens: 8000  # ChatTCU: teto conservador para piloto; escalar em Fase D
+    max_tokens: 16384  # ChatTCU: aumentado para limitar extended thinking sem truncagem abrupta
     max_tokens_ciclo: 131072
     timeout_segundos: 600
     max_tentativas_retry: 4   # aumentado de 2→4 para resistir a saturação pós-Irene
