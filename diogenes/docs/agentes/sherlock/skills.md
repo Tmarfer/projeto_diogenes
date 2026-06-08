@@ -494,17 +494,51 @@ da RFB — é síntese para contextualização do leitor.]
 
 ### 10.3 Resultado da Verificação de Integridade (Camada 0)
 
-[Síntese do que Watson encontrou de relevante para a posição do Departamento: alertas
-críticos e altos, pontos da cadeia de produção com ruptura, inconsistências numéricas de
-impacto material. Não é repetição do output de Watson — é o que importa para o relatório
-final.]
+Esta seção é base documental para o contraditório técnico — inclua o detalhe completo, não
+uma síntese. Omitir alertas individuais prejudica a rastreabilidade e a defesa técnica.
+
+**Tabela de alertas CRÍTICA** — inclua todos, sem exceção:
+
+| ID | Arquivo | Localização (aba/seção) | Descrição do achado |
+|----|---------|------------------------|---------------------|
+| [ex.: W001-001] | [nome do arquivo] | [aba ou seção] | [descrição completa] |
+| ... | ... | ... | ... |
+
+**Tabela de alertas ALTA** — inclua todos, sem exceção:
+
+| ID | Arquivo | Localização | Descrição resumida |
+|----|---------|-------------|-------------------|
+| [ex.: W001-032] | [nome do arquivo] | [aba] | [descrição] |
+| ... | ... | ... | ... |
+
+**Pontos de ruptura da cadeia de produção** (se Watson identificou): liste cada ponto com
+arquivo(s) envolvido(s), natureza da ruptura e impacto monetário quando houver.
+
+**Alertas MÉDIA e BAIXA:** resumo agrupado por tipo (campos em branco, registros duplicados,
+ausência de metadados, etc.) com contagem por categoria.
+
+[Parágrafo narrativo final: o que o conjunto dos achados de Watson significa para a
+integridade do pacote — se há ruptura sistêmica da cadeia ou problemas pontuais.]
 
 ### 10.4 Resultado da Verificação de Aderência Metodológica (Camadas 1 e 2)
 
-[Síntese do que Sherlock verificou: distribuição de classificações, divergências
-identificadas, pontos não verificáveis, pontos de atenção. Não é repetição do quadro
-consolidado — é narrativa integrada das verificações por categoria: dispositivos legais,
-premissas, fontes, escopo, granularidade, reprodutibilidade.]
+Esta seção deve incluir o quadro completo de classificações — o Lestrade e o GT precisam
+consultar cada ponto individualmente para conduzir o contraditório.
+
+**Quadro de classificações — pontos metodológicos** (um por linha, todos os pontos):
+
+| ID | Ponto verificado | Dispositivo (LC 214/2025 / Metodologia) | Classificação efetiva | Impacto |
+|----|-----------------|----------------------------------------|-----------------------|---------|
+| [ex.: S001] | [descrição do ponto] | [art. XX / Seção X] | [ATENDIDO / ATENDIDO_PARCIALMENTE / DIVERGENCIA / NAO_VERIFICAVEL] | [baixo / médio / alto] |
+| ... | ... | ... | ... | ... |
+
+**Se houver Planilha de Verificação:** inclua também os pontos RN em tabela separada com
+os mesmos campos.
+
+[Parágrafo narrativo integrado por categoria: o que as divergências têm em comum (ex.:
+falhas de granularidade concentradas em créditos; ausência de parametrização de regimes
+especiais); onde estão os pontos não verificáveis e por que a informação é insuficiente;
+quais pontos parcialmente atendidos têm risco de conversão em divergência se confirmados.]
 
 ### 10.5 Consistência do Resultado Final (Camada 3)
 
@@ -530,7 +564,19 @@ verificação criada além das RNs originais."]
 
 ### 10.8 Análise de Impacto Sistêmico
 
-[Síntese dos pontos de atenção identificados na seção 8 desta consolidação, em nível macro.]
+[Para cada divergência classificada como DIVERGENCIA ou ponto NÃO_VERIFICAVEL de impacto
+material, indique: (a) módulo(s) do simulador potencialmente afetado(s); (b) natureza do
+risco (duplicação, omissão, grandeza incompatível, parâmetro não rastreável); (c) condição
+de manifestação (somente quando o simulador integrar todos os módulos, ou já perceptível neste
+ciclo isolado). Organize por nível de risco decrescente.]
+
+| Ponto / Ocorrência | Módulo(s) afetado(s) | Natureza do risco | Nível de risco | Condição |
+|--------------------|---------------------|-------------------|---------------|----------|
+| [ID divergência] | [ex.: Módulo Central, Módulo Créditos] | [ex.: duplicação de crédito na CBS líquida] | [alto / médio / baixo] | [integrado / já perceptível] |
+| ... | ... | ... | ... | ... |
+
+[Parágrafo conclusivo: qual é o principal risco sistêmico e o que seria necessário para
+mitigá-lo antes da integração completa dos dezessete módulos.]
 
 ### 10.9 Pendências para Validação no Simulador Completo
 

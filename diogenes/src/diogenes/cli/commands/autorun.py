@@ -5,6 +5,9 @@ manuais, próprio para execução não assistida (noturna). Auto-resolve as paus
 internas (alerta crítico de Watson, completude do Sherlock), roda o Motor de
 Saída e **para antes do seal** — a chancela final imutável fica para revisão
 humana. Cada invocação cria um ciclo novo (igual ao `start`).
+
+Com --auto-seal: se o Motor de Saída confirmar o documento LIMPO (sem
+ocorrências), o ciclo é chancelado automaticamente. Bloqueado em dev_mode.
 """
 from __future__ import annotations
 
@@ -40,8 +43,16 @@ def autorun(
         None, "--delivery",
         help="Pasta da entrega preparada. Default: workspace/input/<module>.",
     ),
+    auto_seal: bool = typer.Option(
+        False, "--auto-seal",
+        help="Se o Motor de Saída confirmar LIMPO, chancela automaticamente. Bloqueado em dev_mode.",
+    ),
 ) -> None:
-    """Executa o ciclo completo sem paradas (auto-Lestrade), parando antes do seal."""
+    """Executa o ciclo completo sem paradas (auto-Lestrade).
+
+    Por padrão para antes do seal (revisar manualmente com `diogenes seal`).
+    Com --auto-seal, chancela automaticamente se o documento sair LIMPO.
+    """
     try:
         cfg = get_config()
     except ConfigError as e:
@@ -125,6 +136,23 @@ def autorun(
     except Exception:
         pass
 
+    # ── 4b. Auto-seal (opcional) ─────────────────────────────────────────────
+    if auto_seal:
+        if cfg.dev_mode:
+            display.aviso("--auto-seal ignorado: DIOGENES_DEV_MODE=true bloqueia seal.")
+        elif not report.documento_limpo:
+            display.aviso(
+                "--auto-seal ignorado: documento com ocorrências — chancela manual obrigatória."
+            )
+        else:
+            now_seal = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            audit.seal_cycle(cycle, "LIMPO", now_seal)
+            try:
+                from diogenes.reports.render_html import atualizar_report_html as _ahr
+                _ahr(cycle, cfg.workspace.path)
+            except Exception:
+                pass
+            display.passo_ok(f"Chancela automática registrada: ENCERRADO_CHANCELADO [{now_seal}]")
 
     # ── 5. Fase de Entrega (gera os entregáveis; não bloqueia o seal) ─────────
     display.passo_ok("Acionando Fase de Entrega...")

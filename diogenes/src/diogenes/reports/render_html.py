@@ -25,6 +25,15 @@ def _fmt_bytes(n: int) -> str:
     return f"{n} B"
 
 
+def _fmt_usd(v: float) -> str:
+    """Formata custo de referência em USD com precisão adaptativa."""
+    if v <= 0:
+        return "US$ 0,00"
+    if v < 0.01:
+        return f"US$ {v:.4f}".replace(".", ",")
+    return f"US$ {v:,.2f}".replace(",", "·").replace(".", ",").replace("·", ".")
+
+
 def _entrega_verdito_class(v: str) -> str:
     vu = v.upper()
     if "APROVADO" in vu:
@@ -68,6 +77,80 @@ def _motor_class(limpo: bool, occurrences: int) -> str:
     return "error"
 
 
+# ── Motor de Perfilamento ─────────────────────────────────────────────────────
+
+def _perfilamento_html(data: CycleReportData) -> str:
+    """Seção Motor de Perfilamento — só renderiza se o motor foi executado."""
+    if not data.perfil_executado:
+        return ""
+    alerta_cls = "error" if data.perfil_alertas_criticos > 0 else "success"
+    erro_cls = "warning" if data.perfil_arquivos_com_erro > 0 else "success"
+    return f"""
+  <!-- Motor de Perfilamento (Watson — pré-LLM) -->
+  <div class="section">
+    <h2>Motor de Perfilamento <span class="agent-tag watson-tag">Watson</span></h2>
+    <div class="perfil-note">Análise estatística determinística de CSV/XLSX via DuckDB — executa antes de Irene/Watson LLM</div>
+    <div class="cards-row">
+      <div class="card">
+        <h3>Arquivos Perfilados</h3>
+        <div class="value">{data.perfil_arquivos_total}</div>
+        <div class="sub">CSV + XLSX analisados</div>
+      </div>
+      <div class="card">
+        <h3>Alertas Críticos</h3>
+        <div class="value {alerta_cls}">{data.perfil_alertas_criticos}</div>
+        <div class="sub">DUPLICATA_CHAVE detectadas</div>
+      </div>
+      <div class="card">
+        <h3>Colunas Compartilhadas</h3>
+        <div class="value info">{data.perfil_colunas_compartilhadas}</div>
+        <div class="sub">candidatas a join cross-file</div>
+      </div>
+      <div class="card">
+        <h3>Erros de Perfil</h3>
+        <div class="value {erro_cls}">{data.perfil_arquivos_com_erro}</div>
+        <div class="sub">arquivos sem perfilamento</div>
+      </div>
+    </div>
+  </div>"""
+
+
+# ── Watson — arquivos analisados ──────────────────────────────────────────────
+
+def _watson_files_html(data: CycleReportData) -> str:
+    """Tabela de arquivos analisados por Watson (expandível)."""
+    if not data.watson_arquivos_detail:
+        return ""
+    rows = ""
+    for i, arq in enumerate(data.watson_arquivos_detail, 1):
+        nome = arq.get("nome", "")
+        ts = arq.get("timestamp_utc", "")
+        alertas = arq.get("alertas", 0)
+        alerta_cls = "metric-warn" if alertas > 0 else "metric-ok"
+        rows += (
+            f"<tr>"
+            f"<td class='mono muted-text' style='width:30px'>{i}</td>"
+            f"<td>{_e(nome)}</td>"
+            f"<td class='mono muted-text'>{_e(ts)}</td>"
+            f"<td><span class='{alerta_cls}'>{alertas}</span></td>"
+            f"</tr>"
+        )
+    return f"""
+  <!-- Watson — análise por arquivo -->
+  <div class="section">
+    <h2>Arquivos Analisados por Watson</h2>
+    <details>
+      <summary>{len(data.watson_arquivos_detail)} arquivo(s) · clique para expandir</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Arquivo</th><th>Analisado em (UTC)</th><th>Alertas CRITICA</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+    </details>
+  </div>"""
+
+
 # ── Fase de Entrega ───────────────────────────────────────────────────────────
 
 def _entrega_html(data: CycleReportData) -> str:
@@ -79,8 +162,8 @@ def _entrega_html(data: CycleReportData) -> str:
     if data.entrega_artefatos_list:
         linhas = "".join(
             f'<tr><td><span class="entrega-tipo">{_e(a.get("tipo", ""))}</span></td>'
-            f'<td><a class="output-link" href="file://{_e(a.get("path", ""))}">'
-            f'{_e(a.get("nome", ""))} ↗</a></td>'
+            f'<td><a class="output-link" href="file://{_e(a.get("path", ""))}" '
+            f'target="_blank" rel="noopener">{_e(a.get("nome", ""))} ↗</a></td>'
             f'<td class="mono muted-text">{_e(_fmt_bytes(int(a.get("bytes", 0) or 0)))}</td></tr>'
             for a in data.entrega_artefatos_list
         )
@@ -144,6 +227,7 @@ def _avatar_visual(nome: str, deco: str, letra: str) -> str:
 
 
 def _agent_cards_html(data: CycleReportData) -> str:
+    irene = data.calls_by_agent.get("irene", AgentCallStats())
     watson = data.calls_by_agent.get("watson", AgentCallStats())
     sherlock = data.calls_by_agent.get("sherlock", AgentCallStats())
     mycroft = data.calls_by_agent.get("mycroft", AgentCallStats())
@@ -177,8 +261,20 @@ def _agent_cards_html(data: CycleReportData) -> str:
               </span>
               <span class="metric-lbl">resultado</span>
             </div>
+            <div class="metric">
+              <span class="metric-val">{irene.calls}</span>
+              <span class="metric-lbl">análises LLM (C4)</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val">{irene.total_tokens:,}</span>
+              <span class="metric-lbl">tokens</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val metric-cost">{_e(_fmt_usd(irene.estimated_cost_usd))}</span>
+              <span class="metric-lbl">custo ref.</span>
+            </div>
           </div>
-          <div class="agent-note">Pipeline C1–C5 independente · sem LLM direto</div>
+          <div class="agent-note">Pipeline C1–C5 · C4 semântica via LLM (ChatTCU)</div>
         </div>
       </div>
 
@@ -205,8 +301,12 @@ def _agent_cards_html(data: CycleReportData) -> str:
               <span class="metric-lbl">chamadas LLM</span>
             </div>
             <div class="metric">
-              <span class="metric-val">{watson.prompt_tokens:,}</span>
-              <span class="metric-lbl">prompt tokens</span>
+              <span class="metric-val">{watson.total_tokens:,}</span>
+              <span class="metric-lbl">tokens</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val metric-cost">{_e(_fmt_usd(watson.estimated_cost_usd))}</span>
+              <span class="metric-lbl">custo ref.</span>
             </div>
           </div>
           <div class="agent-note">
@@ -231,8 +331,12 @@ def _agent_cards_html(data: CycleReportData) -> str:
               <span class="metric-lbl">chamadas LLM</span>
             </div>
             <div class="metric">
-              <span class="metric-val">{mycroft.prompt_tokens:,}</span>
-              <span class="metric-lbl">prompt tokens</span>
+              <span class="metric-val">{mycroft.total_tokens:,}</span>
+              <span class="metric-lbl">tokens</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val metric-cost">{_e(_fmt_usd(mycroft.estimated_cost_usd))}</span>
+              <span class="metric-lbl">custo ref.</span>
             </div>
             <div class="metric">
               <span class="metric-val">{'Sim' if data.watson_overruled else 'Não'}</span>
@@ -275,6 +379,14 @@ def _agent_cards_html(data: CycleReportData) -> str:
             <div class="metric">
               <span class="metric-val">{sherlock.calls}</span>
               <span class="metric-lbl">chamadas LLM</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val">{sherlock.total_tokens:,}</span>
+              <span class="metric-lbl">tokens</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val metric-cost">{_e(_fmt_usd(sherlock.estimated_cost_usd))}</span>
+              <span class="metric-lbl">custo ref.</span>
             </div>
           </div>
           <div class="agent-note">
@@ -334,6 +446,7 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
 
     total_prompt = sum(s.prompt_tokens for s in data.calls_by_agent.values())
     total_compl = sum(s.completion_tokens for s in data.calls_by_agent.values())
+    total_cost = sum(s.estimated_cost_usd for s in data.calls_by_agent.values())
 
     # LLM table rows (mostra todos os agentes que logaram chamadas)
     llm_rows = ""
@@ -341,10 +454,19 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
         llm_rows += (
             f"<tr><td><strong>{_e(agent)}</strong></td><td>{s.calls}</td>"
             f"<td>{s.prompt_tokens:,}</td><td>{s.completion_tokens:,}</td>"
-            f"<td>{s.avg_response_length:,.0f}</td></tr>"
+            f"<td>{s.avg_response_length:,.0f}</td>"
+            f"<td class='mono'>{_e(_fmt_usd(s.estimated_cost_usd))}</td></tr>"
         )
-    if not llm_rows:
-        llm_rows = "<tr><td colspan='5' class='muted-text'>Sem chamadas registradas</td></tr>"
+    if llm_rows:
+        llm_rows += (
+            f"<tr class='llm-total'><td><strong>TOTAL</strong></td>"
+            f"<td><strong>{data.total_calls}</strong></td>"
+            f"<td><strong>{total_prompt:,}</strong></td>"
+            f"<td><strong>{total_compl:,}</strong></td><td>—</td>"
+            f"<td class='mono'><strong>{_e(_fmt_usd(total_cost))}</strong></td></tr>"
+        )
+    else:
+        llm_rows = "<tr><td colspan='6' class='muted-text'>Sem chamadas registradas</td></tr>"
 
     # Fase table rows
     fase_rows = ""
@@ -369,13 +491,19 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
             f"<td class='muted-text'>{_e(det_str)}</td></tr>"
         )
 
-    # Stranger Room html
+    # Stranger Room html — arquivos clicáveis (abrem em nova aba via file://)
     sr_html = ""
     if data.stranger_room_files:
         for fase, arquivos in sorted(data.stranger_room_files.items()):
             sr_html += f'<details class="sr-phase"><summary>{_e(fase)} ({len(arquivos)} arquivos)</summary><ul>'
             for arq in arquivos:
-                sr_html += f"<li><code>{_e(arq)}</code></li>"
+                nome = arq.get("nome", "") if isinstance(arq, dict) else str(arq)
+                path = arq.get("path", "") if isinstance(arq, dict) else ""
+                if path:
+                    sr_html += (f'<li><a class="file-link" href="file://{_e(path)}" '
+                                f'target="_blank" rel="noopener"><code>{_e(nome)}</code> ↗</a></li>')
+                else:
+                    sr_html += f"<li><code>{_e(nome)}</code></li>"
             sr_html += "</ul></details>"
     else:
         sr_html = "<p class='muted-text'>Sem arquivos de deliberação.</p>"
@@ -384,7 +512,8 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     output_html = ""
     if data.output_filename:
         open_link = (
-            f'<a class="output-link" href="file://{_e(data.output_path)}">Abrir relatório ↗</a>'
+            f'<a class="output-link" href="file://{_e(data.output_path)}" '
+            f'target="_blank" rel="noopener">Abrir relatório ↗</a>'
             if data.output_path else ""
         )
         output_html = f"""
@@ -401,6 +530,12 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
 
     # Fase de Entrega
     entrega_html = _entrega_html(data)
+
+    # Motor de Perfilamento
+    perfilamento_html = _perfilamento_html(data)
+
+    # Watson — arquivos detail
+    watson_files_html = _watson_files_html(data)
 
     # Watson progress
     watson_progress_html = f"""
@@ -539,7 +674,7 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
       content: '';
       position: absolute; inset: 0; z-index: 1;
       background: linear-gradient(180deg, var(--ava, rgba(255,255,255,0.2)) 0%, transparent 58%);
-      mix-blend-mode: overlay; opacity: 0.6;
+      mix-blend-mode: overlay; opacity: 0.32;
       pointer-events: none;
     }}
     .agent-avatar::after {{
@@ -554,18 +689,18 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     .agent-avatar.sherlock {{ background: linear-gradient(170deg, var(--sherlock-1) 0%, var(--sherlock-2) 100%); --ava: var(--sherlock-3); }}
     .agent-avatar.lestrade {{ background: linear-gradient(170deg, var(--lestrade-1) 0%, var(--lestrade-2) 100%); --ava: var(--lestrade-3); }}
 
-    /* Retrato (ilustração Paget, domínio público) — tonalizado à paleta */
+    /* Retrato dos agentes — fotos coloridas (estilo período), foco no rosto */
     .avatar-img {{
       position: absolute; inset: 0; z-index: 0;
       width: 100%; height: 100%;
-      object-fit: cover; object-position: center 20%;
-      filter: grayscale(1) sepia(0.45) brightness(1.03) contrast(1.04);
+      object-fit: cover; object-position: center 22%;
+      filter: saturate(1.04) contrast(1.02);
     }}
-    .agent-avatar.mycroft  .avatar-img {{ object-position: center 10%; }}
-    .agent-avatar.watson   .avatar-img {{ object-position: 32% 18%; }}
-    .agent-avatar.sherlock .avatar-img {{ object-position: center 30%; }}
-    .agent-avatar.irene    .avatar-img {{ object-position: center 16%; }}
-    .agent-avatar.lestrade .avatar-img {{ object-position: center 18%; }}
+    .agent-avatar.mycroft  .avatar-img {{ object-position: center 20%; }}
+    .agent-avatar.watson   .avatar-img {{ object-position: center 20%; }}
+    .agent-avatar.sherlock .avatar-img {{ object-position: center 22%; }}
+    .agent-avatar.irene    .avatar-img {{ object-position: center 18%; }}
+    .agent-avatar.lestrade .avatar-img {{ object-position: center 20%; }}
 
     .avatar-deco {{
       font-size: 28px; opacity: 0.75;
@@ -600,10 +735,32 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     .metric-val.metric-warn {{ color: var(--warning); }}
     .metric-val.metric-ok   {{ color: var(--success); }}
     .metric-val.metric-sm   {{ font-size: 14px; }}
+    .metric-val.metric-cost {{ font-size: 15px; color: var(--info);
+                    font-variant-numeric: tabular-nums; }}
     .metric-lbl {{ font-size: 10px; color: var(--muted); text-transform: uppercase;
                     letter-spacing: 0.07em; margin-top: 2px; }}
     .agent-note {{ font-size: 11px; color: var(--muted); border-top: 1px solid var(--border2);
                     padding-top: 10px; font-style: italic; }}
+
+    /* ── Agent tag chip ── */
+    .agent-tag {{
+      display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 8px;
+      border-radius: 100px; text-transform: uppercase; letter-spacing: 0.08em;
+      margin-left: 8px; vertical-align: middle;
+    }}
+    .watson-tag  {{ background: rgba(96,165,250,0.15); color: var(--watson-3);  border: 1px solid rgba(96,165,250,0.25); }}
+    .mycroft-tag {{ background: rgba(167,139,250,0.15); color: var(--mycroft-3); border: 1px solid rgba(167,139,250,0.25); }}
+    .lestrade-tag{{ background: rgba(212,175,106,0.12); color: var(--lestrade-3);border: 1px solid rgba(212,175,106,0.20); }}
+
+    /* ── Perfilamento ── */
+    .perfil-note {{ font-size: 11px; color: var(--muted); font-style: italic; margin-bottom: 12px; }}
+    .value.info  {{ color: var(--info); }}
+    .value.success {{ color: var(--success); }}
+    .value.error   {{ color: var(--error); }}
+    .value.warning {{ color: var(--warning); }}
+
+    /* ── Package hash ── */
+    .pkg-hash {{ font-size: 11px; color: var(--muted); margin-top: 8px; }}
 
     /* ── Fase de Entrega ── */
     .entrega-tipo {{ font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -666,6 +823,13 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     .sr-phase {{ margin-bottom: 8px; border-radius: 10px; }}
     .sr-phase ul {{ padding: 12px 18px; list-style: none; }}
     .sr-phase li {{ padding: 3px 0; color: var(--muted); font-size: 12px; }}
+    .file-link {{ text-decoration: none; color: var(--info); transition: color 0.15s; }}
+    .file-link code {{ color: inherit; }}
+    .file-link:hover {{ color: var(--text); text-decoration: underline; }}
+
+    /* ── Linha de total da tabela LLM ── */
+    .llm-total td {{ border-top: 2px solid var(--border);
+                    background: rgba(148,163,184,0.05); }}
 
     /* ── Output ── */
     .output-info {{
@@ -721,6 +885,12 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
         <h3>Chamadas LLM</h3>
         <div class="value">{data.total_calls}</div>
         <div class="sub">{total_prompt:,} prompt + {total_compl:,} completion</div>
+        <div class="sub" style="margin-top:4px">custo ref. estimado: <strong>{_e(_fmt_usd(total_cost))}</strong></div>
+      </div>
+      <div class="card">
+        <h3>Pacote de Inputs</h3>
+        <div class="value" style="font-size:20px">{data.n_arquivos_total}</div>
+        <div class="sub">{data.n_arquivos_analisavel} para análise · <code style="font-size:10px">{_e(data.package_hash)}…</code></div>
       </div>
       <div class="card">
         <h3>Versão</h3>
@@ -730,20 +900,27 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     </div>
   </div>
 
+  {perfilamento_html}
   {agent_cards}
 
-  <!-- Watson — progresso -->
+  <!-- Watson — progresso e detalhe por arquivo -->
   <div class="section">
     <h2>Análise de Arquivos (Dr. Watson)</h2>
     {watson_progress_html}
   </div>
+  {watson_files_html}
 
   <!-- Chamadas LLM por Agente -->
   <div class="section">
     <h2>Chamadas LLM por Agente</h2>
     <p class="stat-summary">
       {data.total_calls} chamadas · {total_prompt:,} prompt tokens · {total_compl:,} completion tokens
-      &nbsp;·&nbsp; <em>Irene usa pipeline C1–C5 próprio, não contabilizado aqui</em>
+      &nbsp;·&nbsp; custo de referência estimado: <strong>{_e(_fmt_usd(total_cost))}</strong>
+    </p>
+    <p class="perfil-note">
+      Irene (catalogação C4 semântica) usa LLM via ChatTCU e está incluída na tabela.
+      O ChatTCU é institucional (custo real US$ 0); o valor exibido é a estimativa de
+      mercado equivalente ao preço público do modelo.
     </p>
     <details open>
       <summary>Detalhe por agente ({len(data.calls_by_agent)} registrados)</summary>
@@ -752,7 +929,7 @@ def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
           <thead>
             <tr>
               <th>Agente</th><th>Chamadas</th><th>Prompt Tokens</th>
-              <th>Completion Tokens</th><th>Resp. Média (chars)</th>
+              <th>Completion Tokens</th><th>Resp. Média (chars)</th><th>Custo ref.</th>
             </tr>
           </thead>
           <tbody>{llm_rows}</tbody>

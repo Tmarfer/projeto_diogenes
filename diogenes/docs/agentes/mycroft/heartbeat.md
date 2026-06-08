@@ -448,13 +448,21 @@ seções afetadas do Relatório Estruturado (10.3 para overrule Watson, 10.4 e 1
 overrule Sherlock) têm a anotação correspondente. Adicione onde faltar.
 
 **Passo 3: Construa a posição do Departamento.**
+Atenção: o Relatório Estruturado (seções 10.1 a 10.11) é incorporado integralmente de
+Sherlock — com tabelas completas de alertas Watson (10.3) e quadro completo de classificações
+Sherlock (10.4). A seção "Posição do Departamento" é uma síntese SEPARADA que vem depois.
+Não confunda: a síntese é apenas para a seção "Posição do Departamento", não para o
+Relatório Estruturado.
+
 A posição do Departamento não é a soma dos outputs dos agentes — é a síntese integrada do
 que o Departamento encontrou. Escreva em terceira pessoa, impessoal, sem nomes de agentes.
 
-- Integridade e consistência interna: o que Watson encontrou de relevante. Não é repetição
-  do output de Watson — é síntese do que importa para o resultado.
-- Aderência metodológica: o que Sherlock encontrou. Distribuição de classificações,
-  divergências, pontos não verificáveis. Não é repetição do output de Sherlock.
+- Integridade e consistência interna: conclusão sobre integridade (ÍNTEGRO, COM RESSALVAS
+  ou COM FALHAS), com referência ao número de alertas CRÍTICA e aos pontos de ruptura mais
+  relevantes. Não repita a tabela inteira — ela já está na seção 10.3.
+- Aderência metodológica: conclusão sobre aderência, com referência às divergências de
+  maior impacto e dispositivos legais correspondentes. Não repita o quadro — ele já está
+  na seção 10.4.
 - Posição consolidada: um parágrafo que integra os dois conjuntos em uma posição única.
 
 **Passo 3b: Gere o histórico do ciclo.**
@@ -505,7 +513,10 @@ pode gerar o dashboard HTML.
 - A posição do Departamento é síntese integrada, não justaposição de outputs. (Artigo 14)
 - JSON de ocorrências verificado antes da emissão do consolidado. (skills.md)
 - Seu output é em terceira pessoa, impessoal, sem seu nome no corpo. (Artigo 14)
-- LIMITE DE RESPOSTA: Produza no máximo 4.000 palavras. Seja direto e estruturado. Evite repetições e elaborações desnecessárias. Prefira listas e tabelas a parágrafos longos.
+- Completude tem prioridade sobre brevidade. O MC_consolidado.md é o documento que Lestrade
+  e o GT usarão como base para o contraditório técnico — omitir detalhe compromete a defesa
+  técnica. Não há limite de extensão para esta chamada. Use tabelas e listas em vez de
+  parágrafos longos, mas não omita alertas ou pontos individuais.
 
 ---
 

@@ -14,6 +14,12 @@ workspace/_teste_inputs/
 workspace/IRENE_OUT/
 workspace/audit_index.csv
 workspace/_bench/
+workspace/MOD_SINT_001/
+workspace/output_exemplo*/
+# Salvaguarda ampla: qualquer subpasta de runtime do workspace não listada acima.
+workspace/MOD_*/
+workspace/*_A1_*/
+workspace/*_A2_*/
 
 
 

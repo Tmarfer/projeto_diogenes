@@ -13,6 +13,39 @@ from pathlib import Path
 
 from diogenes.persistence.audit_index import AuditIndex
 
+# ── Tabela de preços de referência (USD por 1M tokens) ───────────────────────
+# Espelha src/diogenes/llm/chattcu.py::_PRECOS. O ChatTCU é institucional e não
+# cobra (cost_usd=0.0 nos logs), então o custo exibido no painel é uma ESTIMATIVA
+# de referência de mercado — o que o ciclo custaria via API paga ao preço público.
+# Mantido local para não acoplar reports/ a llm/ (e suas deps msal/requests).
+_PRECOS_REF: dict[str, tuple[float, float]] = {
+    "Claude 4.6 Sonnet":      (3.00, 15.00),
+    "claude-4-8-opus":        (5.00, 25.00),
+    "claude-4-7-opus":        (5.00, 25.00),
+    "claude-4-6-opus":        (5.00, 25.00),
+    "gpt-5.5-thinking":       (5.00, 30.00),
+    "gpt-5.4-thinking":       (2.50, 15.00),
+    "gpt-5.3-instant":        (0.75,  4.50),
+    "gpt-5.2-thinking":       (1.75, 14.00),
+    "gpt-5.2-instant":        (0.75,  4.50),
+    "GPT-4.1":                (2.00,  8.00),
+    "GPT-4o":                 (2.50, 10.00),
+    "o1":                    (15.00, 60.00),
+    "o3":                    (10.00, 40.00),
+    "o4-mini":                (1.10,  4.40),
+    "gemini-3.1-pro-preview": (2.00, 12.00),
+    "gemini-3.1-flash-lite":  (0.10,  0.40),
+    "gemini-3-flash":         (0.50,  3.00),
+    "DeepSeek R1":            (0.55,  2.19),
+}
+
+
+def _custo_ref_call(model: str, prompt_tokens: int, completion_tokens: int) -> float:
+    """Custo de referência (USD) de uma chamada, ao preço de mercado do modelo."""
+    preco_in, preco_out = _PRECOS_REF.get(model, (0.0, 0.0))
+    return (prompt_tokens * preco_in + completion_tokens * preco_out) / 1_000_000
+
+
 # ── Modelos ──────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -21,10 +54,15 @@ class AgentCallStats:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_response_length: int = 0
+    estimated_cost_usd: float = 0.0
 
     @property
     def avg_response_length(self) -> float:
         return self.total_response_length / self.calls if self.calls else 0.0
+
+    @property
+    def total_tokens(self) -> int:
+        return self.prompt_tokens + self.completion_tokens
 
 
 @dataclass
@@ -79,8 +117,8 @@ class CycleReportData:
     fases: list[FaseEntry]
     key_events: list[dict]
 
-    # Stranger Room
-    stranger_room_files: dict[str, list[str]]
+    # Stranger Room — {fase: [{nome, path}]}
+    stranger_room_files: dict[str, list[dict]]
 
     # Output
     output_filename: str
@@ -98,6 +136,21 @@ class CycleReportData:
     entrega_veredito: str = ""
     entrega_artefatos_list: list[dict] = field(default_factory=list)   # {nome, path, bytes, tipo}
     entrega_calls_by_type: dict[str, int] = field(default_factory=dict)
+
+    # Motor de Perfilamento (defaults — backward-compatible)
+    perfil_arquivos_total: int = 0
+    perfil_alertas_criticos: int = 0
+    perfil_colunas_compartilhadas: int = 0
+    perfil_arquivos_com_erro: int = 0
+    perfil_executado: bool = False
+
+    # Pacote de inputs
+    package_hash: str = ""
+    n_arquivos_total: int = 0
+    n_arquivos_analisavel: int = 0
+
+    # Watson — detalhe por arquivo
+    watson_arquivos_detail: list[dict] = field(default_factory=list)  # {nome, timestamp_utc}
 
 
 _TERMINAL_STATES = frozenset({
@@ -230,6 +283,9 @@ def build_report(cycle_id: str, workspace: Path) -> CycleReportData:
         entrega_veredito=record.get("entrega_veredito", ""),
         entrega_artefatos_list=_listar_entrega(cycle_dir),
         entrega_calls_by_type=_calls_entrega_por_tipo(calls),
+        **_perfilamento_stats(runtime_dir, events),
+        **_manifest_info(cycle_dir),
+        watson_arquivos_detail=_watson_arquivos_detail(events),
     )
 
 
@@ -281,10 +337,13 @@ def _agregar_llm_por_agente(calls: list[dict]) -> dict[str, AgentCallStats]:
         if agent not in stats:
             stats[agent] = AgentCallStats()
         s = stats[agent]
+        pt = _safe_int(c.get("prompt_tokens", 0))
+        ct = _safe_int(c.get("completion_tokens", 0))
         s.calls += 1
-        s.prompt_tokens += _safe_int(c.get("prompt_tokens", 0))
-        s.completion_tokens += _safe_int(c.get("completion_tokens", 0))
+        s.prompt_tokens += pt
+        s.completion_tokens += ct
         s.total_response_length += _safe_int(c.get("response_length", 0))
+        s.estimated_cost_usd += _custo_ref_call(str(c.get("model", "")), pt, ct)
     return stats
 
 
@@ -359,17 +418,104 @@ def _calls_entrega_por_tipo(calls: list[dict]) -> dict[str, int]:
     return contagem
 
 
-def _listar_stranger_room(cycle_dir: Path) -> dict[str, list[str]]:
-    result: dict[str, list[str]] = {}
+def _listar_stranger_room(cycle_dir: Path) -> dict[str, list[dict]]:
+    """{fase: [{nome, path}]} — arquivos de deliberação, com path absoluto p/ link."""
+    result: dict[str, list[dict]] = {}
     sr_dir = cycle_dir / "stranger_room"
     if not sr_dir.is_dir():
         return result
     for subfase in sorted(sr_dir.iterdir()):
         if subfase.is_dir():
-            arquivos = sorted(f.name for f in subfase.glob("*.md"))
+            arquivos = [
+                {"nome": f.name, "path": str(f)}
+                for f in sorted(subfase.glob("*.md"))
+            ]
             if arquivos:
                 result[subfase.name] = arquivos
     return result
+
+
+def _perfilamento_stats(runtime_dir: Path, events: list[dict]) -> dict:
+    """Lê perfil_pacote.yaml e/ou eventos de perfilamento para popular as métricas."""
+    result = {
+        "perfil_arquivos_total": 0,
+        "perfil_alertas_criticos": 0,
+        "perfil_colunas_compartilhadas": 0,
+        "perfil_arquivos_com_erro": 0,
+        "perfil_executado": False,
+    }
+    # Tentar evento PERFILAMENTO_CONCLUIDO primeiro (mais confiável)
+    for e in events:
+        if e.get("event_type") == "PERFILAMENTO_CONCLUIDO":
+            d = e.get("details", {})
+            result["perfil_arquivos_total"] = _safe_int(d.get("arquivos_perfilados", 0))
+            result["perfil_alertas_criticos"] = _safe_int(d.get("alertas_criticos", 0))
+            result["perfil_colunas_compartilhadas"] = _safe_int(d.get("colunas_compartilhadas", 0))
+            result["perfil_arquivos_com_erro"] = _safe_int(d.get("arquivos_com_erro", 0))
+            result["perfil_executado"] = True
+            return result
+    # Fallback: ler perfil_pacote.yaml diretamente
+    perfil_path = runtime_dir / "perfis" / "perfil_pacote.yaml"
+    if perfil_path.exists():
+        try:
+            import yaml
+            dados = yaml.safe_load(perfil_path.read_text(encoding="utf-8")) or {}
+            result["perfil_arquivos_total"] = len(dados.get("arquivos_perfilados", []))
+            result["perfil_arquivos_com_erro"] = len(dados.get("arquivos_com_erro", []))
+            result["perfil_colunas_compartilhadas"] = len(dados.get("colunas_compartilhadas", {}))
+            # Contar alertas críticos nos perfis individuais
+            n_crit = 0
+            for nome in dados.get("arquivos_perfilados", []):
+                pf = runtime_dir / "perfis" / f"{nome}.perfil.yaml"
+                if pf.exists():
+                    with contextlib.suppress(Exception):
+                        pf_data = yaml.safe_load(pf.read_text(encoding="utf-8")) or {}
+                        for alerta in pf_data.get("alertas", []):
+                            if alerta.get("severidade") == "CRITICA":
+                                n_crit += 1
+            result["perfil_alertas_criticos"] = n_crit
+            result["perfil_executado"] = True
+        except Exception:  # noqa: BLE001
+            pass
+    return result
+
+
+def _manifest_info(cycle_dir: Path) -> dict:
+    """Extrai package_hash e contagem de arquivos do manifest.md (best-effort)."""
+    result = {"package_hash": "", "n_arquivos_total": 0, "n_arquivos_analisavel": 0}
+    manifest = cycle_dir / "manifest.md"
+    if not manifest.exists():
+        return result
+    try:
+        texto = manifest.read_text(encoding="utf-8", errors="replace")
+        import re
+        m = re.search(r"Hash de integridade do pacote.*?`([a-f0-9]{16,})`", texto, re.IGNORECASE)
+        if m:
+            result["package_hash"] = m.group(1)[:16]
+        # Contar linhas da tabela de arquivos (cada linha começa com "| ")
+        linhas_tabela = [ln for ln in texto.splitlines()
+                         if ln.startswith("| ") and "---" not in ln and "Arquivo" not in ln]
+        result["n_arquivos_total"] = len(linhas_tabela)
+        # "analisavel" — linhas que não têm "metadados"
+        analisavel = sum(1 for ln in linhas_tabela if "metadados" not in ln.lower())
+        result["n_arquivos_analisavel"] = analisavel
+    except Exception:  # noqa: BLE001
+        pass
+    return result
+
+
+def _watson_arquivos_detail(events: list[dict]) -> list[dict]:
+    """Lista de arquivos analisados por Watson, na ordem de análise."""
+    arquivos = []
+    for e in events:
+        if e.get("event_type") == "WATSON_ARQUIVO_ANALISADO":
+            d = e.get("details", {})
+            arquivos.append({
+                "nome": d.get("arquivo", d.get("file", "")),
+                "timestamp_utc": e.get("timestamp_utc", ""),
+                "alertas": _safe_int(d.get("alertas_criticos", d.get("critical_alerts", 0))),
+            })
+    return arquivos
 
 
 def _calcular_duracao(opened: str, ended: str) -> str:
