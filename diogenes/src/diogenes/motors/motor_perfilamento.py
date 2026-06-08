@@ -4,6 +4,12 @@ motors/motor_perfilamento.py — DVA-CBS | Projeto Diógenes
 MotorPerfilamento: análise estatística determinística de CSV/XLSX via DuckDB.
 Roda após motor_start, antes de Irene/Watson.
 
+Dono: WatsonAgent (Auditor de Integridade Técnica).
+Relação: camada pré-LLM determinística do Watson. O .perfil.yaml produzido
+aqui é consumido por watson.analisar_arquivo() via file_prep.preparar_arquivo(),
+fornecendo row_count, unicidade de chave e null_pct para todo o universo de linhas
+— não apenas a amostra truncada que Watson leria sem o motor.
+
 Por cada arquivo analisável:
   - CSV  → DuckDB (read_csv nativo): row_count, por coluna: null_rate,
             distinct_count, min/max, unicidade em colunas-chave candidatas.
@@ -15,7 +21,8 @@ Cross-file:
   Grava: {cycle_dir}/_runtime/perfil_pacote.yaml
 
 Não usa LLM. Best-effort: erros em arquivos individuais nunca abortam o ciclo.
-Referência: Proposta de Solução CSV/XLSX — Auditoria MOD_010_A1_20260605T103922Z.
+Referência normativa: RF-MV-07 (integridade técnica de dados tabulares),
+Proposta de Solução CSV/XLSX — Auditoria MOD_010_A1_20260605T103922Z.
 """
 from __future__ import annotations
 

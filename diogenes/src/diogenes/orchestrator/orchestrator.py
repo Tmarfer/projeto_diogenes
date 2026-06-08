@@ -302,12 +302,12 @@ class Orchestrator:
         inputs_dir = self._cycle_dir / "inputs"
         if not inputs_dir.is_dir():
             return
-        self._events.log("PERFILAMENTO_INICIADO",
+        self._events.log("PERFILAMENTO_INICIADO", agent="watson",
                          details={"inputs_dir": str(inputs_dir),
                                   "perfis_dir": str(self._perfis_dir)})
         try:
             pacote = perfilar_diretorio(inputs_dir, self._perfis_dir)
-            self._events.log("PERFILAMENTO_CONCLUIDO", details={
+            self._events.log("PERFILAMENTO_CONCLUIDO", agent="watson", details={
                 "arquivos_perfilados": len(pacote.arquivos_perfilados),
                 "arquivos_com_erro": len(pacote.arquivos_com_erro),
                 "alertas_criticos": pacote.total_alertas_criticos,
@@ -315,7 +315,7 @@ class Orchestrator:
             })
         except Exception as exc:  # noqa: BLE001
             logger.warning("[Orchestrator] Motor de perfilamento falhou (best-effort): %s", exc)
-            self._events.log("PERFILAMENTO_ERRO", details={"error": str(exc)})
+            self._events.log("PERFILAMENTO_ERRO", agent="watson", details={"error": str(exc)})
 
     # ── Fase Irene ───────────────────────────────────────────
 

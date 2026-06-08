@@ -29,7 +29,9 @@ agentes:
   mycroft:
     # Auditor Chefe — síntese, delegação, decisão, consolidação
     # ChatTCU (piloto de teste):
-    modelo: "claude-4-8-opus"
+    modelo: "gpt-5.5-thinking"
+    # modelo anterior (lento — revertido 2026-06-06):
+    # modelo: "claude-4-8-opus"
 
     # OpenRouter Fase B (fallback):
     # modelo: meta-llama/llama-4-maverick

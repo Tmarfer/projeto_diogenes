@@ -114,7 +114,10 @@ def test_build_report_stranger_room(workspace: tuple[Path, str]) -> None:
     ws, cid = workspace
     data = build_report(cid, ws)
     assert "watson_integridade" in data.stranger_room_files
-    assert "01_apresentacao.md" in data.stranger_room_files["watson_integridade"]
+    nomes = [f["nome"] for f in data.stranger_room_files["watson_integridade"]]
+    assert "01_apresentacao.md" in nomes
+    # cada entrada carrega path absoluto p/ link file://
+    assert all(f.get("path") for f in data.stranger_room_files["watson_integridade"])
 
 
 def test_build_report_sem_audit_index(tmp_path: Path) -> None:
