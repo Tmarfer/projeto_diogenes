@@ -34,7 +34,7 @@
 
 | Crit | Resumo | Status | Observação |
 |---|---|---|---|
-| CA-QUA-01 | Detecção ≥70% das inconsistências propositais | **Bloqueado** | **Gabarito de inconsistências do MOD_SINT_001 não existe** (ver pré-requisito abaixo) |
+| CA-QUA-01 | Detecção ≥70% das inconsistências propositais | Não verificável | Gabarito criado 2026-06-10 (`docs/conformidade/gabarito_mod_sint_001.md` — 4 INC primárias); aguarda ciclo de baseline |
 | CA-QUA-02 | Relatório institucional, impessoal, classificação coerente | Não verificável | Scaffold em `docs/avaliacao_piloto.md`; veredicto pendente |
 | CA-QUA-03 | Stranger's Room como deliberação técnica real | Não verificável | Idem |
 | CA-QUA-04 | Relatório Final A2 usa histórico A1 efetivamente | Não verificável | Exige execução real A2 |
@@ -49,8 +49,8 @@
 | MET-01 | Custo USD total por execução | Traces por chamada; agregação pendente (RNF-CUST-01) | Parcial |
 | MET-02 | Latência total do ciclo | `events.jsonl` + `LLMCall.duration`; agregação manual via `diogenes report` | Conforme |
 | MET-03 | Tokens por agente/chamada | `LLMCall` registra input/output tokens | Conforme |
-| MET-04 | Taxa de detecção de inconsistências (meta ≥70%) | **Bloqueado pelo gabarito ausente** | Bloqueado |
-| MET-05 | Taxa de falsos positivos (meta <15%) | Idem | Bloqueado |
+| MET-04 | Taxa de detecção de inconsistências (meta ≥70%) | Avaliação humana com tabela de pontuação de `gabarito_mod_sint_001.md` | Não verificável |
+| MET-05 | Taxa de falsos positivos (meta <15%) | Alertas emitidos que não correspondem a INC-01..06 / total de alertas | Não verificável |
 | MET-06 | Qualidade da classificação semântica | Avaliação humana sobre detecções corretas | Não verificável |
 | MET-07 | Qualidade da fundamentação metodológica | Avaliação humana; **métrica-alvo da Onda 2** (citação normativa rastreável) | Não verificável |
 | MET-08 | Aderência ao protocolo Stranger's Room | Avaliação qualitativa (4 níveis) | Não verificável |
@@ -61,10 +61,8 @@
 
 ## Protocolo de medição da Onda 2 (calibração de agentes)
 
-**Pré-requisito P1 — criar o gabarito:** `scratch/gerar_massa_teste.py` gera o MOD_SINT_001 mas **não documenta as inconsistências plantadas**. Antes de qualquer medição:
-1. Auditar `scratch/gerar_massa_teste.py` e extrair a lista de inconsistências introduzidas (tipo, arquivo, aba/célula, severidade esperada).
-2. Persistir como `docs/conformidade/gabarito_mod_sint_001.md` (fora de `workspace/input/` — os agentes não podem vê-lo).
-3. Se o gerador não planta inconsistências determinísticas, estendê-lo para plantar e registrar (MARCO-0-4 do PRD).
+**Pré-requisito P1 — gabarito:** ✓ **CRIADO 2026-06-10** em `docs/conformidade/gabarito_mod_sint_001.md`.
+Contém: 4 INC primárias (INC-01..04) + 2 latentes (INC-05/06) + 6 verdadeiros negativos + tabela de pontuação para MET-04..07.
 
 **Baseline (antes de mudar prompts):**
 1. 1 ciclo A1 completo sobre MOD_SINT_001 com a config atual (`gpt-5.5-thinking` via ChatTCU).

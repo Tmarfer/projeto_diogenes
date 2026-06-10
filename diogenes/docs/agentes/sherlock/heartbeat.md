@@ -410,6 +410,12 @@ DIVERGENCIA de impacto alto → CRITICO; DIVERGENCIA de impacto médio ou baixo 
 ATENCAO → ATENCAO; NAO_VERIFICAVEL → ALERTA; ATENDIDO_PARCIALMENTE relevante → ATENCAO.
 Inclua também as pendências para o simulador completo no campo correspondente.
 
+Regra inegociável neste passo: para toda ocorrência com `nivel` = CRITICO ou ALERTA,
+o campo `fundamento_violado` **não pode ser string vazia ou null**. Use obrigatoriamente
+o formato canônico de citação definido no skills.md — ex.: `"LC 214/2025, Art. 39"` ou
+`"Acórdão 2833/2025-TCU-Plenário, Apêndice III, Módulo 10"`. JSON com `fundamento_violado`
+vazio para nível CRITICO/ALERTA é output inválido.
+
 **Passo 9: Produza o Registro de Decisão.**
 Use o Template 3 do skills.md. Para cada ponto do ciclo que teve campo `Bifurcação de
 julgamento: Sim`: documente o ponto, o dispositivo, as opções consideradas, a decisão adotada

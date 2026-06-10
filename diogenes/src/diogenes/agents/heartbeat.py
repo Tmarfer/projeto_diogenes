@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from diogenes.config import ConfigError
+
 # Mapeamento call_type (código) → nome da seção no heartbeat.md
 # Necessário porque um nome diverge:
 #   analise_inicial → analise_arquivo  (heartbeat usa terminologia per-file)
@@ -62,8 +64,13 @@ class HeartbeatLoader:
     def __init__(self, heartbeat_path: Path) -> None:
         self._path = heartbeat_path
         self._sections: dict[str, str] = {}
-        if heartbeat_path.exists():
-            self._sections = _parse_heartbeat(heartbeat_path.read_text(encoding="utf-8"))
+        if not heartbeat_path.exists():
+            raise ConfigError(
+                f"heartbeat.md não encontrado: '{heartbeat_path}'. "
+                f"O arquivo é obrigatório — sem ele o prompt do agente fica truncado. "
+                f"Certifique-se de que 'docs/agentes/<agente>/heartbeat.md' existe."
+            )
+        self._sections = _parse_heartbeat(heartbeat_path.read_text(encoding="utf-8"))
 
     def get_section(self, call_type: str) -> str:
         """

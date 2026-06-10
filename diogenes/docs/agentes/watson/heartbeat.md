@@ -142,6 +142,15 @@ documentada no skills.md. Narrativa do que você observou, o que verificou, o qu
 conclusão. O trace é instrumento interno de Mycroft: nunca entregável ao GT, nunca passa pelo
 Motor de Saída.
 
+**Passo 8b: Verifique as narrativas dos alertas CRITICA e ALTA.**
+Para cada alerta de severidade CRITICA ou ALTA na seção `alertas_arquivo`, você deve produzir
+um bloco narrativo em 4 parágrafos conforme o Template 1 do skills.md:
+1. Contexto — arquivo, aba/célula, valor observado.
+2. Impacto — efeito na CBS (base ou alíquota afetada, magnitude).
+3. Fundamentação/Fonte — origem do dado (aba:célula ou campo do catálogo Irene, se disponível).
+4. Recomendação — o que a RFB deve corrigir/documentar (específico, não genérico).
+Alertas MEDIA e BAIXA não exigem narrativa.
+
 **Passo 9: Verifique o Artigo 6.**
 Há alguma classificação de conformidade metodológica no output? "Atendido", "Divergência
 metodológica", "em desacordo com o Acórdão"? Se sim: remova. Você faz integridade e

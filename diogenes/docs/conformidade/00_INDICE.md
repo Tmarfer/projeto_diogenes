@@ -1,7 +1,7 @@
 # Matriz de Conformidade — Índice e Backlog
 
 > **Processo:** TC 015.848/2025-6 | DVA-CBS | SecexContas/TCU
-> **Data:** 2026-06-09 | **Baseline:** 305 testes passando, 1 skipped (pós-merge `feat/revalidacao-e-auditoria-prd`)
+> **Data:** 2026-06-09 | **Baseline:** 339 testes passando, 1 skipped (pós-Onda 1 — `feat/onda-1-hardening-delivery`)
 > **Fontes:** `PRD_Piloto_Diogenes_v01.md` + `SDD_Piloto_Diogenes_v01.md` vs. `src/`
 > **Semente:** `docs/AUDITORIA_CONFORMIDADE_PRD.md` (2026-06-03) — esta matriz a substitui e detalha.
 
@@ -49,7 +49,7 @@ O passivo real está em três lugares:
 
 | # | Item | Origem | Onda |
 |---|---|---|---|
-| 1 | **Criar gabarito de inconsistências do MOD_SINT_001** (extrair/estender `scratch/gerar_massa_teste.py`; persistir fora do alcance dos agentes) — desbloqueia MET-04..07 e CA-QUA-01 | 11_aceitacao_metricas | 2 |
+| 1 | ~~**Criar gabarito de inconsistências do MOD_SINT_001**~~ **✓ FEITO 2026-06-09** — `docs/conformidade/gabarito_mod_sint_001.md` criado; 4 INC primárias + 2 latentes + 6 verdadeiros negativos documentados; MET-04..07 e CA-QUA-01 desbloqueados | 11_aceitacao_metricas | 2 |
 | 2 | Corpus jurídico mínimo **versionado** como default + política bloqueante fora de DEV_MODE | 05_sherlock, 02_orquestrador (RF-OR-06/RF-SH-03) | 2 |
 | 3 | Sherlock: citação normativa canônica obrigatória + `fundamento_violado` em CRITICO | 05_sherlock (RF-SH-06/07) | 2 |
 | 4 | Watson: template de ocorrência em 4 blocos (contexto/impacto/fundamentação/recomendação) + fonte de dado | 04_watson (RF-WA-10) | 2 |
@@ -64,9 +64,9 @@ O passivo real está em três lugares:
 
 | # | Item | Origem | Onda |
 |---|---|---|---|
-| 11 | Golden tests estruturais do delivery (CheckList dos exemplos como asserções) | plano Onda 1 | 1 |
-| 12 | Reconciliar vendor TCU vs. geradores de `output_exemplo` (drift) + atualizar VENDOR.md | plano Onda 1 | 1 |
-| 13 | Teste de sanidade dos regex de `runtime.yaml:motor_saida` (falha ruidosa) | 07_motor_saida (RF-MV-02) | 1 |
+| 11 | ~~Golden tests estruturais do delivery~~ **✓ FEITO 2026-06-09** — `tests/integration/test_delivery_golden.py` (15 testes, todos passando) | plano Onda 1 | 1 |
+| 12 | ~~Reconciliar vendor TCU vs. geradores de `output_exemplo` (drift) + atualizar VENDOR.md~~ **✓ FEITO 2026-06-09** — sem drift; `delivery/vendor/tcu/VENDOR.md` atualizado | plano Onda 1 | 1 |
+| 13 | ~~Teste de sanidade dos regex de `runtime.yaml:motor_saida`~~ **✓ FEITO 2026-06-09** — coberto em `test_delivery_golden.py` (`test_padroes_*`, `test_regex_*`, `test_substituicoes_*`) | 07_motor_saida (RF-MV-02) | 1 |
 | 14 | ~~Medir cobertura e registrar (CA-OPE-10)~~ **Feito 2026-06-09: 75% (≥70% ✓)**; restam hotspots <20% em `orchestrator/entrega.py`, `cli/autorun.py`, `cli/deliver.py` | 11_aceitacao_metricas | 1 |
 | 15 | Fallback explícito para `heartbeat.md` ausente (erro claro, não prompt truncado) | fragilidade conhecida | 2 |
 | 16 | RNF-REPR-03: modo de re-execução de ciclo (habilita MET-10) | 10_rnf | backlog |
@@ -78,7 +78,7 @@ O passivo real está em três lugares:
 
 | # | Item | Origem | Onda |
 |---|---|---|---|
-| 20 | mypy zerado nos módulos novos do delivery | 10_rnf (RNF-MANU-01) | 1 |
+| 20 | ~~mypy zerado nos módulos novos do delivery~~ **✓ FEITO 2026-06-09** — 0 erros em 7 módulos (`builders`, `parsing`, `extractor`, `pacote`, `motor_entrega`, `orchestrator/entrega`, `reports/cycle_report`) | 10_rnf (RNF-MANU-01) | 1 |
 | 21 | Cabeçalho do SDD ("Bloco 1 de 14") corrigido | 12_sdd_gaps | 3 |
 | 22 | CA-OPE-07 (OneDrive ativo) verificado em ambiente real | 08_persistencia | — |
 | 23 | Registrar RF-MV-04 Evoluído no PRD-adendo | 07_motor_saida | 3 |

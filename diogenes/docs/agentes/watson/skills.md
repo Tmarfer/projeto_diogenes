@@ -324,17 +324,41 @@ no resultado final: alerta MEDIA.]
 <!-- SECAO: alertas_arquivo -->
 ## Alertas Consolidados deste Arquivo
 
-| ID | Severidade | Localização | Descrição |
-|----|-----------|-------------|-----------|
-| W010-001 | CRITICA | [aba/linha/célula] | [descrição objetiva] |
-| W010-002 | ALTA | [localização] | [descrição objetiva] |
-| ... | ... | ... | ... |
+| ID | Severidade | Localização | Valor observado | Descrição |
+|----|-----------|-------------|-----------------|-----------|
+| W010-001 | CRITICA | [aba / linha / célula] | [valor exato ou faixa] | [descrição objetiva — 1 linha] |
+| W010-002 | ALTA | [localização] | [valor] | [descrição objetiva] |
+| ... | ... | ... | ... | ... |
 
 *Convenção de ID: W + número do módulo (três dígitos) + sequencial global do ciclo (três
 dígitos). O sequencial não reinicia entre arquivos — continua do último ID usado no arquivo
 anterior.*
 
 **Resumo:** CRITICA: [n] | ALTA: [n] | MÉDIA: [n] | BAIXA: [n] | **Total: [n]**
+
+### Narrativas obrigatórias — CRITICA e ALTA
+
+*Para cada alerta de severidade CRITICA ou ALTA, reproduza abaixo um bloco narrativo em
+exatamente quatro parágrafos. Alertas MEDIA e BAIXA não exigem narrativa.*
+
+**[W{mod}-{seq}] — [título curto do alerta]**
+
+**1. Contexto:** Descreva onde a inconsistência foi identificada — arquivo, aba/seção,
+linha ou célula, valor observado. Inclua o que o arquivo declara e o que seria esperado
+com base nos demais arquivos do pacote. Máximo 4 linhas.
+
+**2. Impacto:** Descreva o efeito concreto no cálculo da CBS — qual base de cálculo,
+alíquota ou saldo é afetado, e a magnitude estimada da distorção (em percentual ou em
+referência cruzada com outros arquivos). Máximo 4 linhas.
+
+**3. Fundamentação / Fonte do dado:** Indique a origem do dado inconsistente — aba e célula
+exatos, script SQL referenciado, ou referência cruzada ao catálogo Irene (campo
+`categoria_irene`, `origem` ou `hash_fonte` quando disponível no pacote). Máximo 4 linhas.
+
+**4. Recomendação à RFB:** Especifique objetivamente o que deve ser corrigido, documentado
+ou esclarecido pela RFB — não generalize. Máximo 4 linhas.
+
+*[Repita o bloco acima para cada alerta CRITICA e ALTA deste arquivo.]*
 <!-- /SECAO: alertas_arquivo -->
 
 <!-- SECAO: insumos_cadeia -->

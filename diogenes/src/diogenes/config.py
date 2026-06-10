@@ -241,6 +241,6 @@ def get_config() -> DiogenesConfig:
         corpus_juridico_dir=(
             Path(_corpus_dir).resolve()
             if (_corpus_dir := os.environ.get("DIOGENES_CORPUS_JURIDICO_DIR", "").strip())
-            else None
+            else Path("docs/corpus_juridico").resolve()
         ),
     )
