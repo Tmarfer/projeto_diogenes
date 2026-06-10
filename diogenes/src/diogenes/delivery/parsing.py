@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Any
 
 from diogenes.models import OcorrenciaEntrega, PendenciaSimulador
 
@@ -22,7 +23,7 @@ _STATUS_VALIDOS = {"aberto", "encaminhado", "resolvido"}
 _NIVEIS_VALIDOS = {"CRITICO", "ALERTA", "ATENCAO", "RESOLVIDO"}
 
 
-def extrair_json_dashboard(texto: str) -> dict | None:
+def extrair_json_dashboard(texto: str) -> dict[str, Any] | None:
     """
     Extrai o objeto JSON da seção 'insumo_json_dashboard' (seção 11) do
     consolidado de Sherlock. Procura, em ordem:
@@ -60,7 +61,7 @@ def extrair_json_dashboard(texto: str) -> dict | None:
     return None
 
 
-def _tentar_json(bruto: str) -> object | None:
+def _tentar_json(bruto: str) -> Any:
     bruto = bruto.strip()
     try:
         return json.loads(bruto)
@@ -73,7 +74,7 @@ def _tentar_json(bruto: str) -> object | None:
             return None
 
 
-def ocorrencias_de_json(obj: dict) -> tuple[list[OcorrenciaEntrega], list[PendenciaSimulador]]:
+def ocorrencias_de_json(obj: dict[str, Any]) -> tuple[list[OcorrenciaEntrega], list[PendenciaSimulador]]:
     """Converte o dict do insumo_json_dashboard em dataclasses do PacoteEntrega."""
     ocorrencias: list[OcorrenciaEntrega] = []
     for o in obj.get("ocorrencias", []) or []:

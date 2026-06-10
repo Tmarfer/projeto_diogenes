@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from diogenes.models import (
     BlocoFinanceiro,
@@ -75,7 +76,7 @@ class ExtractorFinanceiro:
         self._wb = openpyxl.load_workbook(self._path, data_only=True)
         self._wb_formula = openpyxl.load_workbook(self._path, data_only=False)
 
-    def extrair(self, mapa: dict) -> dict:
+    def extrair(self, mapa: dict[str, Any]) -> dict[str, Any]:
         """
         Aplica o mapa de extração e devolve as três estruturas financeiras do
         PacoteEntrega: blocos_financeiros, valores_agregados, sensibilidade_redutor.
@@ -88,7 +89,7 @@ class ExtractorFinanceiro:
 
         blocos = [self._construir_bloco(b) for b in mapa.get("blocos", []) or []]
 
-        agregados: list[dict] = []
+        agregados: list[dict[str, Any]] = []
         for va in mapa.get("valores_agregados", []) or []:
             fmt = va.get("formato", "bilhoes")
             agregados.append({
@@ -116,7 +117,7 @@ class ExtractorFinanceiro:
 
     # ── construção de blocos ─────────────────────────────────────
 
-    def _construir_bloco(self, b: dict) -> BlocoFinanceiro:
+    def _construir_bloco(self, b: dict[str, Any]) -> BlocoFinanceiro:
         kpis: list[KPIEntrega] = []
         for k in b.get("kpis", []) or []:
             fmt = k.get("formato", "texto")
@@ -196,7 +197,7 @@ class ExtractorFinanceiro:
         )
 
     @staticmethod
-    def _inferir_tipo(b: dict) -> str:
+    def _inferir_tipo(b: dict[str, Any]) -> str:
         if b.get("id") == "visao_geral" or b.get("cards_metodologia"):
             return "visao_geral"
         if b.get("cenarios"):
@@ -215,7 +216,7 @@ class ExtractorFinanceiro:
 
     # ── leitura de células ───────────────────────────────────────
 
-    def _ws(self, aba: str | None):
+    def _ws(self, aba: str | None) -> Any:
         if not aba or self._wb is None:
             return None
         if aba in self._wb.sheetnames:
@@ -223,7 +224,7 @@ class ExtractorFinanceiro:
         self._avisos.append(f"Aba '{aba}' ausente na planilha; campo ignorado.")
         return None
 
-    def _celula(self, aba: str | None, ref: str | None) -> object | None:
+    def _celula(self, aba: str | None, ref: str | None) -> Any:
         if not ref:
             return None
         ws = self._ws(aba)

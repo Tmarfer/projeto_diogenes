@@ -19,6 +19,7 @@ import json
 import re
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from diogenes.delivery import parsing
 from diogenes.delivery.extractor import ExtracaoError, ExtractorFinanceiro
@@ -124,7 +125,7 @@ def montar_pacote(cycle_dir: Path, module_id: str, activity: int) -> tuple[Pacot
 
 # ── fontes ──────────────────────────────────────────────────────
 
-def _carregar_mapa(output_dir: Path, avisos: list[str]) -> dict:
+def _carregar_mapa(output_dir: Path, avisos: list[str]) -> dict[str, Any]:
     path = output_dir / NOME_MAPA_EXTRACAO
     if not path.exists():
         avisos.append(
@@ -133,13 +134,13 @@ def _carregar_mapa(output_dir: Path, avisos: list[str]) -> dict:
         )
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return dict(json.loads(path.read_text(encoding="utf-8")))
     except json.JSONDecodeError as exc:
         avisos.append(f"Mapa de extração inválido: {exc}")
         return {}
 
 
-def _carregar_apendice_conteudo(output_dir: Path, avisos: list[str]) -> dict | None:
+def _carregar_apendice_conteudo(output_dir: Path, avisos: list[str]) -> dict[str, Any] | None:
     path = output_dir / NOME_APENDICE_CONTEUDO
     if not path.exists():
         avisos.append(
@@ -148,7 +149,7 @@ def _carregar_apendice_conteudo(output_dir: Path, avisos: list[str]) -> dict | N
         )
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return dict(json.loads(path.read_text(encoding="utf-8")))
     except json.JSONDecodeError as exc:
         avisos.append(f"Conteúdo do apêndice inválido ({NOME_APENDICE_CONTEUDO}): {exc}")
         return None
@@ -164,7 +165,7 @@ def _ler_relatorio(output_dir: Path, avisos: list[str]) -> str:
 
 
 def _carregar_ocorrencias(cycle_dir: Path, output_dir: Path, relatorio_md: str,
-                          avisos: list[str]):
+                          avisos: list[str]) -> Any:
     # 1. arquivo json dedicado
     jpath = output_dir / NOME_SHERLOCK_JSON
     if jpath.exists():
@@ -188,7 +189,7 @@ def _carregar_ocorrencias(cycle_dir: Path, output_dir: Path, relatorio_md: str,
     return [], []
 
 
-def _extrair_financeiro(cycle_dir: Path, mapa: dict, avisos: list[str]):
+def _extrair_financeiro(cycle_dir: Path, mapa: dict[str, Any], avisos: list[str]) -> Any:
     if not mapa or not any(k in mapa for k in ("blocos", "valores_agregados", "sensibilidade_redutor")):
         return [], [], None
     planilha = _localizar_planilha(cycle_dir, mapa, avisos)
@@ -204,7 +205,7 @@ def _extrair_financeiro(cycle_dir: Path, mapa: dict, avisos: list[str]):
         return [], [], None
 
 
-def _localizar_planilha(cycle_dir: Path, mapa: dict, avisos: list[str]) -> Path | None:
+def _localizar_planilha(cycle_dir: Path, mapa: dict[str, Any], avisos: list[str]) -> Path | None:
     inputs = cycle_dir / "inputs"
     nome = mapa.get("planilha_principal", "")
     if nome:
@@ -235,7 +236,7 @@ def _ler_ata(cycle_dir: Path, avisos: list[str]) -> str:
 
 # ── helpers de narrativa ────────────────────────────────────────
 
-def _testes(narrativa: dict, camada: str) -> list[TesteRealizado]:
+def _testes(narrativa: dict[str, Any], camada: str) -> list[TesteRealizado]:
     if not isinstance(narrativa, dict):
         return []
     testes_val = narrativa.get("testes", []) or []
@@ -265,7 +266,7 @@ def _testes(narrativa: dict, camada: str) -> list[TesteRealizado]:
     return res
 
 
-def _notas(narrativa: dict) -> list[NotaMetodologica]:
+def _notas(narrativa: dict[str, Any]) -> list[NotaMetodologica]:
     if not isinstance(narrativa, dict):
         return []
     notas_val = narrativa.get("notas_metodologicas", []) or []

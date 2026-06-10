@@ -10,6 +10,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from diogenes.persistence.audit_index import AuditIndex
 
@@ -115,10 +116,10 @@ class CycleReportData:
 
     # Timeline
     fases: list[FaseEntry]
-    key_events: list[dict]
+    key_events: list[dict[str, Any]]
 
     # Stranger Room — {fase: [{nome, path}]}
-    stranger_room_files: dict[str, list[dict]]
+    stranger_room_files: dict[str, list[dict[str, Any]]]
 
     # Output
     output_filename: str
@@ -134,7 +135,7 @@ class CycleReportData:
     entrega_artefatos: int = 0
     entrega_invocado_at: str = ""
     entrega_veredito: str = ""
-    entrega_artefatos_list: list[dict] = field(default_factory=list)   # {nome, path, bytes, tipo}
+    entrega_artefatos_list: list[dict[str, Any]] = field(default_factory=list)   # {nome, path, bytes, tipo}
     entrega_calls_by_type: dict[str, int] = field(default_factory=dict)
 
     # Motor de Perfilamento (defaults — backward-compatible)
@@ -150,7 +151,7 @@ class CycleReportData:
     n_arquivos_analisavel: int = 0
 
     # Watson — detalhe por arquivo
-    watson_arquivos_detail: list[dict] = field(default_factory=list)  # {nome, timestamp_utc}
+    watson_arquivos_detail: list[dict[str, Any]] = field(default_factory=list)  # {nome, timestamp_utc}
 
 
 _TERMINAL_STATES = frozenset({
@@ -291,14 +292,14 @@ def build_report(cycle_id: str, workspace: Path) -> CycleReportData:
 
 # ── Helpers (testáveis e reutilizáveis) ───────────────────────────────────────
 
-def _ler_audit_record(workspace: Path, cycle_id: str) -> dict:
+def _ler_audit_record(workspace: Path, cycle_id: str) -> dict[str, Any]:
     try:
         return AuditIndex(workspace).get_cycle(cycle_id) or {}
     except Exception:  # noqa: BLE001
         return {}
 
 
-def _ler_events(runtime_dir: Path) -> list[dict]:
+def _ler_events(runtime_dir: Path) -> list[dict[str, Any]]:
     path = runtime_dir / "events.jsonl"
     if not path.exists():
         return []
@@ -314,7 +315,7 @@ def _ler_events(runtime_dir: Path) -> list[dict]:
     return lines
 
 
-def _ler_llm_calls(runtime_dir: Path) -> list[dict]:
+def _ler_llm_calls(runtime_dir: Path) -> list[dict[str, Any]]:
     path = runtime_dir / "llm_calls.jsonl"
     if not path.exists():
         return []
@@ -330,7 +331,7 @@ def _ler_llm_calls(runtime_dir: Path) -> list[dict]:
     return lines
 
 
-def _agregar_llm_por_agente(calls: list[dict]) -> dict[str, AgentCallStats]:
+def _agregar_llm_por_agente(calls: list[dict[str, Any]]) -> dict[str, AgentCallStats]:
     stats: dict[str, AgentCallStats] = {}
     for c in calls:
         agent = c.get("agent") or "desconhecido"
@@ -347,7 +348,7 @@ def _agregar_llm_por_agente(calls: list[dict]) -> dict[str, AgentCallStats]:
     return stats
 
 
-def _timeline_fases(events: list[dict]) -> list[FaseEntry]:
+def _timeline_fases(events: list[dict[str, Any]]) -> list[FaseEntry]:
     fases: dict[str, FaseEntry] = {}
     for e in events:
         et = e.get("event_type", "")
@@ -365,7 +366,7 @@ def _timeline_fases(events: list[dict]) -> list[FaseEntry]:
     return list(fases.values())
 
 
-def _key_events(events: list[dict]) -> list[dict]:
+def _key_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [e for e in events if e.get("event_type") in _KEY_EVENT_TYPES]
 
 
@@ -388,12 +389,12 @@ def _classificar_entrega(nome: str) -> str:
     return nome.rsplit(".", 1)[-1].lower() if "." in nome else "artefato"
 
 
-def _listar_entrega(cycle_dir: Path) -> list[dict]:
+def _listar_entrega(cycle_dir: Path) -> list[dict[str, Any]]:
     """Artefatos gerados em output/entrega/ (best-effort; ignora temporários ~$ e manifestos)."""
     entrega_dir = cycle_dir / "output" / "entrega"
     if not entrega_dir.is_dir():
         return []
-    itens: list[dict] = []
+    itens: list[dict[str, Any]] = []
     for f in sorted(entrega_dir.iterdir()):
         if not f.is_file() or f.name.startswith("~$") or f.name.startswith("."):
             continue
@@ -408,7 +409,7 @@ def _listar_entrega(cycle_dir: Path) -> list[dict]:
     return itens
 
 
-def _calls_entrega_por_tipo(calls: list[dict]) -> dict[str, int]:
+def _calls_entrega_por_tipo(calls: list[dict[str, Any]]) -> dict[str, int]:
     """Itemiza as call_types da Fase de Entrega (do Mycroft), antes escondidas no agregado."""
     contagem: dict[str, int] = {}
     for c in calls:
@@ -418,9 +419,9 @@ def _calls_entrega_por_tipo(calls: list[dict]) -> dict[str, int]:
     return contagem
 
 
-def _listar_stranger_room(cycle_dir: Path) -> dict[str, list[dict]]:
+def _listar_stranger_room(cycle_dir: Path) -> dict[str, list[dict[str, Any]]]:
     """{fase: [{nome, path}]} — arquivos de deliberação, com path absoluto p/ link."""
-    result: dict[str, list[dict]] = {}
+    result: dict[str, list[dict[str, Any]]] = {}
     sr_dir = cycle_dir / "stranger_room"
     if not sr_dir.is_dir():
         return result
@@ -435,7 +436,7 @@ def _listar_stranger_room(cycle_dir: Path) -> dict[str, list[dict]]:
     return result
 
 
-def _perfilamento_stats(runtime_dir: Path, events: list[dict]) -> dict:
+def _perfilamento_stats(runtime_dir: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
     """Lê perfil_pacote.yaml e/ou eventos de perfilamento para popular as métricas."""
     result = {
         "perfil_arquivos_total": 0,
@@ -458,7 +459,7 @@ def _perfilamento_stats(runtime_dir: Path, events: list[dict]) -> dict:
     perfil_path = runtime_dir / "perfis" / "perfil_pacote.yaml"
     if perfil_path.exists():
         try:
-            import yaml
+            import yaml  # type: ignore[import-untyped]
             dados = yaml.safe_load(perfil_path.read_text(encoding="utf-8")) or {}
             result["perfil_arquivos_total"] = len(dados.get("arquivos_perfilados", []))
             result["perfil_arquivos_com_erro"] = len(dados.get("arquivos_com_erro", []))
@@ -480,7 +481,7 @@ def _perfilamento_stats(runtime_dir: Path, events: list[dict]) -> dict:
     return result
 
 
-def _manifest_info(cycle_dir: Path) -> dict:
+def _manifest_info(cycle_dir: Path) -> dict[str, Any]:
     """Extrai package_hash e contagem de arquivos do manifest.md (best-effort)."""
     result = {"package_hash": "", "n_arquivos_total": 0, "n_arquivos_analisavel": 0}
     manifest = cycle_dir / "manifest.md"
@@ -504,7 +505,7 @@ def _manifest_info(cycle_dir: Path) -> dict:
     return result
 
 
-def _watson_arquivos_detail(events: list[dict]) -> list[dict]:
+def _watson_arquivos_detail(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Lista de arquivos analisados por Watson, na ordem de análise."""
     arquivos = []
     for e in events:
@@ -545,7 +546,7 @@ def _diff_minutos(ts_inicio: str, ts_fim: str) -> float | None:
         return None
 
 
-def _safe_int(val: object) -> int:
+def _safe_int(val: Any) -> int:
     try:
         return int(val) if val not in (None, "") else 0
     except (ValueError, TypeError):
