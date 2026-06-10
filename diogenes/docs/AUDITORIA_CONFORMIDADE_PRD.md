@@ -1,5 +1,10 @@
 # Auditoria de Conformidade — PRD/SDD vs. Implementação
 
+> **⚠️ SUBSTITUÍDA (2026-06-09):** esta auditoria foi expandida e substituída pela
+> **Matriz de Conformidade** em [`docs/conformidade/00_INDICE.md`](conformidade/00_INDICE.md)
+> (evidência por `arquivo:linha`, prioridades P0-P3 e mapeamento para ondas de refatoração).
+> Este arquivo é preservado como registro histórico do estado em 2026-06-03.
+
 > **Processo:** TC 015.848/2025-6 | DVA-CBS | SecexContas/TCU
 > **Data:** 2026-06-03
 > **Escopo:** mapeamento dos requisitos funcionais (RF-*), não funcionais (RNF-*) e
