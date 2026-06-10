@@ -1,7 +1,7 @@
 # Matriz de Conformidade — Índice e Backlog
 
 > **Processo:** TC 015.848/2025-6 | DVA-CBS | SecexContas/TCU
-> **Data:** 2026-06-09 | **Baseline:** 339 testes passando, 1 skipped (pós-Onda 1 — `feat/onda-1-hardening-delivery`)
+> **Data:** 2026-06-10 | **Baseline:** 343 testes passando, 2 warnings (pós-Onda 3 — `feat/onda-3-redator-delivery-v2`)
 > **Fontes:** `PRD_Piloto_Diogenes_v01.md` + `SDD_Piloto_Diogenes_v01.md` vs. `src/`
 > **Semente:** `docs/AUDITORIA_CONFORMIDADE_PRD.md` (2026-06-03) — esta matriz a substitui e detalha.
 
@@ -57,8 +57,8 @@ O passivo real está em três lugares:
 | 6 | Baseline de medição: 1 ciclo A1 MOD_SINT_001 pontuado contra o gabarito ANTES de mudar prompts | 11_aceitacao_metricas (protocolo) | 2 |
 | 7 | 3º ciclo A1 consecutivo MOD_SINT_001 (CA-FUN-01) + A2 real (CA-FUN-02/CA-QUA-04) | 11_aceitacao_metricas | 2 |
 | 8 | SDD v0.2: Blocos 4/6/8/9 atualizados + Bloco 15 (Fase de Entrega) | 12_sdd_gaps | 3 |
-| 9 | PRD-adendo com RF-EN-* (+ RF-AU/RP/BE/IR) | 12_sdd_gaps | 3 |
-| 10 | Motor de Saída varre texto LLM da entrega antes do DOCX (RF-EN-06 proposto) | 07_motor_saida, 12_sdd_gaps | 3 |
+| 9 | ~~PRD-adendo com RF-EN-* (+ RF-AU/RP/BE/IR)~~ **✓ FEITO 2026-06-10** — `docs/antecedentes/PRD_adendo_v01_fase_entrega.md` (RF-EN-01..07, RF-AU-01..03, RF-RP-01..02, RF-BE-01..02, RF-IR-01..03) | 12_sdd_gaps | 3 |
+| 10 | ~~Motor de Saída varre texto LLM da entrega antes do DOCX (RF-EN-06)~~ **✓ FEITO 2026-06-10** — `sanitizar_delivery_text()` em `motor_saida.py`; integrado em `motor_entrega.py` para narrativo/consolidado/pré-atendimento; 4 testes `TestSanitizarDeliveryText` | 07_motor_saida, 12_sdd_gaps | 3 |
 
 ### P2 — robustez e medição
 
@@ -79,13 +79,13 @@ O passivo real está em três lugares:
 | # | Item | Origem | Onda |
 |---|---|---|---|
 | 20 | ~~mypy zerado nos módulos novos do delivery~~ **✓ FEITO 2026-06-09** — 0 erros em 7 módulos (`builders`, `parsing`, `extractor`, `pacote`, `motor_entrega`, `orchestrator/entrega`, `reports/cycle_report`) | 10_rnf (RNF-MANU-01) | 1 |
-| 21 | Cabeçalho do SDD ("Bloco 1 de 14") corrigido | 12_sdd_gaps | 3 |
+| 21 | ~~Cabeçalho do SDD ("Bloco 1 de 14") corrigido~~ **✓ FEITO 2026-06-10** — SDD status atualizado; Bloco 15 adicionado; tabela Bloco 14.8 expandida | 12_sdd_gaps | 3 |
 | 22 | CA-OPE-07 (OneDrive ativo) verificado em ambiente real | 08_persistencia | — |
-| 23 | Registrar RF-MV-04 Evoluído no PRD-adendo | 07_motor_saida | 3 |
+| 23 | ~~Registrar RF-MV-04 Evoluído no PRD-adendo~~ **✓ FEITO 2026-06-10** — resolução R-13 e RF-MV-04 documentadas no PRD-adendo | 07_motor_saida | 3 |
 
 ## Mapa de ondas
 
 - **Onda 1 — Hardening do delivery:** itens 11-14, 20. Pré-requisito: nenhum (merge já feito).
 - **Onda 2 — Calibração de agentes:** itens 1-7, 15, 19. Pré-requisito: gabarito (item 1).
-- **Onda 3 — Redator/entrega + documentação:** itens 8-10, 21, 23. Pré-requisito: Ondas 1-2 (golden tests + prompts calibrados).
+- **Onda 3 — Redator/entrega + documentação:** ~~itens 8-10, 21, 23~~ **✓ FEITOS 2026-06-10** (itens 9, 10, 21, 23 concluídos; item 8 parcial: Bloco 15 adicionado, Blocos 4/6/8/9 pendentes).
 - **Backlog técnico:** itens 16-18, 22 — não bloqueiam os objetivos de qualidade.
