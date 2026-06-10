@@ -7,7 +7,12 @@ import pytest
 
 from diogenes.config import get_config
 from diogenes.motors.exceptions import MotorSaidaError
-from diogenes.motors.motor_saida import MotorSaida, _classificar_posicao, _extrair_contexto
+from diogenes.motors.motor_saida import (
+    MotorSaida,
+    _classificar_posicao,
+    _extrair_contexto,
+    sanitizar_delivery_text,
+)
 from diogenes.motors.motor_start import MotorStart
 from diogenes.orchestrator.states import CycleState
 from diogenes.persistence.audit_index import AuditIndex
@@ -172,3 +177,30 @@ class TestMotorSaidaIntegrado:
         assert record["motor_saida_decision"] == "LIMPO"
         assert record["lestrade_seal_at_utc"] == now
         assert record["ended_at_utc"] == now
+
+
+# ── sanitizar_delivery_text (RF-EN-06) ──────────────────────────────────────
+
+class TestSanitizarDeliveryText:
+    def test_remove_tags_secao(self, cfg):
+        text = "Texto <!-- SECAO: intro --> antes <!-- /SECAO: intro --> depois"
+        result = sanitizar_delivery_text(text)
+        assert "SECAO" not in result
+        assert "antes" in result and "depois" in result
+
+    def test_remove_linha_arquivos(self, cfg):
+        text = "Linha 1\n**Arquivos que compõem este consolidado:** lista\nLinha 3"
+        result = sanitizar_delivery_text(text)
+        assert "Arquivos que compõem" not in result
+        assert "Linha 1" in result and "Linha 3" in result
+
+    def test_remove_referencia_md_interna(self, cfg):
+        text = "Conforme [MC_decisao_watson.md] e [sherlock_consolidado.md] acima."
+        result = sanitizar_delivery_text(text)
+        assert "[MC_decisao_watson.md]" not in result
+        assert "[sherlock_consolidado.md]" not in result
+
+    def test_texto_limpo_passa_intacto(self, cfg):
+        text = "Análise do Módulo CBS — sem marcas internas."
+        result = sanitizar_delivery_text(text)
+        assert "Análise do Módulo CBS" in result

@@ -26,6 +26,7 @@ from diogenes.delivery import builders
 from diogenes.delivery import pacote as pacote_mod
 from diogenes.models import ArtefatoEntrega, MotorEntregaReport, PacoteEntrega
 from diogenes.motors.exceptions import MotorSaidaError
+from diogenes.motors.motor_saida import sanitizar_delivery_text
 from diogenes.persistence.audit_index import AuditIndex
 from diogenes.persistence.workspace import WorkspaceManager
 
@@ -105,7 +106,7 @@ class MotorEntrega:
         return self._tentar(
             "narrativo", path, avisos,
             lambda: builders.gerar_relatorio_docx(
-                builders.montar_markdown_narrativo(p), path,
+                sanitizar_delivery_text(builders.montar_markdown_narrativo(p)), path,
                 titulo=f"Relatório Narrativo — Módulo {p.modulo}", modulo=p.modulo, versao=p.versao),
         )
 
@@ -117,7 +118,7 @@ class MotorEntrega:
         return self._tentar(
             "consolidado", path, avisos,
             lambda: builders.gerar_relatorio_docx(
-                p.relatorio_markdown, path,
+                sanitizar_delivery_text(p.relatorio_markdown), path,
                 titulo=f"Relatório Consolidado — Módulo {p.modulo}", modulo=p.modulo, versao=p.versao),
         )
 
@@ -126,7 +127,7 @@ class MotorEntrega:
         return self._tentar(
             "pre_atendimento", path, avisos,
             lambda: builders.gerar_relatorio_docx(
-                builders.montar_markdown_pre_atendimento(p), path,
+                sanitizar_delivery_text(builders.montar_markdown_pre_atendimento(p)), path,
                 titulo=f"Relatório de Pré-Atendimento — Módulo {p.modulo}", modulo=p.modulo, versao=p.versao),
         )
 

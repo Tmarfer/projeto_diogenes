@@ -129,68 +129,7 @@ class MotorSaida:
     # ── Higienização ─────────────────────────────────────────
 
     def _sanitizar(self, content: str) -> str:
-        """
-        Higieniza o documento para saída externa (Artigo 14/15).
-
-        Etapas:
-        1. Remove todos os blocos <!-- SECAO: ... --> e <!-- /SECAO: ... -->
-           (marcadores internos — não pertencem ao documento externo).
-        2. Remove a linha "**Arquivos que compõem este consolidado:**" (metadado interno).
-        3. Aplica substituições de nomes por linguagem institucional.
-        4. Remove linha de assinatura de Auditor Chefe.
-        5. Corrige artefatos de substituição em cadeia.
-        """
-        resultado = content
-
-        # Etapa 1: remover tags de seção internas
-        resultado = re.sub(r"<!--\s*/?(SECAO|secao):?[^>]*-->", "", resultado, flags=re.IGNORECASE)
-
-        # Etapa 2: remover linha de metadado de arquivos internos
-        resultado = re.sub(r"^\*\*Arquivos que compõem este consolidado:\*\*.*$\n?", "", resultado, flags=re.MULTILINE)
-
-        # Etapa 2.5: remover referências a arquivos internos em notação de colchetes.
-        # [MC_decisao_watson.md], [watson_consolidado.md], [sherlock_consolidado.md], etc.
-        # O split de filename na etapa 3 preserva essas referências de propósito — este
-        # pré-passo remove-as ANTES do split, quando ainda são texto contínuo.
-        # O padrão [NOME.md] não captura referências legítimas como [Acórdão … | …]
-        # (que contêm espaços/pipes) — apenas snake_case puro.
-        resultado = re.sub(r"\[[A-Za-z_][A-Za-z0-9_]*\.md\]", "", resultado)
-
-        # Etapa 3: substituições de nomes (apenas fora de nomes de arquivo)
-        for par in self._ms_cfg.substituicoes_higienizacao:
-            if len(par) != 2:
-                continue
-            padrao, substituto = par
-            # Não substituir dentro de `word.ext` (nome de arquivo)
-            partes_linha = re.split(r"(\S+\.\w{2,5})", resultado)
-            novas_partes: list[str] = []
-            for j, segmento in enumerate(partes_linha):
-                if j % 2 == 1:  # segmentos ímpares = nomes de arquivo
-                    novas_partes.append(segmento)
-                    continue
-                # Padrões iniciados por artigo/preposição: não substituir quando precedidos de letra
-                if re.match(r"^(a|de|por|ao|da|do|pela|pelo)\s", padrao, re.IGNORECASE):
-                    regex = r"(?<![A-Za-zÀ-ú])" + re.escape(padrao)
-                else:
-                    regex = re.escape(padrao)
-                novas_partes.append(re.sub(regex, substituto, segmento, flags=re.IGNORECASE))
-            resultado = "".join(novas_partes)
-
-        # Etapa 4: remover linha de assinatura de Auditor Chefe
-        resultado = re.sub(
-            r"^\*Documento produzido por:.*$\n?",
-            "",
-            resultado,
-            flags=re.MULTILINE,
-        )
-
-        # Etapa 5: corrigir artefato "*DVA-CBS | DVA-CBS |" → "*DVA-CBS |"
-        resultado = re.sub(r"\*DVA-CBS \| DVA-CBS \|", "*DVA-CBS |", resultado)
-
-        # Etapa 5b: colapsar linhas em branco excessivas (máx. 2 consecutivas)
-        resultado = re.sub(r"\n{3,}", "\n\n", resultado)
-
-        return resultado
+        return _aplicar_sanitizacao(content, self._ms_cfg.substituicoes_higienizacao)
 
     # ── Varredura ────────────────────────────────────────────
 
@@ -271,3 +210,57 @@ def _extrair_contexto(linhas: list[str], idx: int) -> str:
         f"{'>>>' if i == idx - inicio else '   '} {linha}"
         for i, linha in enumerate(linhas[inicio:fim])
     )
+
+
+def _aplicar_sanitizacao(content: str, substituicoes: list[list[str]]) -> str:
+    """Aplica as etapas de higienização sobre um texto qualquer.
+
+    Etapas:
+    1. Remove <!-- SECAO: ... --> e <!-- /SECAO: ... --> (marcadores internos).
+    2. Remove linha "**Arquivos que compõem este consolidado:**".
+    3. Remove referências a arquivos internos como [nome.md].
+    4. Aplica substituições de nomes institucionais (apenas fora de nomes de arquivo).
+    5. Remove linha de assinatura do Auditor Chefe.
+    6. Corrige artefato de substituição em cadeia (*DVA-CBS | DVA-CBS |).
+    7. Colapsa linhas em branco excessivas (máx. 2 consecutivas).
+    """
+    resultado = content
+
+    resultado = re.sub(r"<!--\s*/?(SECAO|secao):?[^>]*-->", "", resultado, flags=re.IGNORECASE)
+    resultado = re.sub(
+        r"^\*\*Arquivos que compõem este consolidado:\*\*.*$\n?", "", resultado, flags=re.MULTILINE
+    )
+    resultado = re.sub(r"\[[A-Za-z_][A-Za-z0-9_]*\.md\]", "", resultado)
+
+    for par in substituicoes:
+        if len(par) != 2:
+            continue
+        padrao, substituto = par
+        partes_linha = re.split(r"(\S+\.\w{2,5})", resultado)
+        novas_partes: list[str] = []
+        for j, segmento in enumerate(partes_linha):
+            if j % 2 == 1:
+                novas_partes.append(segmento)
+                continue
+            if re.match(r"^(a|de|por|ao|da|do|pela|pelo)\s", padrao, re.IGNORECASE):
+                regex = r"(?<![A-Za-zÀ-ú])" + re.escape(padrao)
+            else:
+                regex = re.escape(padrao)
+            novas_partes.append(re.sub(regex, substituto, segmento, flags=re.IGNORECASE))
+        resultado = "".join(novas_partes)
+
+    resultado = re.sub(r"^\*Documento produzido por:.*$\n?", "", resultado, flags=re.MULTILINE)
+    resultado = re.sub(r"\*DVA-CBS \| DVA-CBS \|", "*DVA-CBS |", resultado)
+    resultado = re.sub(r"\n{3,}", "\n\n", resultado)
+    return resultado
+
+
+def sanitizar_delivery_text(text: str) -> str:
+    """Aplica a sanitização do Motor de Saída sobre texto antes de converter para DOCX.
+
+    RF-EN-06: todo texto LLM da Fase de Entrega deve passar por esta função antes
+    de ser incorporado a artefatos externos (DOCX, HTML). Dispensa instância completa
+    de MotorSaida (sem requisito de workspace).
+    """
+    substituicoes: list[list[str]] = get_config().motor_saida.substituicoes_higienizacao
+    return _aplicar_sanitizacao(text, substituicoes)

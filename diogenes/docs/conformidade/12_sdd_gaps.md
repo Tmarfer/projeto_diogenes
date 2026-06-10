@@ -21,7 +21,7 @@ defasagem precisa ser fechada para que a declaração volte a ser verdadeira.
 
 | Bloco | Divergência | Quem está certo | Ação | Prio | Onda |
 |---|---|---|---|---|---|
-| Cabeçalho | "Em construção (Bloco 1 de 14)" com 14 blocos escritos | Código/realidade | Atualizar status para "Blocos 1-14 consolidados; revisão v0.2 em curso" | P2 | 3 |
+| Cabeçalho | ~~"Em construção (Bloco 1 de 14)"~~ | — | **✓ FEITO 2026-06-10** — status atualizado; Bloco 15 adicionado | P2 | 3 |
 | Bloco 3 (Stack) | Não lista python-docx, matplotlib, playwright, duckdb, msal, requests, pdfminer.six | Código (`pyproject.toml` justifica cada uma) | Atualizar tabela de dependências | P2 | 3 |
 | Bloco 4 (Config) | Descreve `DIOGENES_ENV` + `DIOGENES_LLM_API_KEY/BASE_URL` como seleção de provider | Código (`DIOGENES_LLM_PROVIDER`; MSAL sem API key) | Reescrever seção de variáveis; documentar `DIOGENES_IRENE_*`, `DIOGENES_CORPUS_JURIDICO_DIR`, `DIOGENES_DEV_MODE`, `DIOGENES_SSL_VERIFY` | P1 | 3 |
 | Bloco 6 (LLMClient) | OpenRouter como provider do piloto; sem governança | Código (`llm/base.py` guardião: ChatTCU único em produção, OpenRouter só sob pytest) | Reescrever: ChatTCU/MSAL como provider primário, governança bloqueante, duas assinaturas de `get_llm_client()` | P1 | 3 |
@@ -36,11 +36,11 @@ defasagem precisa ser fechada para que a declaração volte a ser verdadeira.
 
 | Bloco | Conteúdo | Semente | Prio | Onda |
 |---|---|---|---|---|
-| **Bloco 15 — Fase de Entrega** | `motor_entrega.py` (determinístico), `delivery/` (parsing, extractor openpyxl, builders, dashboard, pacote), vendor TCU (`vendor/tcu/` + política de revendorização do VENDOR.md), mapa de extração (localizações-nunca-valores), call_types LLM (`mapear_dados_modulo`, `redigir_apendice`, `avaliar_entrega`), QA, hook no autorun | `delivery/MAPA_EXTRACAO.md` + `VENDOR.md` | P1 | 3 |
+| ~~**Bloco 15 — Fase de Entrega**~~ | — | — | **✓ FEITO 2026-06-10** — Bloco 15 adicionado ao SDD (`docs/sdd/SDD_Piloto_Diogenes_v01.md`, linha ~5730+); cobre motor_entrega, extractor, builders, vendor TCU, call_types LLM, RF-EN-06, RF-EN-07 | P1 | 3 |
 | **Bloco 16 — Painel local (reports/)** | `EventLogger` → `report.html` ao vivo; `diogenes report`; equivalente LangSmith sem SaaS | `reports/cycle_report.py` | P2 | 3 |
 | **Bloco 17 — Motor de Perfilamento** | Análise estatística determinística CSV/XLSX via DuckDB pré-Watson | `motors/motor_perfilamento.py` (581 linhas, 44+ testes) | P2 | 3 |
 
-## Tensão com o PRD — conversão DOCX (R-13)
+## Tensão com o PRD — conversão DOCX (R-13) — **RESOLVIDA 2026-06-10**
 
 PRD linhas 84, 580 (R-13) e 1092 declaram a conversão DOCX como **pós-piloto**,
 delegada ao motor do projeto maior. A realidade: o motor foi **vendorizado para

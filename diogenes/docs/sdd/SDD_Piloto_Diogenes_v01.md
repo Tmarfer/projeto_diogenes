@@ -5,7 +5,7 @@ processo: TC 015.848/2025-6
 unidade: SecexContas — Tribunal de Contas da União
 grupo_de_trabalho: GT Reforma Tributária
 versao: 0.1
-status: Documento de Trabalho Interno — Em construção (Bloco 1 de 14)
+status: Documento de Trabalho Interno — Blocos 1-14 consolidados; Bloco 15 adicionado em 2026-06-10 (revisão v0.2 em curso)
 data: 2026-05-07
 uso: Interno Restrito
 documentos_antecedentes:
@@ -17,7 +17,7 @@ documentos_antecedentes:
 # **SDD — Piloto Diógenes Local**
 ## Departamento de Validação Assistida da CBS
 
-> **Status:** Documento de Trabalho Interno em construção. Bloco 1 de 14.
+> **Status:** Documento de Trabalho Interno — Blocos 1-14 consolidados; Bloco 15 (Fase de Entrega) adicionado em 2026-06-10.
 > **Escopo:** Arquitetura de software do piloto operacional do Departamento de Validação Assistida em ambiente local ou VPS particular, com modelos servidos via OpenRouter, antes de qualquer migração para infraestrutura institucional.
 > **Relação com documentos antecedentes:** Este SDD deriva do PRD e dos documentos arquiteturais do Departamento. Não substitui nenhum deles — traduz seus requisitos em decisões de implementação concretas.
 
@@ -5717,11 +5717,154 @@ O SDD está completo. A tabela abaixo registra o que cada bloco especifica e o a
 | 12 | CLI | Onze subcomandos especificados com parâmetros, pré-condições e saídas, `display.py`, tabela de mapeamento |
 | 13 | Testes | `conftest.py`, testes unitários por componente, teste de integração end-to-end, mock com `pytest-httpx`, fixtures do MOD_SINT_001 |
 | 14 | Roadmap | Quatro sprints com tarefas e marcos verificáveis, `pyproject.toml` final, caminho de migração para Azure |
+| 15 | Fase de Entrega | `diogenes deliver`: motor determinístico, extractor financeiro, builders DOCX/HTML, vendor TCU, call_types LLM de Mycroft, salvaguardas RF-EN-06 |
 
 ---
 
-*SDD — Piloto Diógenes Local, versão 0.1 — concluído.*
+*SDD — Piloto Diógenes Local, versão 0.1 — concluído. Bloco 15 adicionado em revisão 2026-06-10.*
 
 DVA-CBS | Projeto Diógenes | TC 015.848/2025-6
 Tribunal de Contas da União | Secretaria de Controle Externo de Contas
+
+---
+
+# **Bloco 15 — Fase de Entrega**
+
+> Adicionado em 2026-06-10 (revisão v0.2). Documenta `diogenes deliver` e o pacote `delivery/`.
+> Referência normativa: RF-EN-01..07 (PRD-adendo v0.1, 2026-06-10).
+
+## **15.1 Propósito e Posicionamento**
+
+A Fase de Entrega produz os artefatos institucionais do Departamento a partir do ciclo já chancelado (ou, no fluxo automatizado, imediatamente antes do `seal`). É invocada por `diogenes deliver --cycle {id}` ou automaticamente ao final do `autorun`.
+
+**Invariante central:** os artefatos da Fase de Entrega são derivados — o relatório `.md` chancelado pela Lestrade é e permanece a fonte primária. O DOCX é uma projeção tipográfica do mesmo conteúdo, nunca o contrário.
+
+**Origem da tensão com o PRD:** o PRD v0.1 (R-13) declara a conversão DOCX como pós-piloto, delegada ao motor gerador de documentos do projeto maior. A decisão de **vendorizar o motor para dentro do Diógenes** foi tomada posteriormente para eliminar a dependência de caminho OneDrive em runtime. O PRD-adendo v0.1 formaliza essa evolução com RF-EN-01..07.
+
+## **15.2 Arquitetura da Fase de Entrega**
+
+```
+diogenes deliver
+       │
+       ▼
+MotorEntrega.gerar(cycle_id)          motors/motor_entrega.py
+       │
+       ├─ pacote.montar_pacote_entrega()  delivery/pacote.py
+       │       ├─ lê entrega_mapa_extracao.json   (localizações — nunca valores)
+       │       ├─ ExtractorFinanceiro              delivery/extractor.py (openpyxl)
+       │       ├─ lê relatorio_preliminar_{id}.md  (texto LLM higienizado pelo ciclo)
+       │       └─ lê ata_rfb_{id}.md               (opcional)
+       │
+       └─ builders.*                    delivery/builders.py
+               ├─ gerar_dashboard_html()         → Dashboard.html
+               ├─ gerar_apendice_docx()          → Apendice_Modulo{N}.docx
+               ├─ sanitizar_delivery_text()  ◄── RF-EN-06 (motor_saida)
+               │       ├─ gerar_relatorio_docx(narrativo) → Relatorio_Narrativo_Modulo{N}.docx
+               │       ├─ gerar_relatorio_docx(consolidado) → Relatorio_Consolidado_Modulo{N}.docx
+               │       └─ gerar_relatorio_docx(pre_atendimento) → Relatorio_Pre_Atendimento_Modulo{N}.docx
+               └─ gerar_ficha_html()           → ficha_sintese_modulo{N}.html
+                       └─ gerar_ficha_assets() → ficha_sintese_modulo{N}.pdf + pngs
+```
+
+### **15.2.1 Separação entre localização e valor**
+
+O `entrega_mapa_extracao.json` (persistido em `output/`) contém **apenas referências de célula** — nunca valores numéricos. O `ExtractorFinanceiro` (openpyxl) lê as células indicadas da planilha principal em runtime e extrai os valores. Isso garante que:
+
+1. O mapa é auditável por Lestrade sem carregar a planilha.
+2. Se a planilha for atualizada pela RFB, o mapa permanece válido.
+3. Nenhum número transita via LLM — o agente descreve onde estão os dados, nunca quais são os dados.
+
+O mapa pode ser produzido pelo LLM (call_type `mapear_dados_modulo` do Mycroft) ou autorado diretamente por Lestrade. Sua ausência não bloqueia a entrega — os artefatos são gerados apenas com a camada de auditoria (ocorrências, consolidado).
+
+### **15.2.2 Vendor TCU**
+
+Os geradores tipográficos TCU vivem em `delivery/vendor/tcu/` — cópias versionadas dos scripts `01-BIBLIOTECAS_UTILITARIAS/` do projeto maior, com política de revendorização documentada em `delivery/vendor/tcu/VENDOR.md`. O Diógenes nunca acessa o OneDrive do projeto maior em runtime. A revendorização manual é necessária apenas quando o Design System TCU-CBS evolui.
+
+## **15.3 Call_types de Mycroft para a Entrega**
+
+Três call_types de Mycroft servem à Fase de Entrega. Nenhum deles transcreve valores numéricos.
+
+| Call_type | Heartbeat | O que faz |
+|---|---|---|
+| `mapear_dados_modulo` | `mapear_dados_modulo` | LLM lê o manifesto e o inventário Irene e localiza dados na planilha → `entrega_mapa_extracao.json` (só referências de célula) |
+| `redigir_apendice` | `redigir_apendice` | LLM redige texto qualitativo do Apêndice (proposta, objetivo, descrição de arquivos) a partir do relatório selado → `apendice_conteudo` mesclado com camada numérica em `builders.dados_apendice()` |
+| `avaliar_entrega` | `avaliar_entrega` | LLM faz QA de aderência sobre o manifesto da entrega gerada → veredito `APROVADO` \| `REQUER_AJUSTE` registrado em `audit_index` |
+
+`--no-qa` pula `avaliar_entrega`. `--no-assets` pula PDF/PNG da ficha síntese.
+
+## **15.4 Salvaguardas**
+
+### **RF-EN-06 — Motor de Saída antes do DOCX**
+
+Todo texto LLM que entra nos artefatos externos (Narrativo, Consolidado, Pré-Atendimento) passa por `sanitizar_delivery_text()` (`motors/motor_saida.py`) antes de ser convertido para DOCX. A função aplica as mesmas etapas de higienização do `MotorSaida._sanitizar` mas sem requisito de workspace — pode ser chamada durante a geração de artefatos sem inicializar a máquina de estados do ciclo.
+
+```python
+# motors/motor_saida.py (RF-EN-06)
+def sanitizar_delivery_text(text: str) -> str:
+    substituicoes = get_config().motor_saida.substituicoes_higienizacao
+    return _aplicar_sanitizacao(text, substituicoes)
+```
+
+### **RF-EN-07 — Imutabilidade do relatório chancelado**
+
+O `relatorio_preliminar_{id}.md` em `workspace/cycles/{id}/output/` é escrito pelo Orquestrador e lido pela Fase de Entrega. A Fase de Entrega nunca o sobrescreve — apenas o lê como fonte para `p.relatorio_markdown`. O DOCX consolidado é gerado a partir desse campo (sanitizado por RF-EN-06), não do arquivo diretamente.
+
+## **15.5 Estrutura do Diretório de Entrega**
+
+```
+workspace/cycles/{cycle_id}/output/entrega/
+  ├── Dashboard.html
+  ├── Apendice_Modulo{N}.docx
+  ├── Relatorio_Narrativo_Modulo{N}.docx
+  ├── Relatorio_Consolidado_Modulo{N}.docx
+  ├── Relatorio_Pre_Atendimento_Modulo{N}.docx
+  ├── ficha_sintese_modulo{N}.html
+  ├── ficha_sintese_modulo{N}.pdf          (requer playwright install chromium)
+  ├── ficha_sintese_modulo{N}_pagina1.png  (idem)
+  └── manifesto_entrega_{timestamp}.json   (artefatos gerados + hashes + avisos)
+```
+
+O `manifesto_entrega_*.json` registra quais artefatos foram gerados com sucesso, seus hashes SHA-256, e eventuais avisos (dependência ausente, markdown vazio, QA `REQUER_AJUSTE`).
+
+## **15.6 Diagrama de Módulos**
+
+```
+src/diogenes/
+  delivery/
+    __init__.py
+    pacote.py          ← montagem de PacoteEntrega (lê JSON+XLSX+MD do workspace)
+    extractor.py       ← ExtractorFinanceiro (openpyxl, mapa → valores)
+    parsing.py         ← parse defensivo de Markdown/JSON dos outputs dos agentes
+    builders.py        ← funções de geração: apendice_docx, relatorio_docx, ficha_html
+    dashboard.py       ← gerar_dashboard_html (HTML estático inline)
+    vendor/tcu/        ← cópias versionadas dos geradores TCU (VENDOR.md)
+  motors/
+    motor_entrega.py   ← MotorEntrega: orquestra pacote + builders + QA + audit
+    motor_saida.py     ← sanitizar_delivery_text (RF-EN-06) + MotorSaida (ciclo)
+```
+
+**Dependências externas:** `python-docx>=1.1.0`, `matplotlib>=3.8.0` (runtime). `playwright>=1.40.0` como extra `[delivery-pdf]` — apenas para ficha síntese PDF/PNG; `--no-assets` pula essa etapa.
+
+## **15.7 Modelo de Dados da Entrega**
+
+O objeto central é `PacoteEntrega` (`models.py`) — um dataclass frozen que agrega todos os dados necessários para gerar os artefatos:
+
+| Grupo de campos | Origem | Conteúdo |
+|---|---|---|
+| Identificação (`processo`, `acordao`, `relator`) | config + defaults | Cabeçalho institucional TC 015.848/2025-6 |
+| Narrativa descritiva (`proposta_descricao`, `objetivo`, …) | `redigir_apendice` (LLM) | Texto qualitativo — passa por RF-EN-06 |
+| Camada financeira (`blocos_financeiros`, `valores_agregados`) | `ExtractorFinanceiro` (openpyxl) | Valores numéricos — nunca via LLM |
+| Auditoria (`ocorrencias`, `testes_camada_*`, `notas_metodologicas`) | `parsing.py` lendo Sherlock/Watson outputs | Achados dos agentes |
+| Relatório consolidado (`relatorio_markdown`) | `relatorio_preliminar_{id}.md` | Texto do Mycroft consolidado, higienizado |
+| Ata RFB (`ata_rfb_markdown`) | `ata_rfb_{id}.md` (opcional) | Documento externo — não passa por RF-EN-06 |
+
+## **15.8 Testes**
+
+Testes de unidade em `tests/unit/test_motor_entrega.py` (20 casos) e testes de integração em `tests/integration/test_delivery_golden.py` (15 casos — golden tests estruturais adicionados na Onda 1).
+
+Os golden tests verificam **estrutura**, não bytes: contagem de seções/tabelas via python-docx, presença de colunas obrigatórias, formato de valores. Não requerem LLM.
+
+O teste `TestSanitizarDeliveryText` em `tests/unit/test_motor_saida.py` verifica RF-EN-06: remoção de tags de seção, linhas de metadado, referências internas.
+
+*Bloco 15 encerrado.*
 Documento interno de trabalho | Uso restrito
