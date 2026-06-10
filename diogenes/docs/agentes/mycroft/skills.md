@@ -887,8 +887,15 @@ re-deriva achados. É a sua função de integração e consolidação aplicada a
 - **Tom e voz:** objetividade absoluta, ceticismo profissional, linguagem técnica, terceira pessoa
   impessoal (Artigo 14).
 - **Proibido:** adjetivação desnecessária, linguagem coloquial, textos longos e exaustivos.
+- **Parágrafos:** máximo **4 linhas** por parágrafo. Parágrafos mais longos devem ser divididos
+  ou convertidos em lista ou tabela.
+- **Travessão:** **não use** o travessão (—) como recurso de estilo no corpo do texto. Use
+  vírgula, ponto e vírgula ou nova frase.
+- **Valores abreviados:** valores monetários e quantitativos sempre abreviados — R$ X,X bi
+  (bilhões), R$ X,X mi (milhões), X% (percentual). **Nunca** escreva o valor bruto por extenso.
 - **Dados em quadros:** maximize tabelas (testes, arquivos, inconsistências, premissas); minimize
-  texto corrido.
+  texto corrido. Toda tabela com dados de origem deve incluir coluna **"Fonte"** (arquivo:aba ou
+  peça de referência).
 - **Rastreabilidade:** sempre indique a origem (peça, documento, aba) — ex.: "conforme Anexo Nota
   Cetad 079/2025 (peça 16)".
 - **Regra inegociável:** **NUNCA** escreva valor monetário/macro. Resultados de teste são

@@ -614,9 +614,9 @@ abaixo, pronto para ingestão pelo Motor de Saída para geração do dashboard H
       "codigo": "[ex.: S001-DIV, SQL-01, AG-02]",
       "titulo": "[descrição curta — máximo de oitenta caracteres]",
       "nivel": "[CRITICO | ALERTA | ATENCAO | RESOLVIDO]",
-      "fundamento_violado": "[dispositivo legal ou Apêndice da metodologia]",
-      "descricao": "[descrição técnica completa da ocorrência]",
-      "solicitacao_rfb": "[o que especificamente se solicita à RFB]",
+      "fundamento_violado": "[dispositivo legal ou Apêndice da metodologia — OBRIGATÓRIO quando nivel=CRITICO ou ALERTA; use o formato canônico: 'LC 214/2025, Art. X' ou 'Acórdão 2833/2025-TCU-Plenário, item Y'; string vazia é inválida para esses níveis]",
+      "descricao": "[descrição técnica completa da ocorrência — para nivel=CRITICO: mínimo 3 parágrafos cobrindo (1) o desvio identificado, (2) o impacto na apuração CBS e (3) a posição normativa; para ALERTA: mínimo 2 parágrafos]",
+      "solicitacao_rfb": "[o que especificamente se solicita à RFB — não generalize; indique arquivo, aba, valor ou dispositivo legal a ser comprovado]",
       "status": "[aberto | encaminhado | resolvido]",
       "status_resolucao": "[descrição da resolução quando status = resolvido | null]"
     }

@@ -613,8 +613,18 @@ class Orchestrator:
         if not corpus_juridico:
             self._events.log("SHERLOCK_CORPUS_AUSENTE", phase=fase, details={
                 "modulo": manifest.module_id,
-                "aviso": "Arcabouço jurídico não localizado — defina DIOGENES_CORPUS_JURIDICO_DIR.",
+                "corpus_dir": str(self._cfg.corpus_juridico_dir or ""),
+                "aviso": "Arcabouço jurídico não localizado — corpus versionado ausente.",
             })
+            if not self._cfg.dev_mode:
+                from diogenes.config import ConfigError  # noqa: PLC0415
+                raise ConfigError(
+                    f"Corpus jurídico ausente para o módulo '{manifest.module_id}'. "
+                    f"Diretório verificado: {self._cfg.corpus_juridico_dir}. "
+                    f"Popule 'docs/corpus_juridico/normas_para_motor/' ou defina "
+                    f"DIOGENES_CORPUS_JURIDICO_DIR. "
+                    f"Em DEV_MODE, a ausência é tolerada (somente aviso)."
+                )
 
         pacote = self._mycroft.montar_pacote_sherlock(
             manifest, inputs_dir, decisao_watson, watson_apresentacao,

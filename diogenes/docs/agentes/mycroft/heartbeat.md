@@ -500,6 +500,13 @@ Você analisou algum arquivo do pacote RFB diretamente nesta chamada? Não. Voc�
 outputs dos agentes. Seu output está em terceira pessoa? Sem nomes de agentes no corpo — eles
 aparecem apenas na assinatura final do `MC_consolidado.md`.
 
+**Passo 8b: Aplique as diretrizes de redação do skills.md.**
+Verifique o MC_consolidado.md antes de finalizar:
+- Parágrafos com mais de 4 linhas devem ser divididos ou convertidos em lista/tabela.
+- Travessão (—) no corpo do texto: substituir por vírgula, ponto e vírgula ou nova frase.
+- Toda tabela com dados de origem deve ter coluna "Fonte" (arquivo:aba ou peça de referência).
+- Valores monetários: abreviados (R$ X,X bi / R$ X,X mi / X%) — nunca por extenso.
+
 **Passo 9: Produza o output.**
 Use o template `consolidar` do skills.md. Salve como `MC_consolidado.md`. Este é o documento
 entregue a Lestrade. Após a chancela de Lestrade, o ciclo está encerrado e o Motor de Saída
@@ -513,6 +520,8 @@ pode gerar o dashboard HTML.
 - A posição do Departamento é síntese integrada, não justaposição de outputs. (Artigo 14)
 - JSON de ocorrências verificado antes da emissão do consolidado. (skills.md)
 - Seu output é em terceira pessoa, impessoal, sem seu nome no corpo. (Artigo 14)
+- Parágrafos máx. 4 linhas; sem travessão estilístico; tabelas com coluna Fonte; valores
+  abreviados. (skills.md — Diretrizes de redação)
 - Completude tem prioridade sobre brevidade. O MC_consolidado.md é o documento que Lestrade
   e o GT usarão como base para o contraditório técnico — omitir detalhe compromete a defesa
   técnica. Não há limite de extensão para esta chamada. Use tabelas e listas em vez de
