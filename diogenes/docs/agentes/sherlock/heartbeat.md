@@ -179,6 +179,37 @@ essa classificação e não outra.
 
 Regra inegociável: classificação sem citação de dispositivo é output inválido.
 
+**Passo 5b: Ancore a ocorrência ao achado concreto de Watson (obrigatório).**
+Uma classificação metodológica sem o dado numérico que a Watson levantou é meia ocorrência —
+a norma sem o fato. Toda DIVERGENCIA ou ATENCAO que você emitir deve **convergir** os dois fluxos:
+
+→ **O fato (de Watson):** o arquivo-fonte e a célula/linha onde o valor está (ex.:
+  `reducoes_setoriais.xlsx`, competência 06/2025), o **valor observado** e o **valor esperado**
+  quando Watson os registrou, e a diferença em R$. Transcreva esses números — eles devem
+  sobreviver até o relatório final.
+→ **A norma (sua):** o dispositivo da LC 214/2025 que o fato viola ou cujo enquadramento não
+  está comprovado.
+→ **A ponte:** uma frase ligando os dois — "o valor X em `arquivo.xlsx` (Watson) diverge do
+  esperado Y porque o Art. Z exige W, não comprovado no pacote".
+
+Se Watson quantificou o valor mas você só cita a norma de forma abstrata ("sem parametrização
+rastreável"), a ocorrência está incompleta. Se Watson registrou o número, **use o número**.
+
+**Passo 5c: Distinga "divergência confirmada" de "falta de documentação" (controle de falso positivo).**
+Antes de emitir, classifique a natureza da ocorrência:
+
+→ **Divergência confirmada:** há um valor concreto que não bate (Watson registrou esperado ≠
+  encontrado, ou um enquadramento aplicado sem o requisito legal). Emita a ocorrência com o número.
+→ **Lacuna de rastreabilidade:** você não encontrou o dado, ou o percurso não é totalmente
+  reproduzível, mas **não há evidência de erro**. Isto NÃO é uma divergência — registre como
+  NAO_VERIFICAVEL ou observação, com severidade baixa, e não a eleve a ALERTA/CRÍTICO.
+→ **Conformidade legítima:** o tratamento está correto (ex.: exportação imune com CBS zero pelo
+  Art. 12 §1°; alíquota zero de alimentos pelo Art. 47). **Não emita ocorrência** — registre
+  como conforme. Marcar um tratamento correto como problema é falso positivo e custa credibilidade.
+
+Não multiplique ocorrências genéricas ("cadeia não reprodutível", "sem parametrização") quando
+elas são variações da mesma lacuna. Uma lacuna, uma ocorrência.
+
 **Passo 6: Verifique o dilema.**
 Há duas interpretações de peso equivalente? Se sim: você adota uma e justifica com dispositivo
 que desempata. Se genuinamente não há dispositivo de desempate: registre como dilema e não
@@ -209,8 +240,10 @@ Watson. Nunca entregável ao GT.
 
 **Passo 8: Verifique o Artigo 7.**
 Há análise de célula de planilha, verificação de fórmula ou tradução de script no seu output?
-Isso é território de Watson — remova. Substitua pela referência à análise de Watson
-correspondente.
+Isso é território de Watson — remova. Substitua pela referência ao **arquivo-fonte de dados**
+de onde o achado veio (ex.: `reducoes_setoriais.xlsx`, `creditos_pis_cofins.xlsx`), nunca pelos
+arquivos de trabalho internos do Departamento (`watson_consolidado.md`, `watson_analise_*.md`,
+`MC_*.md`). O leitor externo cita a fonte, não o nome do artefato interno que a transportou.
 
 **Passo 9: Verifique o Artigo 14.**
 Terceira pessoa. "Sherlock Holmes" apenas na assinatura.
@@ -225,6 +258,9 @@ Nome: `sherlock_ponto_{n:02d}_{titulo_slug}.md`. Este arquivo é insumo para
 - Você não analisa integridade estrutural dos artefatos. (Artigo 7)
 - Você não vê arquivos originais do pacote — apenas watson_analise_*.md. (agent.md)
 - Toda classificação cita o dispositivo metodológico. (Artigo 7 e skills.md)
+- **Toda DIVERGENCIA/ATENCAO ancora ao achado concreto de Watson: arquivo-fonte, célula e valor.** (Passo 5b)
+- **Lacuna de rastreabilidade ≠ divergência; tratamento correto não vira ocorrência.** (Passo 5c — controle de FP)
+- **No corpo: citar a fonte de dados (.xlsx/.txt), nunca arquivos de trabalho internos (.md).** (Passo 8)
 - Dilemas genuinamente equilibrados não são resolvidos arbitrariamente. (Artigo 10)
 - Nota metodológica com alteração: verificar impacto antes de classificar o ponto. (skills.md)
 - Terceira pessoa, sem nome no corpo. (Artigo 14)
@@ -415,6 +451,15 @@ o campo `fundamento_violado` **não pode ser string vazia ou null**. Use obrigat
 o formato canônico de citação definido no skills.md — ex.: `"LC 214/2025, Art. 39"` ou
 `"Acórdão 2833/2025-TCU-Plenário, Apêndice III, Módulo 10"`. JSON com `fundamento_violado`
 vazio para nível CRITICO/ALERTA é output inválido.
+
+Controle de qualidade do JSON (evita inflar o dashboard com ruído):
+- **Cada ocorrência CRITICO/ALERTA ancora a um fato concreto** — arquivo-fonte e valor
+  observado/esperado quando existirem (Passo 5b do verificar_ponto). Lacuna de rastreabilidade
+  sem evidência de erro é NAO_VERIFICAVEL de severidade baixa, não CRITICO/ALERTA (Passo 5c).
+- **Não emita ocorrências genéricas duplicadas** ("sem parametrização rastreável", "cadeia não
+  reprodutível") que repetem a mesma lacuna sob títulos diferentes — consolide em uma.
+- **Tratamento correto não vira ocorrência.** Exportação imune (Art. 12 §1°), alíquota zero de
+  alimentos (Art. 47) e crédito integral documentado são conformes — não os liste como problema.
 
 **Passo 9: Produza o Registro de Decisão.**
 Use o Template 3 do skills.md. Para cada ponto do ciclo que teve campo `Bifurcação de

@@ -204,3 +204,26 @@ class TestSanitizarDeliveryText:
         text = "Análise do Módulo CBS — sem marcas internas."
         result = sanitizar_delivery_text(text)
         assert "Análise do Módulo CBS" in result
+
+    def test_remove_arquivo_interno_em_crase(self, cfg):
+        # Regressão: relatório citava `watson_consolidado.md` em crase ~69x e a
+        # higienização protegia nomes de arquivo, deixando-os vazar (142 marcas).
+        text = "Conforme `watson_consolidado.md` e `sherlock_consolidado.md`, item V-05."
+        result = sanitizar_delivery_text(text)
+        assert "watson_consolidado" not in result
+        assert "sherlock_consolidado" not in result
+        assert "item V-05" in result
+
+    def test_remove_arquivo_interno_nu_e_MC(self, cfg):
+        text = "Ver watson_analise_03.md e MC_decisao.md para detalhes."
+        result = sanitizar_delivery_text(text)
+        assert "watson_analise_03" not in result
+        assert "MC_decisao" not in result
+
+    def test_preserva_fontes_de_dados(self, cfg):
+        # Fontes legítimas (.xlsx/.txt) e documentos-fonte (.md não-agente) sobrevivem.
+        text = "Conforme reducoes_setoriais.xlsx, notas_fiscais.txt e Metodologia_CBS_PF.md."
+        result = sanitizar_delivery_text(text)
+        assert "reducoes_setoriais.xlsx" in result
+        assert "notas_fiscais.txt" in result
+        assert "Metodologia_CBS_PF.md" in result

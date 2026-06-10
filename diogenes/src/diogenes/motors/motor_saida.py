@@ -218,7 +218,7 @@ def _aplicar_sanitizacao(content: str, substituicoes: list[list[str]]) -> str:
     Etapas:
     1. Remove <!-- SECAO: ... --> e <!-- /SECAO: ... --> (marcadores internos).
     2. Remove linha "**Arquivos que compõem este consolidado:**".
-    3. Remove referências a arquivos internos como [nome.md].
+    3. Remove referências a arquivos de trabalho internos ([nome.md], `nome.md`, nome.md nu).
     4. Aplica substituições de nomes institucionais (apenas fora de nomes de arquivo).
     5. Remove linha de assinatura do Auditor Chefe.
     6. Corrige artefato de substituição em cadeia (*DVA-CBS | DVA-CBS |).
@@ -231,6 +231,20 @@ def _aplicar_sanitizacao(content: str, substituicoes: list[list[str]]) -> str:
         r"^\*\*Arquivos que compõem este consolidado:\*\*.*$\n?", "", resultado, flags=re.MULTILINE
     )
     resultado = re.sub(r"\[[A-Za-z_][A-Za-z0-9_]*\.md\]", "", resultado)
+
+    # Etapa 3b: remover referências a arquivos de TRABALHO internos dos agentes
+    # (watson_*.md, sherlock_*.md, mycroft_*.md, MC_*.md) em qualquer forma —
+    # crase, colchete ou nu. A etapa de substituição (4) protege nomes de arquivo
+    # de propósito (preserva fontes como divergencias_identificadas.xlsx), então
+    # nunca higieniza estes; sem este pré-passo eles vazam para o documento externo.
+    # Restrito aos prefixos de agente para não tocar fontes de dados (.xlsx/.txt/...)
+    # nem documentos-fonte legítimos (ex.: Metodologia_CBS_PF.md).
+    resultado = re.sub(
+        r"`?\b(?:watson|sherlock|mycroft|mc)_[A-Za-z0-9_]*\.md\b`?",
+        "",
+        resultado,
+        flags=re.IGNORECASE,
+    )
 
     for par in substituicoes:
         if len(par) != 2:

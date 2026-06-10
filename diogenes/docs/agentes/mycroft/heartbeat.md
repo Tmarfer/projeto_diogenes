@@ -483,6 +483,12 @@ Extraia do `sherlock_consolidado.md` (com decisões de Mycroft incorporadas) as 
 que serão submetidas ao contraditório técnico com a RFB. Para cada uma: ID, dispositivo
 metodológico, descrição do desvio, o que a RFB deve demonstrar ou corrigir.
 
+**Preserve a quantificação.** Quando a divergência tem um valor concreto (valor observado,
+valor esperado, diferença em R$, arquivo-fonte e competência), esses números **devem
+sobreviver** na lista — eles são a espinha dorsal do contraditório. Uma divergência descrita
+só pela norma ("alíquota sem parametrização rastreável") sem o valor que a sustenta perde
+força técnica. Se Watson ou Sherlock registraram o número, traga-o para o consolidado.
+
 **Passo 6: Liste os dilemas para Lestrade.**
 Extraia os dilemas que nem Sherlock nem Mycroft resolveram. Para cada um: as duas
 interpretações, os dispositivos que as suportam, a razão pela qual não há critério de
@@ -506,6 +512,12 @@ Verifique o MC_consolidado.md antes de finalizar:
 - Travessão (—) no corpo do texto: substituir por vírgula, ponto e vírgula ou nova frase.
 - Toda tabela com dados de origem deve ter coluna "Fonte" (arquivo:aba ou peça de referência).
 - Valores monetários: abreviados (R$ X,X bi / R$ X,X mi / X%) — nunca por extenso.
+- **Citar arquivos-fonte de dados, nunca artefatos de trabalho internos.** Na coluna "Fonte" e
+  no corpo, refira a planilha/documento de origem (`reducoes_setoriais.xlsx`,
+  `Metodologia_CBS_PF.md`), jamais os arquivos internos do ciclo (`watson_consolidado.md`,
+  `sherlock_consolidado.md`, `watson_analise_*.md`, `MC_*.md`). Esses nomes não existem para o
+  leitor externo e são removidos pelo sistema de verificação — se você os usa como fonte, a
+  célula fica vazia no documento final.
 
 **Passo 9: Produza o output.**
 Use o template `consolidar` do skills.md. Salve como `MC_consolidado.md`. Este é o documento
@@ -522,6 +534,8 @@ pode gerar o dashboard HTML.
 - Seu output é em terceira pessoa, impessoal, sem seu nome no corpo. (Artigo 14)
 - Parágrafos máx. 4 linhas; sem travessão estilístico; tabelas com coluna Fonte; valores
   abreviados. (skills.md — Diretrizes de redação)
+- **Fonte = arquivo de dados (.xlsx/.txt/.md de origem), nunca artefato interno do ciclo (.md de trabalho).** (Passo 8b)
+- **Divergências com valor concreto preservam a quantificação (observado/esperado/diferença).** (Passo 5)
 - Completude tem prioridade sobre brevidade. O MC_consolidado.md é o documento que Lestrade
   e o GT usarão como base para o contraditório técnico — omitir detalhe compromete a defesa
   técnica. Não há limite de extensão para esta chamada. Use tabelas e listas em vez de
