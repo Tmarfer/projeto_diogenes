@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from diogenes.config import get_config
 from diogenes.delivery.pacote import NOME_APENDICE_CONTEUDO, NOME_MAPA_EXTRACAO
@@ -87,7 +88,7 @@ def executar_entrega(
 
 # ── etapas com LLM ──────────────────────────────────────────────
 
-def _construir_mycroft(cycle_id: str, cycle_dir: Path):
+def _construir_mycroft(cycle_id: str, cycle_dir: Path) -> Any:
     try:
         from diogenes.agents.mycroft import MycrooftAgent
         from diogenes.llm.base import get_llm_client
@@ -102,7 +103,7 @@ def _construir_mycroft(cycle_id: str, cycle_dir: Path):
         return None
 
 
-def _mapear(mycroft, cycle_dir: Path, record: dict, mapa_path: Path) -> None:
+def _mapear(mycroft: Any, cycle_dir: Path, record: dict[str, Any], mapa_path: Path) -> None:
     import json
 
     from diogenes.models import CycleManifest
@@ -129,7 +130,7 @@ def _mapear(mycroft, cycle_dir: Path, record: dict, mapa_path: Path) -> None:
         logger.info("Mapa de extração gravado em %s", mapa_path)
 
 
-def _redigir_apendice(mycroft, cycle_dir: Path, record: dict, apendice_path: Path) -> None:
+def _redigir_apendice(mycroft: Any, cycle_dir: Path, record: dict[str, Any], apendice_path: Path) -> None:
     import json
 
     from diogenes.models import CycleManifest
@@ -164,11 +165,11 @@ def _ler_consolidado(cycle_dir: Path) -> str:
     return ""
 
 
-def _avaliar(mycroft, report: MotorEntregaReport) -> str:
+def _avaliar(mycroft: Any, report: MotorEntregaReport) -> str:
     import contextlib
     import json
     manifesto_path = report.entrega_dir / "entrega_manifesto.json"
-    manifesto: dict = {}
+    manifesto: dict[str, Any] = {}
     if manifesto_path.exists():
         with contextlib.suppress(json.JSONDecodeError):
             manifesto = json.loads(manifesto_path.read_text(encoding="utf-8"))

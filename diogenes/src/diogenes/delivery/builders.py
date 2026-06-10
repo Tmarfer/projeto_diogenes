@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import html
 from pathlib import Path
+from typing import Any
 
 from diogenes.delivery import vendor
 from diogenes.models import PacoteEntrega
@@ -32,7 +33,7 @@ _NIVEL_PARA_STATUS = {
 
 # ── Apêndice (7 seções) ─────────────────────────────────────────
 
-def dados_apendice(p: PacoteEntrega) -> dict:
+def dados_apendice(p: PacoteEntrega) -> dict[str, Any]:
     """Monta o dicionário do ApendiceGerador mesclando:
 
     - **Qualitativo** redigido por Mycroft (`p.apendice_conteudo`, via call_type
@@ -74,15 +75,17 @@ def dados_apendice(p: PacoteEntrega) -> dict:
     }
 
 
-def _identidade_apendice(p: PacoteEntrega, c: dict) -> tuple[dict, str, str, dict]:
-    cp = c.get("proposta") if isinstance(c.get("proposta"), dict) else {}
-    proposta = {
+def _identidade_apendice(p: PacoteEntrega, c: dict[str, Any]) -> tuple[dict[str, Any], str, str, dict[str, Any]]:
+    _cp = c.get("proposta")
+    cp: dict[str, Any] = _cp if isinstance(_cp, dict) else {}
+    proposta: dict[str, Any] = {
         "descricao": cp.get("descricao") or p.proposta_descricao,
         "contexto_narrativo": cp.get("contexto_narrativo") or p.proposta_contexto,
         "fonte": cp.get("fonte") or p.proposta_fonte,
     }
-    ca = c.get("arquivos") if isinstance(c.get("arquivos"), dict) else {}
-    arquivos = {
+    _ca = c.get("arquivos")
+    ca: dict[str, Any] = _ca if isinstance(_ca, dict) else {}
+    arquivos: dict[str, Any] = {
         "principal": ca.get("principal") or p.arquivos_principal,
         "auxiliares": ca.get("auxiliares") or p.arquivos_auxiliares,
         "fontes": ca.get("fontes") or p.arquivos_fontes,
@@ -91,16 +94,18 @@ def _identidade_apendice(p: PacoteEntrega, c: dict) -> tuple[dict, str, str, dic
             c.get("objetivo_detalhado") or p.objetivo_detalhado, arquivos)
 
 
-def _testes_apendice(p: PacoteEntrega, c: dict) -> dict:
+def _testes_apendice(p: PacoteEntrega, c: dict[str, Any]) -> dict[str, Any]:
     """Camadas/subcategorias do conteúdo redigido; fallback nos testes do blueprint."""
-    def _do_pacote(itens) -> list[dict]:
+    def _do_pacote(itens: list[Any]) -> list[dict[str, Any]]:
         return [{"id": t.id, "descricao": t.descricao,
                  "resultado": t.resultado, "status": t.status} for t in itens]
 
-    ct = c.get("testes") if isinstance(c.get("testes"), dict) else {}
+    _ct = c.get("testes")
+    ct: dict[str, Any] = _ct if isinstance(_ct, dict) else {}
     if ct:
-        def _camada(nome: str, fallback: list[dict]) -> dict:
-            bloco = ct.get(nome) if isinstance(ct.get(nome), dict) else {}
+        def _camada(nome: str, fallback: list[dict[str, Any]]) -> dict[str, Any]:
+            _bloco = ct.get(nome)
+            bloco: dict[str, Any] = _bloco if isinstance(_bloco, dict) else {}
             bloco = {k: list(v or []) for k, v in bloco.items()}
             # garante ao menos a subcategoria principal preenchida pelo blueprint
             principal = {"camada_1": "conformidade", "camada_2": "conformidade",
@@ -120,7 +125,7 @@ def _testes_apendice(p: PacoteEntrega, c: dict) -> dict:
     }
 
 
-def _inconsistencias_apendice(p: PacoteEntrega, c: dict) -> list[dict]:
+def _inconsistencias_apendice(p: PacoteEntrega, c: dict[str, Any]) -> list[dict[str, Any]]:
     """INC: status determinístico (nível §11); consequência/tratamento redigidos por Mycroft."""
     redigido = {i.get("id"): i for i in c.get("inconsistencias", []) or [] if isinstance(i, dict)}
     out = []
@@ -137,9 +142,10 @@ def _inconsistencias_apendice(p: PacoteEntrega, c: dict) -> list[dict]:
     return out
 
 
-def _conclusao_apendice(p: PacoteEntrega, c: dict) -> dict:
-    cc = c.get("conclusao") if isinstance(c.get("conclusao"), dict) else {}
-    conclusao: dict = {
+def _conclusao_apendice(p: PacoteEntrega, c: dict[str, Any]) -> dict[str, Any]:
+    _cc = c.get("conclusao")
+    cc: dict[str, Any] = _cc if isinstance(_cc, dict) else {}
+    conclusao: dict[str, Any] = {
         "conformidade": (cc.get("conformidade") or p.conclusao_conformidade
                          or f"Veredito: {p.veredito or 'não consolidado'}."),
         "consistencia": cc.get("consistencia") or p.conclusao_consistencia,
@@ -154,16 +160,16 @@ def _conclusao_apendice(p: PacoteEntrega, c: dict) -> dict:
 
 
 def gerar_apendice_docx(p: PacoteEntrega, out_path: Path) -> Path:
-    ApendiceGerador = vendor.carregar_apendice_gerador()
+    ApendiceGerador = vendor.carregar_apendice_gerador()  # type: ignore[no-untyped-call]
     gerador = ApendiceGerador(dados_apendice(p), modulo=p.modulo)
-    return gerador.gerar(str(out_path))
+    return Path(gerador.gerar(str(out_path)))
 
 
 # ── DOCX a partir de markdown (TCUFormatter) ────────────────────
 
 def gerar_relatorio_docx(markdown_text: str, out_path: Path, titulo: str,
                          modulo: int, versao: str = "") -> Path:
-    fmt = vendor.carregar_formatter()
+    fmt = vendor.carregar_formatter()  # type: ignore[no-untyped-call]
     md_path = out_path.with_suffix(".md")
     md_path.write_text(markdown_text, encoding="utf-8")
     fmt.format_md(
@@ -294,10 +300,10 @@ def gerar_ficha_html(p: PacoteEntrega) -> str:
     )
 
 
-def gerar_ficha_assets(html_path: Path, saida_dir: Path) -> dict:
+def gerar_ficha_assets(html_path: Path, saida_dir: Path) -> dict[str, Any]:
     """Converte o HTML da ficha em PDF + PNGs (Playwright/Chromium)."""
-    ficha = vendor.carregar_ficha()
-    return ficha.gerar_documentos(html_path, saida_dir, gerar_pdf=True, gerar_png=True)
+    ficha = vendor.carregar_ficha()  # type: ignore[no-untyped-call]
+    return dict(ficha.gerar_documentos(html_path, saida_dir, gerar_pdf=True, gerar_png=True))
 
 
 _FICHA_TEMPLATE = """<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><style>

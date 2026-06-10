@@ -25,9 +25,21 @@ no padrão GT Reforma Tributária / SecexContas.
 
 - `python-docx>=1.1.0`, `matplotlib>=3.8.0` (gráficos), `playwright>=1.40.0` (+ `python -m playwright install chromium`).
 
+## Reconciliação com os geradores de exemplo (2026-06-09)
+
+Comparado contra `workspace/output_exemplo  /MOD_010_Pessoa_Fisica/2026_05_20-Analise_Teste/`:
+
+| Script do exemplo | Status no vendor | Decisão |
+|---|---|---|
+| `gerar_apendice_v4.py` | Apenas instancia `ApendiceGerador` com dados MOD_010 | Sem drift: a classe `ApendiceGerador` vendorizada (1357 linhas) **é** a biblioteca que o script importa. |
+| `gerar_relatorio_narrativo_mod10.py` | **Não vendorizado** (deliberado) | Diógenes usa `builders.montar_markdown_narrativo()` → `TCUFormatter.format_md()`. Resultado equivalente sem duplicar dados hard-coded do MOD_010. |
+| `gerar_relatorio_pre_atendimento.py` | **Não vendorizado** (deliberado) | Idem — `builders.montar_markdown_pre_atendimento()` + `TCUFormatter`. |
+
+**Conclusão:** sem drift de API. Os três geradores do exemplo usam `TCUFormatter` e/ou `ApendiceGerador` — ambas vendorizadas. Os geradores narrativo e de pré-atendimento não precisam ser vendorizados porque o Diógenes usa uma abordagem genérica (markdown gerado pelos builders) em vez de dados hard-coded por módulo.
+
 ## Como atualizar
 
-Recopiar os arquivos da pasta de origem e atualizar a data acima. **Não editar**
-as cópias diretamente — mudanças devem nascer na biblioteca-fonte e ser revendorizadas.
-O acesso é feito sempre por import relativo do pacote `diogenes.delivery.vendor.tcu`,
-nunca pelo caminho do OneDrive.
+Recopiar os arquivos da pasta de origem e atualizar a data em "Copiado em:" acima.
+**Não editar** as cópias diretamente — mudanças devem nascer na biblioteca-fonte e
+ser revendorizadas. O acesso é feito sempre por import relativo do pacote
+`diogenes.delivery.vendor.tcu`, nunca pelo caminho do OneDrive.

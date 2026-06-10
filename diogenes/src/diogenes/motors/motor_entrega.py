@@ -19,6 +19,7 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from diogenes.config import get_config
 from diogenes.delivery import builders
@@ -152,7 +153,7 @@ class MotorEntrega:
 
     # ── infraestrutura ──────────────────────────────────────────
 
-    def _tentar(self, tipo: str, path: Path, avisos: list[str], fn) -> ArtefatoEntrega:
+    def _tentar(self, tipo: str, path: Path, avisos: list[str], fn: Any) -> ArtefatoEntrega:
         try:
             fn()
             return self._artefato(tipo, path, True)

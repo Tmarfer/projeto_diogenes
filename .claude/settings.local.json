@@ -42,7 +42,21 @@
       "Bash(pip3 show:*)",
       "Bash(/Library/Frameworks/Python.framework/Versions/3.13/bin/python3:*)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(pip show *)",
+      "Bash(git stash *)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(gh pr *)",
+      "Bash(ruff check *)",
+      "Bash(sips -g pixelWidth -g pixelHeight IRENE2.png)",
+      "Bash(md5 -q IRENE2.png)",
+      "Bash(xargs -I{} echo \"AINDA EXISTE TEXTO ERRADO: {}\")",
+      "Bash(open /tmp/report_check.html)",
+      "Bash(cat /Users/tmarfer_mac/.claude/projects/-Users-tmarfer-mac-Documents-Projetos-projeto-diogenes/memory/motor-perfilamento.md 2>/dev/null | head -5 *)",
+      "Bash(git check-ignore *)",
+      "Bash(git rm *)"
     ]
   }
 }
