@@ -232,7 +232,26 @@ MET-07 = média de pontos por INC detectado (máx. 2, bônus 3).
 
 | Ciclo | Data | Config | MET-04 | MET-05 | MET-07 | Notas |
 |-------|------|--------|--------|--------|--------|-------|
-| *(preencher após o 1º ciclo de baseline)* | | | | | | |
+| MOD_SINT_001_A1_20260610T095227Z | 2026-06-10 | gpt-5.5-thinking (Onda 2/3, commit 4df6b9e) | **área 4/4 (100%)** · quantificação 2/4 (50%) | **~60% FP (reprova <15%)** | **~2,1 (aprova ≥1,5)** | Baseline. Ver análise abaixo. |
+
+### Análise do baseline 2026-06-10
+
+**MET-04 — detecção (meta ≥70%):** as 4 áreas/artigos foram tocadas (Art. 71, 39, 44, 54) — **o corpus jurídico funcionou**. Mas só 2 de 4 tiveram o valor plantado quantificado:
+
+| INC | Área detectada | Valor quantificado | Severidade | Veredito |
+|-----|----------------|--------------------|-----------|----------|
+| INC-01 (locação Art. 71) | ✅ S006 + V-05 (Watson achou R$ 4.455 vs R$ 0) | ✅ via Planilha Verificação | ❌ ALERTA (gabarito: CRÍTICO) | Detectado, **subclassificado e não vinculado** |
+| INC-02 (combustível Art. 39) | ✅ S007 CRÍTICO | ❌ R$ 65.288/116.622 ausentes | ⬆ CRÍTICO (gabarito: ATENÇÃO) | Área certa, **sem números** |
+| INC-03 (saúde Art. 44) | ✅ S008 + V-07 (Watson achou R$ 9.405 vs R$ 18.810) | ✅ via Planilha Verificação | ✅ ALERTA≈ATENÇÃO | **Melhor detecção** |
+| INC-04 (crédito Art. 54) | ✅ S005 CRÍTICO genérico | ❌ R$ 5.000/11.760/6.760 ausentes | ⬆ CRÍTICO | Área certa, **sem números** |
+
+**MET-05 — falsos positivos (meta <15%):** 15 ocorrências Sherlock; ~9 são genéricas ("sem parametrização rastreável", "cadeia não reprodutível", "CBS líquida inconsistente"). S003 marca exportações zeradas como problema — mas elas são **verdadeiro negativo** (imunidade Art. 12 §1° correta). FP ≈ 60% → reprova.
+
+**MET-07 — fundamentação (meta ≥1,5):** **toda** ocorrência tem `fundamento_violado` com LC 214/2025 + artigo; várias citam Acórdão 2833/2025. Média ≈ 2,1 → aprova. **Este é o ganho da Onda 2.**
+
+**Achado central (causa-raiz da qualidade):** Watson e Sherlock produzem **dois fluxos paralelos não vinculados** — Watson acha os números (via Planilha de Verificação: "esperado X, encontrado Y") mas sem o sentido de negócio; Sherlock acha a norma (via corpus: "locação Art. 71") mas sem os números de Watson. Eles deveriam **convergir**: "o R$ 4.455 de CBS sobre locação (V-05) viola interpretação do Art. 71 — CRÍTICO". Em vez disso ficam separados, e a quantificação se perde no relatório final (nenhum dos valores plantados sobrevive em `relatorio_preliminar`).
+
+**Impessoalidade (MET-09):** 142 marcas internas (vs 31/33 nos ciclos pré-Onda 2) — a maioria são citações a `` `watson_consolidado.md` `` / `` `sherlock_consolidado.md` `` em crase no corpo do relatório. As narrativas mais ricas da Onda 2 fizeram os agentes citarem os arquivos de trabalho internos com mais frequência.
 
 ---
 
