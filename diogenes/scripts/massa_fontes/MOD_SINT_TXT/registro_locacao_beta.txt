@@ -1,0 +1,10 @@
+REGISTRO CONTABIL - LOCACAO DE BEM MOVEL
+Alimentar Beta S.A. | CNPJ 98.765.432/0001-10 | Competencia 04/2024
+
+Contrato de locacao de empilhadeira a terceiro.
+Base mensal: R$ 45.000,00
+CBS lancada: R$ 4.455,00 (aliquota 9,9% aplicada integralmente)
+
+Observacao do lancamento: a contabilidade manteve a tributacao integral
+da receita de locacao de bem movel, sem ressalva quanto ao entendimento
+da Receita Federal de que a operacao nao compoe a base da CBS.

@@ -229,6 +229,27 @@ class TestChatTCUClientErros:
         assert resp.content == "Resultado consolidado."
         assert resp.retry_attempts == 1
 
+    def test_resposta_vazia_faz_retry_depois_sucesso(self, tmp_path: Path) -> None:
+        """2xx com response vazio é falha transitória — retry até obter conteúdo."""
+        client = _client(tmp_path)
+        resp_vazia = _mock_resp(content="")
+        resp_ok = _mock_resp()
+        with patch("requests.post", side_effect=[resp_vazia, resp_ok]), patch("time.sleep"):
+            resp = client.complete(_call())
+        assert resp.content == "Resultado consolidado."
+        assert resp.retry_attempts == 1
+
+    def test_resposta_vazia_persistente_degrada_sem_levantar(self, tmp_path: Path) -> None:
+        """Vazio em todas as tentativas: devolve a resposta vazia (degradação graciosa,
+        o Orquestrador trata o arquivo como não analisado) em vez de abortar o ciclo."""
+        client = _client(tmp_path)
+        resp_vazia = _mock_resp(content="")
+        with patch("requests.post", return_value=resp_vazia) as mock_post, patch("time.sleep"):
+            resp = client.complete(_call())
+        assert mock_post.call_count == 2  # max_tentativas_retry=2
+        assert resp.content == ""
+        assert resp.retry_attempts == 1
+
     def test_connection_error_faz_retry(self, tmp_path: Path) -> None:
         import requests as req
 

@@ -25,11 +25,13 @@ class WatsonAgent:
     FASE = "watson_integridade"
 
     def __init__(self, llm: LLMClient, agent_spec: AgentSpec,
-                 cycle_id: str, docs_dir: Path) -> None:
+                 cycle_id: str, docs_dir: Path,
+                 seed_base: int = 42) -> None:
         self._llm = llm
         self._spec = agent_spec
         self._cycle_id = cycle_id
         self._docs_dir = docs_dir
+        self._seed_base = seed_base
         self._system_prompt = self._construir_system_prompt()
         self._heartbeat = HeartbeatLoader(docs_dir / "heartbeat.md")
 
@@ -71,7 +73,7 @@ class WatsonAgent:
                 agent="watson", call_type=call_type,
                 model=self._spec.modelo, temperature=self._spec.temperatura,
                 max_tokens=self._spec.max_tokens,
-                seed=calcular_seed(42, self._cycle_id, self.FASE, call_type,
+                seed=calcular_seed(self._seed_base, self._cycle_id, self.FASE, call_type,
                                    hash(arquivo_info.name) & 0xFFFF),
                 messages=[
                     LLMMessage(role="system", content=self._system_prompt),
@@ -130,7 +132,7 @@ class WatsonAgent:
                 agent="watson", call_type=call_type,
                 model=self._spec.modelo, temperature=self._spec.temperatura,
                 max_tokens=self._spec.max_tokens,
-                seed=calcular_seed(42, self._cycle_id, self.FASE, call_type),
+                seed=calcular_seed(self._seed_base, self._cycle_id, self.FASE, call_type),
                 messages=[
                     LLMMessage(role="system", content=self._system_prompt),
                     LLMMessage(role="user", content=user),
@@ -212,7 +214,7 @@ class WatsonAgent:
             agent="watson", call_type=call_type,
             model=self._spec.modelo, temperature=self._spec.temperatura,
             max_tokens=self._spec.max_tokens,
-            seed=calcular_seed(42, self._cycle_id, self.FASE, call_type),
+            seed=calcular_seed(self._seed_base, self._cycle_id, self.FASE, call_type),
             messages=[
                 LLMMessage(role="system", content=self._system_prompt),
                 LLMMessage(role="user", content=user),
@@ -256,7 +258,7 @@ class WatsonAgent:
                 agent="watson", call_type=call_type,
                 model=self._spec.modelo, temperature=self._spec.temperatura,
                 max_tokens=self._spec.max_tokens,
-                seed=calcular_seed(42, self._cycle_id, self.FASE, call_type, rodada),
+                seed=calcular_seed(self._seed_base, self._cycle_id, self.FASE, call_type, rodada),
                 messages=[
                     LLMMessage(role="system", content=self._system_prompt),
                     LLMMessage(role="user", content=user),

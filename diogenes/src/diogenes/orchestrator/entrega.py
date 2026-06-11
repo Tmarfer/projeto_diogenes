@@ -97,6 +97,7 @@ def _construir_mycroft(cycle_id: str, cycle_dir: Path) -> Any:
         return MycrooftAgent(
             llm=llm, agent_spec=cfg.agentes.mycroft, cycle_id=cycle_id,
             docs_dir=Path("docs/agentes") / "mycroft", cycle_dir=cycle_dir,
+            seed_base=cfg.agentes.seed_base,
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("LLM indisponível para a Fase de Entrega — só geração determinística: %s", exc)

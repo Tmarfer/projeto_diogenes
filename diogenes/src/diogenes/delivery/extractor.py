@@ -227,6 +227,17 @@ class ExtractorFinanceiro:
     def _celula(self, aba: str | None, ref: str | None) -> Any:
         if not ref:
             return None
+        if ":" in ref:
+            # campo de célula única recebeu um intervalo (ex.: mapa do Mycroft
+            # com "D2:D8") — ws[ref] devolveria tupla e .value estouraria
+            inicio, _, fim = ref.partition(":")
+            if inicio.strip().upper() != fim.strip().upper():
+                self._avisos.append(
+                    f"Referência {aba}!{ref} é um intervalo onde se esperava "
+                    f"célula única; campo ignorado."
+                )
+                return None
+            ref = inicio.strip()
         ws = self._ws(aba)
         if ws is None:
             return None
@@ -241,7 +252,7 @@ class ExtractorFinanceiro:
                         f"reabra a planilha no Excel/LibreOffice e salve."
                     )
             return val
-        except (KeyError, ValueError) as exc:
+        except (KeyError, ValueError, AttributeError, TypeError) as exc:
             self._avisos.append(f"Referência inválida {aba}!{ref}: {exc}")
             return None
 

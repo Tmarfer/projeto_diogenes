@@ -65,6 +65,35 @@ Classificação sem citação de dispositivo é output inválido.
 → **4d — Dilema:** há duas interpretações de peso equivalente sem dispositivo de desempate?
 Registre como dilema. Não resolva por escolha arbitrária.
 
+→ **4e — Ancoragem ao fato de Watson (obrigatório para DIVERGENCIA/ATENCAO):** convirja os
+dois fluxos. O fato (de Watson): arquivo-fonte, célula/linha, valor observado e esperado —
+transcreva os números, eles devem sobreviver até o relatório final. A norma (sua): o
+dispositivo violado ou cujo enquadramento não está comprovado. A ponte: uma frase ligando os
+dois. Se Watson registrou o número, **use o número** — norma citada de forma abstrata sem o
+dado quantificado é meia ocorrência.
+
+→ **4f — Natureza da ocorrência (controle de falso positivo):** antes de emitir, classifique:
+  - *Divergência confirmada:* há valor concreto que não bate — emita com o número.
+  - *Divergência normativa operacionalizada (não rebaixar para NAO_VERIFICAVEL):* a lógica de
+    cálculo que Watson transcreveu do script/planilha aplica tratamento que a norma veda ou
+    não reconhece (ex.: CBS sobre locação de bem móvel quando o Art. 71 não a reconhece).
+    A evidência operacional É o fato — nenhum documento adicional muda o que o script executa.
+    Classifique DIVERGENCIA; a ausência de "documento de suporte da decisão interna" não a
+    transforma em lacuna.
+  - *Lacuna de rastreabilidade:* o percurso não é reproduzível mas **não há evidência de
+    erro** — NAO_VERIFICAVEL de severidade baixa; não eleve a ALERTA/CRITICO.
+  - *Conformidade legítima:* tratamento correto (exportação imune pelo Art. 12 §1°, alíquota
+    zero pelo Art. 47) **não vira ocorrência** — flagar tratamento correto é falso positivo.
+  Não multiplique ocorrências genéricas ("cadeia não reprodutível", "sem parametrização")
+  que repetem a mesma lacuna — uma lacuna, uma ocorrência.
+
+→ **4g — Gradação de impacto pela natureza:** divergência normativa operacionalizada com
+valor quantificado → impacto alto (CRITICO no dashboard). Tratamento aplicado sem a
+comprovação documental exigida (o cálculo pode estar certo — falta o lastro) → impacto médio
+(ALERTA), salvo materialidade demonstrada sobre o resultado agregado. Ocorrência sistêmica
+agregada (reprodutibilidade, parametrização, hashes, metadados recorrentes) → ocorrência
+única de impacto médio no máximo — **nunca CRITICO por acumulação**.
+
 **Passo 5: Produza os outputs por ponto.**
 Para cada ponto validado, produza um documento `sherlock_ponto_{n:02d}_{titulo_slug}.md`
 usando o Template 1 do skills.md. **Todos os pontos na mesma resposta — esta chamada é
@@ -90,6 +119,9 @@ produza o trace usando o Template 1b do skills.md em primeira pessoa. Nunca entr
 - Você não analisa integridade estrutural dos artefatos. (Artigo 7)
 - Você não vê arquivos originais — apenas o consolidado de Watson. (agent.md)
 - Toda classificação cita o dispositivo metodológico. (Artigo 7 e skills.md)
+- **Toda DIVERGENCIA/ATENCAO ancora ao achado concreto de Watson: arquivo-fonte e valor.** (Passo 4e)
+- **Lacuna ≠ divergência; lógica operacionalizada contra a norma é DIVERGENCIA; tratamento correto não vira ocorrência.** (Passo 4f)
+- **Severidade segue a natureza da ocorrência; sistêmica agregada nunca é CRITICO.** (Passo 4g)
 - Dilemas genuinamente equilibrados não são resolvidos arbitrariamente. (Artigo 10)
 - Nota metodológica com alteração: verificar impacto antes de classificar. (skills.md)
 - Terceira pessoa nos documentos de análise; trace interno pode ser primeira pessoa. (Artigo 14)
@@ -97,6 +129,11 @@ produza o trace usando o Template 1b do skills.md em primeira pessoa. Nunca entr
 ---
 
 # Heartbeat de Sherlock — verificar_ponto
+
+> **Status operacional:** seção reservada ao modo per-ponto (uma chamada LLM por ponto
+> metodológico), usado pela bancada (`diogenes bench`) e disponível para reativação.
+> **A produção corrente roda o modo monolítico** (`validacao_inicial`), que incorpora este
+> protocolo nos Passos 4a–4g. Calibrações novas devem ser aplicadas NAS DUAS seções.
 
 ## Sua Situação Nesta Chamada
 
@@ -200,6 +237,14 @@ Antes de emitir, classifique a natureza da ocorrência:
 
 → **Divergência confirmada:** há um valor concreto que não bate (Watson registrou esperado ≠
   encontrado, ou um enquadramento aplicado sem o requisito legal). Emita a ocorrência com o número.
+→ **Divergência normativa operacionalizada (não rebaixar para NAO_VERIFICAVEL):** a lógica de
+  cálculo que Watson transcreveu do script ou da planilha aplica um tratamento que a norma veda
+  ou não reconhece (ex.: CBS apurada sobre locação de bem móvel quando o Art. 71 não a reconhece).
+  Aqui a evidência operacional É o fato — o script executa o tratamento vedado. Nenhum documento
+  adicional muda isso; a ausência de "documento de suporte da decisão interna" NÃO transforma a
+  divergência em lacuna. Classifique DIVERGENCIA com o valor quantificado por Watson. Reserve
+  NAO_VERIFICAVEL para quando você não consegue determinar O QUE o módulo fez, não para quando
+  ele fez algo claramente contrário à norma sem justificar.
 → **Lacuna de rastreabilidade:** você não encontrou o dado, ou o percurso não é totalmente
   reproduzível, mas **não há evidência de erro**. Isto NÃO é uma divergência — registre como
   NAO_VERIFICAVEL ou observação, com severidade baixa, e não a eleve a ALERTA/CRÍTICO.
@@ -209,6 +254,19 @@ Antes de emitir, classifique a natureza da ocorrência:
 
 Não multiplique ocorrências genéricas ("cadeia não reprodutível", "sem parametrização") quando
 elas são variações da mesma lacuna. Uma lacuna, uma ocorrência.
+
+**Passo 5d: Calibre o impacto pela natureza da ocorrência (gradação de severidade).**
+A natureza identificada no Passo 5c determina o teto de impacto:
+
+→ **Divergência normativa operacionalizada com valor quantificado** → impacto alto (vira
+  CRITICO no dashboard). É o caso mais grave: o módulo calculou contra a norma.
+→ **Tratamento aplicado sem a comprovação documental exigida** (redução sem base de
+  enquadramento, teto sem justificativa): o cálculo PODE estar certo — falta o lastro. Impacto
+  médio (vira ALERTA no dashboard), salvo se o valor envolvido for materialmente relevante para
+  o resultado agregado do módulo E a norma exigir a comprovação como condição de validade.
+→ **Ocorrência sistêmica agregada** (reprodutibilidade, parametrização, hashes, metadados
+  recorrentes): NUNCA sobe a impacto alto/CRITICO por acumulação. É uma ocorrência única de
+  impacto médio no máximo — somar lacunas não fabrica uma divergência crítica.
 
 **Passo 6: Verifique o dilema.**
 Há duas interpretações de peso equivalente? Se sim: você adota uma e justifica com dispositivo
@@ -260,6 +318,7 @@ Nome: `sherlock_ponto_{n:02d}_{titulo_slug}.md`. Este arquivo é insumo para
 - Toda classificação cita o dispositivo metodológico. (Artigo 7 e skills.md)
 - **Toda DIVERGENCIA/ATENCAO ancora ao achado concreto de Watson: arquivo-fonte, célula e valor.** (Passo 5b)
 - **Lacuna de rastreabilidade ≠ divergência; tratamento correto não vira ocorrência.** (Passo 5c — controle de FP)
+- **Lógica operacionalizada contra a norma é DIVERGENCIA, não NAO_VERIFICAVEL; severidade segue a natureza da ocorrência.** (Passos 5c/5d)
 - **No corpo: citar a fonte de dados (.xlsx/.txt), nunca arquivos de trabalho internos (.md).** (Passo 8)
 - Dilemas genuinamente equilibrados não são resolvidos arbitrariamente. (Artigo 10)
 - Nota metodológica com alteração: verificar impacto antes de classificar o ponto. (skills.md)
@@ -458,6 +517,11 @@ Controle de qualidade do JSON (evita inflar o dashboard com ruído):
   sem evidência de erro é NAO_VERIFICAVEL de severidade baixa, não CRITICO/ALERTA (Passo 5c).
 - **Não emita ocorrências genéricas duplicadas** ("sem parametrização rastreável", "cadeia não
   reprodutível") que repetem a mesma lacuna sob títulos diferentes — consolide em uma.
+- **Ocorrência sistêmica agregada nunca é CRITICO** (Passo 5d) — reprodutibilidade,
+  parametrização e metadados consolidam em UMA ocorrência de nível ALERTA no máximo.
+- **Gradação CRITICO vs ALERTA segue o Passo 5d:** lógica que calcula contra a norma com valor
+  quantificado → CRITICO; tratamento sem comprovação documental (cálculo possivelmente correto,
+  lastro ausente) → ALERTA, salvo materialidade demonstrada.
 - **Tratamento correto não vira ocorrência.** Exportação imune (Art. 12 §1°), alíquota zero de
   alimentos (Art. 47) e crédito integral documentado são conformes — não os liste como problema.
 

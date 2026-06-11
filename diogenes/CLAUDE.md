@@ -314,11 +314,12 @@ diogenes confirm-manifest --cycle {id}
       Mycroft.montar_pacote_sherlock()           [heartbeat: montar_pacote_sherlock]
         ↳ propaga "Nota metodológica com alteração"
           se Watson sinalizou no consolidado
-      Mycroft.mapear_pontos()                    [heartbeat: mapear_pontos]
-        ↳ mapeia pontos do Apêndice aos watson_analise_*.md relevantes
+        ↳ (mapear_pontos: reservado ao modo per-ponto — não ativo na produção)
 
       [FASE SHERLOCK]
-      Sherlock.verificar_ponto() × N pontos      [heartbeat: verificar_ponto]
+      Sherlock.validar()                         [heartbeat: validacao_inicial]
+        ↳ MONOLÍTICO: todos os pontos numa única chamada (Passos 4a-4g);
+          o modo per-ponto (verificar_ponto) é reservado à bancada
       Sherlock.validacao_planilha_rn_sherlock()  [heartbeat: validacao_planilha_rn_sherlock]
         ↳ CONDICIONAL: só se Planilha de Verificação
           estiver listada no manifesto

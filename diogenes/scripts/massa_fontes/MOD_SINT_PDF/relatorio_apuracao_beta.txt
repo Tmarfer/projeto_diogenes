@@ -1,0 +1,17 @@
+RELATORIO DE APURACAO CBS - ALIMENTAR BETA S.A.
+CNPJ 98.765.432/0001-10 | Competencia 04/2024
+
+1. RECEITAS DO PERIODO
+Venda de alimentos basicos (NCM 1006.30.21): R$ 120.000,00
+Locacao de bem movel (empilhadeira): R$ 45.000,00
+Prestacao de servicos administrativos: R$ 30.000,00
+
+2. CBS APURADA
+Alimentos basicos: R$ 0,00 (aliquota zero, Anexo I)
+Locacao de bem movel: R$ 4.455,00 (9,9% sobre R$ 45.000,00)
+Servicos administrativos: R$ 2.970,00 (9,9%)
+
+3. OBSERVACOES DA CONTABILIDADE
+A receita de locacao de bem movel foi tributada integralmente a 9,9%
+por decisao interna. Nao foi registrada ressalva quanto ao entendimento
+da Receita Federal de que a operacao nao compoe a base da CBS.

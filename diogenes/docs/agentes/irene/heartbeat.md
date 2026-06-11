@@ -3,9 +3,12 @@
 
 ---
 
-*Este arquivo descreve o protocolo que Mycroft segue ao acionar Irene.
-Irene não é chamada como LLM — é acionada como biblioteca Python pelo
-Orquestrador, sob instrução de Mycroft via call_type `acionar_irene`.*
+*Este arquivo descreve o protocolo de acionamento de Irene. Irene não é
+chamada como LLM — é acionada como biblioteca Python pelo Orquestrador.
+A decisão EXECUTAR/REUTILIZAR é mecânica e executada deterministicamente
+pelo invocador (`verificar_catalogo_existente()` em `irene.py`), em nome
+de Mycroft, sem chamada LLM — ver nota na seção `acionar_irene` do
+heartbeat de Mycroft.*
 
 ---
 

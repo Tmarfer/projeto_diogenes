@@ -56,7 +56,19 @@
       "Bash(open /tmp/report_check.html)",
       "Bash(cat /Users/tmarfer_mac/.claude/projects/-Users-tmarfer-mac-Documents-Projetos-projeto-diogenes/memory/motor-perfilamento.md 2>/dev/null | head -5 *)",
       "Bash(git check-ignore *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(echo \"=== ENTREGA ===\")",
+      "Bash(echo \"=== AUDIT ===\")",
+      "Bash(tail -3 workspace/audit_index.csv)",
+      "Bash(grep -n \"INC-0\\\\|CRÍTICO\\\\|ATENÇÃO\\\\|Art\\\\.\\\\|R\\\\$\\\\|nível\\\\|Nível\\\\|detec\" docs/conformidade/gabarito_mod_sint_001.md)",
+      "Bash(git checkout *)",
+      "Bash(pytest tests/unit/test_motor_saida.py tests/unit/test_motor_entrega.py tests/integration/test_delivery_golden.py -q)",
+      "Bash(pytest tests/unit/test_motor_saida.py -q)",
+      "Bash(grep -n \"Heartbeat de Mycroft — consolidar\\\\b\\\\|Heartbeat de Mycroft — consolidar$\\\\|# Heartbeat de Mycroft\" docs/agentes/mycroft/heartbeat.md)",
+      "Bash(pytest tests/ -q)",
+      "Bash(mypy src/diogenes/motors/motor_saida.py)",
+      "Bash(pytest tests/ -k \"agent_def or heartbeat\" -q)",
+      "Bash(git push *)"
     ]
   }
 }

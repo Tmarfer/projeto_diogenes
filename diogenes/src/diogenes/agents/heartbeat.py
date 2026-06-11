@@ -36,11 +36,21 @@ CALL_TYPE_TO_SECTION: dict[str, str] = {
     "fixar_decisao_sherlock":        "fixar_decisao",              # mesma seção
     "montar_pacote_sherlock":        "montar_pacote_sherlock",
     "consolidar":                    "consolidar",
+    # Mycroft — Fase de Entrega
+    "mapear_dados_modulo":           "mapear_dados_modulo",
+    "avaliar_entrega":               "avaliar_entrega",
+    "redigir_apendice":              "redigir_apendice",
     # Sherlock
     "validacao_inicial":             "validacao_inicial",
     "validacao_planilha_rn_sherlock": "validacao_planilha_rn_sherlock",
     "consolidar_sherlock":           "consolidar_sherlock",
     # resposta_r1 e resposta_r2 já coincidem com o nome da seção
+    #
+    # Seções existentes no heartbeat.md SEM call_type ativo na produção:
+    #   mycroft.mapear_pontos   — modo per-ponto de Sherlock (reservado/bancada)
+    #   mycroft.acionar_irene   — decisão executada deterministicamente pelo
+    #                             Orquestrador (verificar_catalogo_existente)
+    #   sherlock.verificar_ponto — modo per-ponto (reservado/bancada)
 }
 
 

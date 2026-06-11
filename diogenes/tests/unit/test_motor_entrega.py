@@ -117,6 +117,24 @@ def test_extrator_aba_ausente_gera_aviso(planilha: Path):
     assert any("Inexistente" in a for a in ext.avisos)
 
 
+def test_extrator_intervalo_em_campo_de_celula_unica_gera_aviso(planilha: Path):
+    # regressão: mapa do Mycroft com "B3:B12" num campo `celula` derrubava a
+    # entrega inteira com AttributeError ('tuple' object has no attribute 'value')
+    ext = ExtractorFinanceiro(planilha)
+    res = ext.extrair({"blocos": [{"id": "x", "titulo": "X",
+                                   "kpis": [{"rotulo": "k", "aba": "Resumo", "celula": "B3:B12"}]}]})
+    assert res["blocos_financeiros"][0].kpis[0].valor == ""
+    assert any("intervalo" in a for a in ext.avisos)
+
+
+def test_extrator_intervalo_degenerado_vira_celula_unica(planilha: Path):
+    ext = ExtractorFinanceiro(planilha)
+    res = ext.extrair({"blocos": [{"id": "x", "titulo": "X",
+                                   "kpis": [{"rotulo": "k", "aba": "Resumo", "celula": "B3:B3",
+                                             "formato": "bilhoes"}]}]})
+    assert res["blocos_financeiros"][0].kpis[0].valor == "R$ 30,84 bilhões"
+
+
 def test_extrator_le_delta_total_labels_e_cenarios(planilha: Path):
     mapa = {"blocos": [
         {"id": "visao_geral", "tipo": "visao_geral", "titulo": "VG",
@@ -308,6 +326,32 @@ def test_montar_pacote_carrega_apendice_conteudo(tmp_path: Path):
     assert pacote.apendice_conteudo["proposta"]["fonte"].startswith("Anexo Nota Cetad")
 
 
+# ── localização da ata da reunião RFB ────────────────────────────
+
+def test_ler_ata_nao_casa_substring_catalogo(tmp_path: Path):
+    """`CATALOGO.md` contém 'ata' como substring mas não como token — não é ata."""
+    from diogenes.delivery.pacote import _ler_ata
+    cdir = tmp_path / "cycles" / "MOD_010_A1_X"
+    cat = cdir / "inputs" / "04_TRANSFORMADO" / "_CATALOGO"
+    cat.mkdir(parents=True)
+    (cat / "CATALOGO.md").write_text("# Catálogo Irene", encoding="utf-8")
+    avisos: list[str] = []
+    assert _ler_ata(cdir, avisos) == ""
+    assert any("não localizada" in a for a in avisos)
+
+
+def test_ler_ata_acha_nota_em_diretorio_de_entrega(tmp_path: Path):
+    """Notas de reunião vivem em diretórios como `2026_04_27-entrega_MOD_010/`."""
+    from diogenes.delivery.pacote import _ler_ata
+    cdir = tmp_path / "cycles" / "MOD_010_A1_X"
+    ent = cdir / "inputs" / "2026_04_27-entrega_MOD_010"
+    ent.mkdir(parents=True)
+    (ent / "NOTION.md").write_text("# Ata da reunião", encoding="utf-8")
+    avisos: list[str] = []
+    assert _ler_ata(cdir, avisos) == "# Ata da reunião"
+    assert any("NOTION.md" in a for a in avisos)
+
+
 # ── montagem do PacoteEntrega a partir do diretório do ciclo ─────
 
 def test_montar_pacote_le_json_e_extrai_financeiro(tmp_path: Path, planilha: Path):
@@ -371,6 +415,8 @@ def test_motor_entrega_gera_dashboard_e_manifesto(tmp_path, monkeypatch):
     by_type = {a.tipo: a for a in report.artefatos}
     assert by_type["dashboard"].ok is True
     assert by_type["ficha"].ok is True
+    # pré-atendimento sai mesmo sem ata da reunião (Bloco 1 omitido pelo builder)
+    assert "pre_atendimento" in by_type
     assert (report.entrega_dir / "Dashboard.html").exists()
     assert (report.entrega_dir / "entrega_manifesto.json").exists()
     manifesto = json.loads((report.entrega_dir / "entrega_manifesto.json").read_text(encoding="utf-8"))

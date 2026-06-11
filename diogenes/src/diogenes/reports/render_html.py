@@ -430,12 +430,23 @@ def _agent_cards_html(data: CycleReportData) -> str:
 def render_html(data: CycleReportData, live_mode: bool | None = None) -> str:
     """Gera HTML standalone completo para o painel de acompanhamento.
 
-    live_mode: True → inclui meta-refresh de 10s; None → deriva do is_terminal.
+    live_mode: True → auto-reload de 10s; None → deriva do is_terminal.
+
+    Em estado terminal o auto-reload continua por 15 min a partir da geração da
+    página: no autorun a chancela (terminal) antecede a Fase de Entrega, e o
+    meta-refresh fixo congelava o browser antes da seção de entrega aparecer.
+    Páginas terminais antigas (relatórios arquivados) ficam estáticas.
     """
     if live_mode is None:
         live_mode = not data.is_terminal
 
-    refresh_tag = '<meta http-equiv="refresh" content="10">' if live_mode else ""
+    from datetime import UTC, datetime
+    _gerado_em_ms = int(datetime.now(UTC).timestamp() * 1000)
+    reload_cond = "true" if live_mode else f"Date.now() - {_gerado_em_ms} < 15 * 60 * 1000"
+    refresh_tag = (
+        f"<script>if ({reload_cond}) setTimeout(function() "
+        "{ location.reload(); }, 10000);</script>"
+    )
     live_badge = (
         '<span class="badge badge-live pulse">● AO VIVO</span>'
         if live_mode else ""

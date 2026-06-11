@@ -65,8 +65,9 @@ class MotorEntrega:
         artefatos.append(self._gerar_apendice(pacote, entrega_dir, avisos))
         artefatos.append(self._gerar_narrativo(pacote, entrega_dir, avisos))
         artefatos.append(self._gerar_consolidado(pacote, entrega_dir, avisos))
-        if pacote.ata_rfb_markdown:
-            artefatos.append(self._gerar_pre_atendimento(pacote, entrega_dir, avisos))
+        # Pré-atendimento sai sempre — sem a ata, o builder omite o Bloco 1 e
+        # preserva o batimento das inconsistências (o aviso da ata já foi registrado).
+        artefatos.append(self._gerar_pre_atendimento(pacote, entrega_dir, avisos))
         artefatos.extend(self._gerar_ficha(pacote, entrega_dir, with_assets, avisos))
 
         artefatos = [a for a in artefatos if a is not None]
