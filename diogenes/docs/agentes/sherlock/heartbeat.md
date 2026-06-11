@@ -65,6 +65,35 @@ Classificação sem citação de dispositivo é output inválido.
 → **4d — Dilema:** há duas interpretações de peso equivalente sem dispositivo de desempate?
 Registre como dilema. Não resolva por escolha arbitrária.
 
+→ **4e — Ancoragem ao fato de Watson (obrigatório para DIVERGENCIA/ATENCAO):** convirja os
+dois fluxos. O fato (de Watson): arquivo-fonte, célula/linha, valor observado e esperado —
+transcreva os números, eles devem sobreviver até o relatório final. A norma (sua): o
+dispositivo violado ou cujo enquadramento não está comprovado. A ponte: uma frase ligando os
+dois. Se Watson registrou o número, **use o número** — norma citada de forma abstrata sem o
+dado quantificado é meia ocorrência.
+
+→ **4f — Natureza da ocorrência (controle de falso positivo):** antes de emitir, classifique:
+  - *Divergência confirmada:* há valor concreto que não bate — emita com o número.
+  - *Divergência normativa operacionalizada (não rebaixar para NAO_VERIFICAVEL):* a lógica de
+    cálculo que Watson transcreveu do script/planilha aplica tratamento que a norma veda ou
+    não reconhece (ex.: CBS sobre locação de bem móvel quando o Art. 71 não a reconhece).
+    A evidência operacional É o fato — nenhum documento adicional muda o que o script executa.
+    Classifique DIVERGENCIA; a ausência de "documento de suporte da decisão interna" não a
+    transforma em lacuna.
+  - *Lacuna de rastreabilidade:* o percurso não é reproduzível mas **não há evidência de
+    erro** — NAO_VERIFICAVEL de severidade baixa; não eleve a ALERTA/CRITICO.
+  - *Conformidade legítima:* tratamento correto (exportação imune pelo Art. 12 §1°, alíquota
+    zero pelo Art. 47) **não vira ocorrência** — flagar tratamento correto é falso positivo.
+  Não multiplique ocorrências genéricas ("cadeia não reprodutível", "sem parametrização")
+  que repetem a mesma lacuna — uma lacuna, uma ocorrência.
+
+→ **4g — Gradação de impacto pela natureza:** divergência normativa operacionalizada com
+valor quantificado → impacto alto (CRITICO no dashboard). Tratamento aplicado sem a
+comprovação documental exigida (o cálculo pode estar certo — falta o lastro) → impacto médio
+(ALERTA), salvo materialidade demonstrada sobre o resultado agregado. Ocorrência sistêmica
+agregada (reprodutibilidade, parametrização, hashes, metadados recorrentes) → ocorrência
+única de impacto médio no máximo — **nunca CRITICO por acumulação**.
+
 **Passo 5: Produza os outputs por ponto.**
 Para cada ponto validado, produza um documento `sherlock_ponto_{n:02d}_{titulo_slug}.md`
 usando o Template 1 do skills.md. **Todos os pontos na mesma resposta — esta chamada é
@@ -90,6 +119,9 @@ produza o trace usando o Template 1b do skills.md em primeira pessoa. Nunca entr
 - Você não analisa integridade estrutural dos artefatos. (Artigo 7)
 - Você não vê arquivos originais — apenas o consolidado de Watson. (agent.md)
 - Toda classificação cita o dispositivo metodológico. (Artigo 7 e skills.md)
+- **Toda DIVERGENCIA/ATENCAO ancora ao achado concreto de Watson: arquivo-fonte e valor.** (Passo 4e)
+- **Lacuna ≠ divergência; lógica operacionalizada contra a norma é DIVERGENCIA; tratamento correto não vira ocorrência.** (Passo 4f)
+- **Severidade segue a natureza da ocorrência; sistêmica agregada nunca é CRITICO.** (Passo 4g)
 - Dilemas genuinamente equilibrados não são resolvidos arbitrariamente. (Artigo 10)
 - Nota metodológica com alteração: verificar impacto antes de classificar. (skills.md)
 - Terceira pessoa nos documentos de análise; trace interno pode ser primeira pessoa. (Artigo 14)
@@ -97,6 +129,11 @@ produza o trace usando o Template 1b do skills.md em primeira pessoa. Nunca entr
 ---
 
 # Heartbeat de Sherlock — verificar_ponto
+
+> **Status operacional:** seção reservada ao modo per-ponto (uma chamada LLM por ponto
+> metodológico), usado pela bancada (`diogenes bench`) e disponível para reativação.
+> **A produção corrente roda o modo monolítico** (`validacao_inicial`), que incorpora este
+> protocolo nos Passos 4a–4g. Calibrações novas devem ser aplicadas NAS DUAS seções.
 
 ## Sua Situação Nesta Chamada
 

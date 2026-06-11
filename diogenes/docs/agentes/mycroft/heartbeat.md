@@ -263,6 +263,11 @@ arquivo é insumo obrigatório para a próxima etapa do ciclo.
 
 # Heartbeat de Mycroft — mapear_pontos
 
+> **Status operacional:** seção reservada ao modo per-ponto de Sherlock (não ativo na
+> produção corrente, que usa o protocolo monolítico `validacao_inicial` — o pacote inteiro
+> vai numa única chamada via `montar_pacote_sherlock`, sem mapa de pontos). Mantida para a
+> bancada e eventual reativação do modo per-ponto.
+
 ## Sua Situação Nesta Chamada
 
 Watson foi aprovado. O `watson_consolidado.md` e as análises isoladas estão disponíveis.
@@ -544,6 +549,14 @@ pode gerar o dashboard HTML.
 ---
 
 # Heartbeat de Mycroft — acionar_irene
+
+> **Execução delegada ao invocador determinístico:** esta decisão é mecânica (existência de
+> arquivo + comparação de versão) e o Orquestrador a executa em nome de Mycroft via
+> `verificar_catalogo_existente()` (`irene.py`), sem chamada LLM — Artigo 5 (decisão sem
+> juízo de conteúdo). Critérios implementados: catálogo `irene_catalog.yaml` existe no
+> IRENE_OUT do módulo E `versao_irene >= 1.3.0` → REUTILIZAR; senão EXECUTAR. Lestrade força
+> reprocessamento removendo o catálogo do IRENE_OUT. O protocolo abaixo permanece como
+> especificação da decisão.
 
 ## Sua Situação Nesta Chamada
 

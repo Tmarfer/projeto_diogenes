@@ -157,14 +157,17 @@ class Orchestrator:
             llm=self._llm, agent_spec=self._cfg.agentes.mycroft,
             cycle_id=cycle_id, docs_dir=docs / "mycroft",
             cycle_dir=self._cycle_dir,
+            seed_base=self._cfg.agentes.seed_base,
         )
         self._watson = WatsonAgent(
             llm=self._llm, agent_spec=self._cfg.agentes.watson,
             cycle_id=cycle_id, docs_dir=docs / "watson",
+            seed_base=self._cfg.agentes.seed_base,
         )
         self._sherlock = SherlockAgent(
             llm=self._llm, agent_spec=self._cfg.agentes.sherlock,
             cycle_id=cycle_id, docs_dir=docs / "sherlock",
+            seed_base=self._cfg.agentes.seed_base,
         )
 
     # ── Ponto de entrada ─────────────────────────────────────
@@ -351,6 +354,13 @@ class Orchestrator:
         if existe:
             self._events.log("IRENE_CATALOGO_REUTILIZADO",
                              details={"catalogo": caminho_catalogo, "modulo": manifest.module_id})
+            # Sem esta cópia, Mycroft._ler_catalogo_irene() não encontra o catálogo
+            # no diretório do ciclo e definir_tasks_watson declara "Catálogo: Não"
+            # mesmo com reuso válido.
+            copiar_catalogo_para_ciclo(
+                {"artefatos": {"catalog": caminho_catalogo}},
+                self._cycle_id, self._cfg.workspace.path,
+            )
             # Fica em VERIFICANDO_EXISTENCIA — _executar_fase_watson() transitará para
             # EM_EXECUCAO_WATSON, e VERIFICANDO_EXISTENCIA → EM_EXECUCAO_WATSON é válida.
             return False
@@ -646,7 +656,9 @@ class Orchestrator:
             pass
         self._events.log("PHASE_STARTED", phase=fase, agent="sherlock")
 
-        # Fase 1: verificação de ponto metodológico (call_type verificar_ponto).
+        # Fase 1: validação metodológica monolítica (call_type validacao_inicial —
+        # todos os pontos numa única chamada; o modo per-ponto verificar_ponto é
+        # reservado à bancada).
         output_pontos = self._sherlock.validar(pacote)
 
         # Frente 3a: validacao_planilha_rn_sherlock — acionado condicionalmente quando
