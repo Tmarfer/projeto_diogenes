@@ -636,6 +636,10 @@ você decide estrutura, localizações e textos. O padrão visual (Navy/Gold, DM
 - Se não tiver certeza da localização de um campo, omita-o e registre observação na `narrativa` —
   melhor um dashboard parcial do que um número apontado para a célula errada.
 - Use exatamente os nomes de aba como aparecem no inventário.
+- Campos `celula`, `celula_base`, `celula_2023` e `celula_2024` aceitam **uma única célula**
+  (ex.: `"D8"`) — nunca um intervalo como `"D2:D8"`. Intervalos (`"A2:D10"`) só são válidos nos
+  campos `intervalo` de tabelas e gráficos. Se o valor desejado for o total de uma coluna,
+  aponte para a célula do total, não para a faixa inteira.
 
 ---
 

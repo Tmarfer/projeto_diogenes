@@ -1,0 +1,8 @@
+REGISTRO CONTABIL - EXPORTACOES (IMUNES)
+Siderurgica Alfa Ltda | CNPJ 12.345.678/0001-90 | Competencia 03/2024
+
+NF-e 000003 (CFOP 7101): R$ 850.000,00 - CBS R$ 0,00
+NF-e 000011 (CFOP 7101): R$ 432.500,00 - CBS R$ 0,00
+
+Operacoes de exportacao imunes a CBS (LC 214/2025, Art. 12, par. 1).
+Conferencia nota a nota contra o livro de saidas: sem divergencias.

@@ -233,6 +233,38 @@ MET-07 = média de pontos por INC detectado (máx. 2, bônus 3).
 | Ciclo | Data | Config | MET-04 | MET-05 | MET-07 | Notas |
 |-------|------|--------|--------|--------|--------|-------|
 | MOD_SINT_001_A1_20260610T095227Z | 2026-06-10 | gpt-5.5-thinking (Onda 2/3, commit 4df6b9e) | **área 4/4 (100%)** · quantificação 2/4 (50%) | **~60% FP (reprova <15%)** | **~2,1 (aprova ≥1,5)** | Baseline. Ver análise abaixo. |
+| MOD_SINT_001_A1_20260610T133554Z | 2026-06-10 | gpt-5.5-thinking (Onda 4, commit 17691ef) | — | — | — | **INVÁLIDO p/ Sherlock:** 4 timeouts (600s) → fallback determinístico, 1 ocorrência global NV. Watson OK (V-05/V-07 quantificados). Motivou timeout 1500s. |
+| MOD_SINT_001_A1_20260610T164820Z | 2026-06-10 | gpt-5.5-thinking (Onda 4 + timeout 1500s) | área 4/4 (100%) · quantificação 2/4 (50%) | ~60% FP (reprova) | ~2,0 (aprova) | Sherlock via LLM, sem fallback. Ver análise abaixo. |
+
+### Análise do ciclo pós-Onda 4 (20260610T164820Z)
+
+**Sherlock rodou inteiro via LLM** (2 chamadas, 231s/212s — o timeout 1500s resolveu) e emitiu
+10 ocorrências, todas fundamentadas. Motor de Saída: **documento LIMPO** (142 marcas → 0 — a
+correção 1 da Onda 4 funcionou). Ciclo em ~80 min (vs ~137 min).
+
+| INC | Evidência no ciclo | Veredito |
+|-----|--------------------|----------|
+| INC-01 (locação Art. 71) | Watson W001-005: V-05 "esperado R$ 4.455,00 e encontrado R$ 0,00" ✅; Sherlock S010 cita Art. 71 mas agrega locação+combustíveis+saúde em 1 ocorrência NV/Médio | Detectado e quantificado; **subclassificado** (sem CRÍTICO individual) |
+| INC-02 (combustível Art. 39) | S004 cita arts. 39/44/47/48 **e** "V-02 referencia R$ 65.288,32" | **Melhor vinculação número↔norma do ciclo** (ganho da Onda 4 Passo 5b); severidade CRÍTICO (+1 nível vs gabarito) |
+| INC-03 (saúde Art. 44) | Watson V-07 "encontrado em dobro do esperado" ✅; S010 exige "habilitação profissional" e "segregação de serviços administrativos de hospitais" (condição exata do gabarito) | Área+norma corretas; valores R$ 9.405/18.810 não sobrevivem ao relatório |
+| INC-04 (crédito Art. 54) | S005-AP "Créditos sem chave operacional formal — LC 214/2025, Art. 54" | Área+norma; sem os valores R$ 11.760/5.000/6.760 |
+
+**MET-05 (~60%, reprova) — composição do FP:** S001 (anos-base 2025 vs 2023/2024 — **artefato
+do corpus sintético**, ver nota abaixo), S009 (consequência de falha técnica — ver nota), S002/S003/
+S006/S008 genéricas de rastreabilidade. **Nenhum verdadeiro negativo foi flagado** (exportações
+imunes e alíquota zero não viraram ocorrência — ganho da Onda 4 Passo 5c/8f).
+
+**Notas de contexto (não são erro de calibração):**
+1. **S001 (anos-base):** a massa sintética é datada Jan–Jun/2025 enquanto a metodologia fixa
+   anos-base 2023/2024. Tecnicamente o Sherlock está certo. Opções: re-datar a massa para
+   2023/2024 ou aceitar S001 como ocorrência esperada do módulo (não pontuar como FP).
+2. **S009 (arquivo não analisado):** o ChatTCU devolveu 2xx com resposta vazia na análise de
+   `receita_bruta_empresa_A.xlsx` (0 tokens, 82,7s); o ciclo degradou graciosamente, mas perdeu
+   1/28 análises. Corrigido em `llm/chattcu.py` (resposta vazia agora faz retry).
+
+**Pendência de calibração (próxima onda de prompt):** a quantificação plantada ainda se perde
+entre Watson e o relatório final (2/4), e o Sherlock agrega os 3 pontos controvertidos numa
+única ocorrência NV em vez de classificá-los individualmente (INC-01 deveria ser CRÍTICO próprio).
 
 ### Análise do baseline 2026-06-10
 

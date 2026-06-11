@@ -40,7 +40,8 @@ agentes:
     temperatura: 0.0  # 0.0 = determinístico; elimina alucinações na síntese
     max_tokens: 16384  # ChatTCU: aumentado para limitar extended thinking sem truncagem abrupta
     max_tokens_ciclo: 131072
-    timeout_segundos: 600
+    timeout_segundos: 1500  # 600→1500 (2026-06-10): consolidar_watson com 149k tokens levou 1076s;
+                            # Sherlock validacao_inicial estourou 600s 4× e caiu em fallback
     max_tentativas_retry: 4   # aumentado de 2→4 para resistir a saturação pós-Irene
     backoff_segundos: 60      # aumentado de 10→60 para dar tempo ao ChatTCU recuperar
 
@@ -56,7 +57,7 @@ agentes:
     temperatura: 0.0    # máximo determinismo — Watson não especula
     max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ≤ 6k tok
     max_tokens_ciclo: 131072
-    timeout_segundos: 600
+    timeout_segundos: 1500  # 600→1500 (2026-06-10): consolidar_watson (149k tok in) levou 1076s
     max_tentativas_retry: 4   # aumentado de 2→4 para resistir a HTTP 500 transitório
     backoff_segundos: 30      # aumentado de 10→30s
 
@@ -72,7 +73,8 @@ agentes:
     temperatura: 0.1
     max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ~16.4k tok
     max_tokens_ciclo: 131072
-    timeout_segundos: 600
+    timeout_segundos: 1500  # 600→1500 (2026-06-10): validacao_inicial estourou 600s 4× no ciclo
+                            # MOD_SINT_001_A1_20260610T133554Z e colapsou em fallback determinístico
     max_tentativas_retry: 4   # aumentado de 2→4
     backoff_segundos: 30      # aumentado de 10→30s
 

@@ -227,20 +227,25 @@ def test_render_html_estrutura_basica(workspace: tuple[Path, str]) -> None:
     assert cid in html
 
 
-def test_render_html_terminal_sem_refresh(workspace: tuple[Path, str]) -> None:
+def test_render_html_terminal_reload_condicional(workspace: tuple[Path, str]) -> None:
+    """Terminal: reload JS condicionado à idade da página (15 min) — não para
+    antes da Fase de Entrega do autorun, mas relatório arquivado fica estático."""
     ws, cid = workspace
     data = build_report(cid, ws)
     assert data.is_terminal is True
     html = render_html(data)
     assert 'http-equiv="refresh"' not in html
+    assert "15 * 60 * 1000" in html
+    assert "location.reload()" in html
 
 
-def test_render_html_live_com_refresh(workspace: tuple[Path, str]) -> None:
+def test_render_html_live_com_reload_incondicional(workspace: tuple[Path, str]) -> None:
     ws, cid = workspace
     data = build_report(cid, ws)
     data_live = replace(data, status="EM_EXECUCAO_WATSON", is_terminal=False)
     html = render_html(data_live)
-    assert 'http-equiv="refresh"' in html
+    assert "if (true) setTimeout" in html
+    assert "location.reload()" in html
     assert "AO VIVO" in html
 
 

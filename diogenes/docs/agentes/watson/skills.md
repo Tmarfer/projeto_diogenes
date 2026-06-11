@@ -75,8 +75,13 @@ tipo do arquivo que está analisando.
 | Responsável técnico ou identificador de autoria | Idem | [valor encontrado ou "Ausente"] | [Presente / Ausente] |
 
 **Alertas desta seção:**
-[Para cada metadado ausente: alerta CRITICA se for período de referência ou data de geração;
-alerta MEDIA para os demais. Se todos presentes: "Metadados mínimos presentes."]
+[Para cada metadado ausente: alerta CRITICA se o período de referência estiver ausente E não
+for inferível do conteúdo (competência em filtro, comentário ou nome de aba conta como presente
+com ressalva); alerta ALTA se apenas a data de geração/extração estiver ausente com o período
+presente; alerta MEDIA para os demais. A ausência do mesmo metadado em vários arquivos do
+pacote é UM padrão sistêmico — registre o alerta em cada arquivo, mas anote "padrão recorrente
+no pacote" para que a consolidação agregue em ocorrência única, sem inflar a contagem de
+criticidade. Se todos presentes: "Metadados mínimos presentes."]
 <!-- /SECAO: verificacao_metadados -->
 
 <!-- SECAO: consistencia_numerica -->

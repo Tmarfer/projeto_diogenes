@@ -1,0 +1,11 @@
+REGISTRO CONTABIL - CREDITOS PIS/COFINS NA TRANSICAO
+Siderurgica Alfa Ltda | CNPJ 12.345.678/0001-90 | Competencia Jan/2024
+
+Credito de transporte de insumos:
+  PIS R$ 2.100,00 + COFINS R$ 9.660,00 = disponivel R$ 11.760,00
+  Aproveitado: R$ 5.000,00
+  Saldo nao aproveitado: R$ 6.760,00
+
+O aproveitamento parcial foi lancado sem documento de justificativa.
+Demais creditos do periodo (energia eletrica, R$ 7.560,00) aproveitados
+integralmente com documentacao completa.

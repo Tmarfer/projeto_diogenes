@@ -72,9 +72,9 @@ def _log_chamada_llm(agente: str, modelo: str, tokens_input: int, tokens_output:
     logger.info(linha)
 
     try:
+        from rich.columns import Columns
         from rich.console import Console
         from rich.panel import Panel
-        from rich.columns import Columns
 
         console = Console()
 
@@ -306,6 +306,7 @@ class ChatTCUClient:
         max_tentativas = 1 if _dev_mode else max(1, call.max_tentativas_retry)
         _timeout = min(call.timeout_segundos, 30) if _dev_mode else call.timeout_segundos
         retry_count = 0
+        _prompt_chars = len(system_prompt) + len(user_prompt)
 
         import time as _time
         t0 = _time.monotonic()
@@ -331,8 +332,9 @@ class ChatTCUClient:
 
                 if resp.status_code >= 500:
                     logger.warning(
-                        "[ChatTCUClient] Tentativa %d/%d — HTTP %d: %s",
-                        tentativa, max_tentativas, resp.status_code, resp.text[:200],
+                        "[ChatTCUClient] Tentativa %d/%d (call_id=%s, prompt=%d chars) — HTTP %d: %s",
+                        tentativa, max_tentativas, call.call_id, _prompt_chars,
+                        resp.status_code, resp.text[:200],
                     )
                     if tentativa < max_tentativas:
                         retry_count += 1
@@ -347,6 +349,17 @@ class ChatTCUClient:
                 # 2xx — sucesso
                 dados = resp.json()
                 texto = dados.get("response", "")
+                if not str(texto).strip() and tentativa < max_tentativas:
+                    # 2xx com corpo vazio: a chamada foi aceita mas não produziu
+                    # conteúdo — sem retry o arquivo fica "não analisado" no ciclo
+                    logger.warning(
+                        "[ChatTCUClient] Tentativa %d/%d (call_id=%s, prompt=%d chars) — "
+                        "HTTP 2xx com resposta vazia; tratando como falha transitória.",
+                        tentativa, max_tentativas, call.call_id, _prompt_chars,
+                    )
+                    retry_count += 1
+                    _time.sleep(call.backoff_segundos)
+                    continue
                 tokens_obj        = dados.get("tokens") or {}
                 total             = tokens_obj.get("total_tokens", 0)
                 prompt_tokens     = tokens_obj.get("prompt_tokens", total)
@@ -388,8 +401,8 @@ class ChatTCUClient:
 
             except requests.RequestException as exc:
                 logger.warning(
-                    "[ChatTCUClient] Tentativa %d/%d — erro de conexão: %s",
-                    tentativa, max_tentativas, exc,
+                    "[ChatTCUClient] Tentativa %d/%d (call_id=%s, prompt=%d chars, timeout=%ds) — erro de conexão: %s",
+                    tentativa, max_tentativas, call.call_id, _prompt_chars, _timeout, exc,
                 )
                 if tentativa < max_tentativas:
                     retry_count += 1

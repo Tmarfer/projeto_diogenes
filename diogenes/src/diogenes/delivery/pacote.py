@@ -222,13 +222,30 @@ def _localizar_planilha(cycle_dir: Path, mapa: dict[str, Any], avisos: list[str]
     return None
 
 
+_TOKENS_ATA = {"ata", "atas", "reuniao", "reunioes", "entrega", "atendimento"}
+
+
+def _tokens_caminho(rel: Path) -> set[str]:
+    """Tokens alfabéticos do caminho relativo, normalizados (sem acento, minúsculos)."""
+    bruto = " ".join(rel.parts)
+    sem_acento = bruto.translate(str.maketrans("áàâãéêíóôõúüç", "aaaaeeiooouuc"))
+    return set(re.findall(r"[a-z]+", sem_acento.lower()))
+
+
 def _ler_ata(cycle_dir: Path, avisos: list[str]) -> str:
+    """Localiza a ata da reunião de entrega RFB por tokens do caminho relativo.
+
+    Matching por token inteiro (não substring): evita que `CATALOGO.md` case com
+    "ata" e permite achar notas de reunião em diretórios como `..._entrega_MOD_010/`.
+    """
     inputs = cycle_dir / "inputs"
     if not inputs.is_dir():
         return ""
-    for arq in inputs.rglob("*"):
-        if arq.is_file() and re.search(r"(ata|reuni|entrega|atendimento)", arq.name, re.IGNORECASE) \
-                and arq.suffix.lower() in (".md", ".txt"):
+    for arq in sorted(inputs.rglob("*")):
+        if not (arq.is_file() and arq.suffix.lower() in (".md", ".txt")):
+            continue
+        if _tokens_caminho(arq.relative_to(inputs)) & _TOKENS_ATA:
+            avisos.append(f"Ata da reunião RFB: usando '{arq.relative_to(inputs)}'.")
             return arq.read_text(encoding="utf-8", errors="replace")
     avisos.append("Ata da reunião RFB não localizada — pré-atendimento ficará sem o bloco da ata.")
     return ""

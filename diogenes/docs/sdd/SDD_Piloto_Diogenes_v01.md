@@ -5753,7 +5753,7 @@ MotorEntrega.gerar(cycle_id)          motors/motor_entrega.py
        │       ├─ lê entrega_mapa_extracao.json   (localizações — nunca valores)
        │       ├─ ExtractorFinanceiro              delivery/extractor.py (openpyxl)
        │       ├─ lê relatorio_preliminar_{id}.md  (texto LLM higienizado pelo ciclo)
-       │       └─ lê ata_rfb_{id}.md               (opcional)
+       │       └─ localiza ata da reunião em inputs/ (opcional — match por token de caminho)
        │
        └─ builders.*                    delivery/builders.py
                ├─ gerar_dashboard_html()         → Dashboard.html
@@ -5856,7 +5856,7 @@ O objeto central é `PacoteEntrega` (`models.py`) — um dataclass frozen que ag
 | Camada financeira (`blocos_financeiros`, `valores_agregados`) | `ExtractorFinanceiro` (openpyxl) | Valores numéricos — nunca via LLM |
 | Auditoria (`ocorrencias`, `testes_camada_*`, `notas_metodologicas`) | `parsing.py` lendo Sherlock/Watson outputs | Achados dos agentes |
 | Relatório consolidado (`relatorio_markdown`) | `relatorio_preliminar_{id}.md` | Texto do Mycroft consolidado, higienizado |
-| Ata RFB (`ata_rfb_markdown`) | `ata_rfb_{id}.md` (opcional) | Documento externo — não passa por RF-EN-06 |
+| Ata RFB (`ata_rfb_markdown`) | localizada em `inputs/` por token de caminho (`ata`, `reuniao`, `entrega`, `atendimento`) — match por token inteiro, nunca substring (evita falso-match com `CATALOGO.md`); opcional | Documento externo — não passa por RF-EN-06 |
 
 ## **15.8 Testes**
 
@@ -5867,4 +5867,116 @@ Os golden tests verificam **estrutura**, não bytes: contagem de seções/tabela
 O teste `TestSanitizarDeliveryText` em `tests/unit/test_motor_saida.py` verifica RF-EN-06: remoção de tags de seção, linhas de metadado, referências internas.
 
 *Bloco 15 encerrado.*
+
+# **Bloco 16 — Errata Consolidada de Runtime (v0.2)**
+
+> Adicionado em 2026-06-10. Atualiza os Blocos 4, 6, 8, 9 e 12 para o estado corrente do
+> sistema sem reescrevê-los: onde este bloco divergir do texto original, **este bloco prevalece**.
+> Documenta também os componentes nascidos depois do SDD v0.1: painel de acompanhamento
+> local, motor de perfilamento e a infraestrutura de homologação por formato.
+
+## **16.1 Provider LLM — supersede Bloco 4 e Bloco 6 (OpenRouter → ChatTCU)**
+
+O Bloco 4 descreve `.env` com `DIOGENES_LLM_API_KEY`/OpenRouter. **Isso foi abandonado**:
+dados fiscais do TC 015.848/2025-6 não trafegam por serviços externos.
+
+- **ChatTCU é o único provider permitido em produção.** Seleção via
+  `DIOGENES_LLM_PROVIDER=chattcu` (default). `get_llm_client()` (`llm/base.py`) é o guardião
+  de governança: levanta `ConfigError` para `openrouter` fora de contexto pytest e para
+  qualquer provider desconhecido.
+- **Autenticação MSAL, sem API key** — browser abre na primeira execução; token cacheado e
+  renovado silenciosamente, inclusive **a cada tentativa de retry** dentro de uma chamada.
+- `DIOGENES_SSL_VERIFY=false` para redes TCU com proxy de inspeção SSL.
+- Variáveis novas: `DIOGENES_CHATTCU_BASE_URL`, `DIOGENES_IRENE_HABILITADO`,
+  `IRENE_PROVIDER`, `IRENE_MODEL`, `DIOGENES_POST_IRENE_COOLDOWN_S`,
+  `DIOGENES_CORPUS_JURIDICO_DIR`, `DIOGENES_DEV_MODE`.
+- Modelos nomeados **exatamente como na plataforma ChatTCU** (ex.: `gpt-5.5-thinking`),
+  sem prefixo de organização. Custo por chamada é **de referência** (tabela em
+  `llm/chattcu.py`); custo real é zero (infra institucional, `teto_custo_ciclo_usd: 0.00`).
+
+## **16.2 Camada LLMClient — resiliência corrente (atualiza Bloco 6)**
+
+Parâmetros operacionais vigentes (`agents_spec.yaml`, calibrados em 2026-06-10 com base em
+medições reais — `consolidar_watson` com 149k tokens levou 1076s):
+
+| Parâmetro | Valor | Racional |
+|---|---|---|
+| `timeout_segundos` | **1500** (era 600) | chamadas thinking longas estouravam 600s 4× |
+| `max_tentativas_retry` | **4** (era 2) | saturação pós-Irene e HTTP 500 transitórios |
+| Retry de **2xx com corpo vazio** | sim | ChatTCU ocasionalmente responde 200 sem conteúdo — sem retry o arquivo ficava "não analisado" silenciosamente |
+| Log de retry | `call_id` + tamanho do prompt + tentativa | diagnóstico de timeouts em rodadas longas |
+
+Comportamento validado em ciclo real (MOD_SINT_SQL, 2026-06-10): 1 read-timeout de 1500s
+recuperado na tentativa seguinte em ~124s, sem perda de análise.
+
+## **16.3 Orquestrador — fases e estados novos (atualiza Bloco 8)**
+
+- **Fase Irene (condicional)**: estados `AGUARDANDO_IRENE` → `IRENE_CONCLUIDA` antes de
+  Watson, quando `DIOGENES_IRENE_HABILITADO=true`. `IRENE_ERRO_FATAL` →
+  `ABORTADO_FALHA_AGENTE`; `IRENE_BLOQUEADO` não é fatal (Watson recebe catálogo com ressalvas).
+- **EventLogger** (`orchestrator/events.py`): além do JSONL de auditoria, regenera
+  `report.html` no diretório do ciclo após cada evento (best-effort) — base do painel local.
+- **Fase de Entrega no autorun**: após a chancela (automática com `--auto-seal` e documento
+  LIMPO), o Orquestrador aciona `mapear_dados_modulo` → Motor de Entrega → `avaliar_entrega`.
+- **Tracker de IDs de alerta Watson** (`W{cod}-{n:03d}`) persistido entre chamadas via
+  `InputFileInfo.ultimo_id_alerta`.
+
+## **16.4 Agentes — call_types e calibrações (atualiza Bloco 9)**
+
+Call_types adicionados após o v0.1: `watson.validacao_planilha_rn` (condicional),
+`sherlock.validacao_planilha_rn_sherlock` (condicional), `mycroft.mapear_pontos`,
+`mycroft.fixar_decisao_*`, e os três da Entrega (`mapear_dados_modulo`, `redigir_apendice`,
+`avaliar_entrega`).
+
+Calibrações de prompt relevantes (2026-06, medidas contra gabaritos de conformidade):
+
+| Data | Agente | Calibração |
+|---|---|---|
+| 06-03 | Watson | formato numérico estrito; segurança ChatTCU |
+| 06-10 (Onda 4) | Sherlock | Passo 5b — vincular norma ao achado numérico de Watson |
+| 06-10 (Onda 4) | Sherlock | Passo 5c — divergência confirmada ≠ lacuna de rastreabilidade (controle de FP) |
+| 06-10 (pós-SQL v2) | Sherlock | Passo 5c+ — **divergência normativa operacionalizada**: lógica de script que calcula contra a norma é DIVERGENCIA, não NAO_VERIFICAVEL |
+| 06-10 (pós-SQL v2) | Sherlock | **Passo 5d** — gradação de severidade pela natureza (operacionalizada → CRITICO; sem comprovação documental → ALERTA; sistêmica agregada → nunca CRITICO) |
+| 06-10 (pós-SQL v2) | Watson | `verificacao_metadados` — período inferível do conteúdo = presente com ressalva; só data de geração ausente = ALTA (não CRITICA); padrão recorrente é agregado na consolidação |
+
+## **16.5 CLI — subcomandos novos (atualiza Bloco 12)**
+
+`autorun` (ciclo não assistido: auto-Lestrade para manifesto/alertas, `--delivery` para
+pacote fora de `workspace/input/`, `--auto-seal` condicionado a documento LIMPO),
+`report` (painel local), `deliver` (Fase de Entrega), `bench` (bancada cirúrgica:
+`smoke`, `validate-models`, `preview`, `call`).
+
+## **16.6 Painel de Acompanhamento Local (`reports/`)**
+
+Substituto local do LangSmith — **nenhum dado sai da máquina**. `build_report()`
+(`reports/cycle_report.py`) agrega eventos JSONL + chamadas LLM + audit_index em
+`CycleReportData`; renderizadores Markdown (terminal) e HTML (browser, auto-refresh por
+JS que persiste até 15 min após estado terminal; páginas arquivadas ficam estáticas).
+O `autorun` abre o painel automaticamente.
+
+## **16.7 Motor de Perfilamento (DuckDB + openpyxl)**
+
+Análise estatística determinística de CSV/XLSX **antes** de Watson: perfil de colunas,
+detecção de duplicatas/nulos, eliminação de truncamento de amostra. 44 testes dedicados.
+Insumo citável pelos agentes; não usa LLM.
+
+## **16.8 Homologação por Formato e Ferramentas de Massa**
+
+Infraestrutura de calibração introduzida na Onda 5 (2026-06-10):
+
+- **`scripts/massa_fontes/`** — fontes versionadas dos módulos sintéticos por formato
+  (`MOD_SINT_SQL/IPYNB/MD/PDF/DOCX/TXT` + `_comum/Metodologia_CBS_SINT.md`, âncora
+  normativa sem a qual Sherlock declara o módulo não verificável).
+- **`scripts/gerar_mod_sint_formatos.py`** — gera os módulos em `workspace/input/` com
+  protocolo + inventário (SHA-256 reais, período de referência e data de geração);
+  nativos pré-conversão em `workspace/_fontes_originais/`.
+- **`scripts/converter_md.py`** — conversor determinístico docx/txt/pdf→md; semente do
+  futuro motor de pré-conversão (decisão de produto: docx/txt/pdf serão convertidos a
+  `.md` antes de entrar no Departamento de Validação).
+- **`docs/conformidade/gabarito_mod_sint_*.md`** — gabaritos das inconsistências plantadas
+  (MET-04/05/07), **fora do alcance dos agentes**, com histórico de medições por ciclo.
+- Fluxo de homologação: massa → ciclo `autorun` → confronto com gabarito → calibração →
+  re-rodada. Critério de avanço por formato: MET-04 ≥70% e MET-05 <15%.
+
+*Bloco 16 encerrado.*
 Documento interno de trabalho | Uso restrito
