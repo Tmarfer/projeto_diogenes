@@ -440,7 +440,7 @@ real, usado na Fase D.
 - Exceções em `except` clauses usam `raise ... from e` (B904)
 - Nenhuma semicolon em statements múltiplos (E702)
 
-**Estado atual:** 216 testes passando, 1 skipped (`docling` não instalado no Mac), ruff limpo nos arquivos tocados.
+**Estado atual:** 357 testes passando, ruff limpo nos arquivos tocados.
 
 ---
 
@@ -490,8 +490,39 @@ entre famílias de modelo (`gpt-5.4`, `gpt-5.5`, Claude).
 - ~40 erros de mypy pré-existentes (`dict` sem type args, etc.)
 - `fase_ativa: B` em `agents_spec.yaml` é apenas rótulo de rastreabilidade
 
+### Batimento agente-por-agente (2026-06-10)
+
+**Reconciliação 3-vias completada:** `agents_spec.yaml` (parâmetros) × invocadores Python
+(`agents/{agente}.py` + orquestrador) × documentação (`heartbeat.md` / `skills.md`), confrontada
+com requisitos PRD (RF-MY-01..08, RF-WA-01..10, RF-SH-01..08). Relatório formal:
+`docs/auditoria_agentes/batimento_agentes_2026-06-10.md`.
+
+**Achado crítico — Sherlock em produção vs documentação:**
+- Modo **monolítico** (`validacao_inicial`) é o único ativo em produção
+- Modo **per-ponto** (`verificar_ponto`) é reservado à bancada
+- As calibrações da Onda 4/pós-SQL-v2 (Passos 5b/5c/5d) viviam **só na seção per-ponto**
+  → estavam **mortas em produção**
+- Sintoma: ciclo SQL v2 ainda teve sistêmica S009 como CRITICO apesar de "calibrações aplicadas"
+- **Correção:** Passos 5b/5c/5d portados como **4e/4f/4g** do protocolo monolítico
+  + restrições ativas. **Regra:** calibração de Sherlock sempre nas **DUAS** seções.
+
+**Demais achados e correções:**
+- **Irene:** catálogo reutilizado não era copiado para `cycles/{id}/irene_catalog.yaml` →
+  Mycroft declarava "Catálogo: Não" mesmo com reuso válido. Corrigido no orquestrador.
+- **Irene/Mycroft:** `acionar_irene` documentado como decisão LLM; na prática é determinística
+  (`verificar_catalogo_existente` no orquestrador). Docs anotadas (Artigo 5).
+- **Mycroft:** `mapear_pontos` seção orfã (nenhum método). Marcado reservado; fluxo CLAUDE.md
+  e comentários orquestrador corrigidos.
+- **Mycroft:** `max_tokens` hardcoded ignorando spec. Agora lê `agents_spec.yaml`.
+- **Todos (My/Wa/Sh):** `seed_base` hardcoded `42` em 6 call-sites (ignorava RNF-REPR-02).
+  Injetado via construtor de `cfg.agentes.seed_base`.
+- **heartbeat.py:** mapeamentos `CALL_TYPE_TO_SECTION` explícitos para Fase de Entrega +
+  inventário comentado de seções reservadas.
+
+**Suíte: 357 verdes. Lint: ruff clean.**
+
 ### Próximo passo
-Novo `autorun` completo com as correções — Sherlock agora recebe a RN inteira.
-O painel abre sozinho no browser durante a execução.
+Disparo manual da rodada noturna MOD_010 conforme plano (`docs/plano_rodada_noturna_MOD_010.md`).
+Calibrações de Sherlock agora vivas em produção.
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*

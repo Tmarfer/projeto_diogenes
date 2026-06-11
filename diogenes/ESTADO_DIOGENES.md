@@ -1,6 +1,6 @@
 # ESTADO DO PROJETO DIÓGENES
-## Snapshot para onboarding
-**Data:** 2026-06-04
+## Snapshot consolidado
+**Data:** 2026-06-10 (batimento agente-por-agente concluído)
 **Processo:** TC 015.848/2025-6 | DVA-CBS | SecexContas/TCU
 
 ---
@@ -15,10 +15,10 @@
 | Modelo ativo (todos os agentes) | `gpt-5.5-thinking` via `agents_spec.yaml` |
 | Fase piloto ativa | Fase D — módulo real MOD_010 (Pessoa Física) |
 | Teto de custo por ciclo | USD 0.00 (ChatTCU — custo institucional zero) |
-| Suite de testes | **216 passed, 1 skipped** (0 falhas) |
-| Branch ativa | `feat/revalidacao-e-auditoria-prd` |
-| Último ciclo completo | `MOD_010_A1_20260604T013158Z` — ENCERRADO_CHANCELADO |
-| Duração do último ciclo | 13h 07min · 116 arquivos · 130 chamadas LLM |
+| Suite de testes | **357 passed** (0 falhas) |
+| Branch ativa | `feat/onda-4-calibracao-baseline` |
+| Último ciclo verde | `MOD_SINT_001_A1_20260610T164820Z` — ciclo sintético (80 min) |
+| Status arquitetura | ✅ Batimento concluído (3-vias reconciliado) |
 
 ---
 
@@ -68,10 +68,46 @@ Para antes do `seal` — chancela humana de manhã.
 
 ---
 
-## 4. Calibrações aplicadas (auditoria sistemática 2026-06-03)
+## 4. Batimento agente-por-agente (2026-06-10)
+
+**Reconciliação 3-vias completada** (documento formal: `docs/auditoria_agentes/batimento_agentes_2026-06-10.md`):
+
+### Achado crítico — Sherlock em produção vs documentação
+- **Modo monolítico** (`validacao_inicial`) é o único ativo em produção
+- **Modo per-ponto** (`verificar_ponto`) é reservado à bancada
+- As **calibrações Onda 4/pós-SQL-v2 viviam só na seção per-ponto** (não injetada)
+  - Passos 5b (ancoragem), 5c (controle FP), 5d (gradação)
+  - Resultado: **mortas em produção** apesar de documentadas
+  - Sintoma: ciclo SQL v2 ainda teve sistêmica S009 como CRITICO
+- **Correção:** portados como **Passos 4e/4f/4g** do protocolo monolítico
+- **Regra operacional:** toda calibração de Sherlock deve estar em AMBAS as seções
+
+### Demais achados e correções
+- **Irene:** catálogo reutilizado não era copiado para `cycles/{id}/irene_catalog.yaml`
+  → Mycroft declarava "Catálogo: Não" mesmo com reuso válido
+  → Corrigido: `copiar_catalogo_para_ciclo()` agora tb. no caminho de reuso
+- **Mycroft:** `max_tokens` hardcoded (16384) ignorando `agents_spec.yaml`
+  → Agora lê `self._spec.max_tokens` (restaura contrato de config)
+- **Watson/Mycroft/Sherlock:** `seed_base` hardcoded (42) em 6 call-sites
+  → Ignorava RNF-REPR-02 (reproducibilidade por config)
+  → Corrigido: injetado via construtor a partir de `cfg.agentes.seed_base`
+- **heartbeat.py:** `CALL_TYPE_TO_SECTION` mapeamentos implícitos
+  → Adicionados explicitamente para Fase de Entrega + inventário de seções reservadas
+
+### Validação
+- Suíte: **357 passed** (recorde)
+- Lint (ruff): clean
+- Type check (mypy): inalterado (~40 erros pré-existentes, não bloqueante)
+
+---
+
+## 5. Calibrações aplicadas (auditoria sistemática 2026-06-03 + 2026-06-10)
 
 A auditoria comparou o contrato projetado com o comportamento real de cada agente
 e calibrou os prompts onde havia desvio. Registro completo em `docs/auditoria_agentes/`.
+
+**Nota 2026-06-10:** batimento revelou discrepâncias arquiteturais (modo monolítico vs per-ponto);
+calibrações portadas e ativadas.
 
 ### Watson
 - `soul.md` — "Prevenção de Interceptação de Segurança (ChatTCU)": mascaramento de
@@ -99,7 +135,7 @@ e calibrou os prompts onde havia desvio. Registro completo em `docs/auditoria_ag
 
 ---
 
-## 5. Correções pós-ciclo noturno (2026-06-04)
+## 6. Correções pós-ciclo noturno (2026-06-04)
 
 Identificadas e corrigidas após análise do ciclo `MOD_010_A1_20260604T013158Z`:
 
@@ -128,7 +164,7 @@ o diretório estaria em `DIRS_IGNORADOS`.
 
 ---
 
-## 6. Atividade 2 — Revalidação (implementada)
+## 7. Atividade 2 — Revalidação (implementada)
 
 `motors/motor_start.py` + `orchestrator/orchestrator.py` + `agents/mycroft.py`:
 - `_resolver_ciclo_anterior()` encontra o ciclo A1 mais recente em ENCERRADO_CHANCELADO.
@@ -140,7 +176,7 @@ Testes: `tests/integration/test_ciclo_atividade2.py`.
 
 ---
 
-## 7. Painel de acompanhamento local (`diogenes report`)
+## 8. Painel de acompanhamento local (`diogenes report`)
 
 Equivalente ao LangSmith, 100% local (governança: dados fiscais não saem da infra TCU).
 Lê artefatos já gravados em disco sem chamar nenhum modelo de linguagem.
@@ -169,7 +205,7 @@ Novo módulo: `src/diogenes/reports/` (cycle_report.py · render_markdown.py · 
 
 ---
 
-## 8. Fase de Entrega — entregáveis institucionais (`diogenes deliver`)
+## 9. Fase de Entrega — entregáveis institucionais (`diogenes deliver`)
 
 Etapa pós-ciclo que transforma os artefatos do ciclo nos documentos do padrão
 GT Reforma Tributária. Roda após o Motor de Saída (excursão a partir de
@@ -205,7 +241,7 @@ Novo módulo: `src/diogenes/delivery/` + `motors/motor_entrega.py` +
 
 ---
 
-## 9. Bancada de testes (`diogenes bench`)
+## 10. Bancada de testes (`diogenes bench`)
 
 | Comando | O que faz |
 |---|---|
@@ -224,13 +260,13 @@ Resultado de referência pós-correções:
 
 ---
 
-## 10. Suite de testes
+## 11. Suite de testes
 
 | Resultado | Quantidade |
 |---|---|
-| Total coletados | **217** |
-| Passed | **216** |
-| Skipped | 1 (`test_docx_fallback_docling_se_invalido` — `docling` não instalado no Mac) |
+| Total coletados | **357** |
+| Passed | **357** |
+| Skipped | 0 |
 | Failed | 0 |
 
 ```bash
@@ -239,7 +275,7 @@ cd diogenes && pytest tests/ -q   # ~3s
 
 ---
 
-## 11. Provider LLM — governança crítica
+## 12. Provider LLM — governança crítica
 
 **ChatTCU é o ÚNICO provider permitido em produção.** Dados fiscais do TC 015.848/2025-6
 não podem trafegar por serviços externos. `get_llm_client()` em `llm/base.py` é o guardião.
@@ -255,7 +291,7 @@ prompts e outputs contêm dados fiscais do TC 015.848/2025-6. Usar `diogenes rep
 
 ---
 
-## 12. Estrutura de código
+## 13. Estrutura de código
 
 ```
 src/diogenes/
@@ -279,7 +315,7 @@ src/diogenes/
 
 ---
 
-## 13. Máquina de estados (CycleState)
+## 14. Máquina de estados (CycleState)
 
 19 estados implementados:
 `PREPARADO` → `AGUARDANDO_CONFIRMACAO_MANIFESTO` → `VERIFICANDO_EXISTENCIA` →
@@ -291,22 +327,24 @@ caminho do seal): `EM_EXECUCAO_ENTREGA` ⇄ `AGUARDANDO_AJUSTE_ENTREGA` → volt
 
 ---
 
-## 14. Próximo passo recomendado
+## 15. Próximo passo recomendado
 
-Executar novo ciclo `autorun` completo com as correções aplicadas (RN completa,
-Motor de Saída limpo, corpus jurídico ativo). O browser abre sozinho com o painel ao vivo:
+Executar novo ciclo `autorun` completo **MOD_010 (Pessoa Física)** com todas as correções
+ativas (RN completa, Motor de Saída limpo, corpus jurídico ativo, calibrações Sherlock vivas).
+O browser abre sozinho com o painel ao vivo. Confira o plano em `docs/plano_rodada_noturna_MOD_010.md`.
 
 ```bash
 cd diogenes
-# pré-voo: renovar token MSAL e ativar role PIM
+# pré-voo: renovar token MSAL e ativar role PIM (elevado)
 diogenes bench smoke
 
+# ~10-20h de execução com caffeinate (poupança de bateria)
 caffeinate -i diogenes autorun \
   --module MOD_010 --activity 1 \
-  --delivery /Users/tmarfer_mac/Documents/Projetos/projeto_diogenes/workspace/_teste_inputs/MOD_010_Pessoa_Fisica \
+  --delivery /Users/tmarfer_mac/Documents/Projetos/projeto_diogenes/workspace/_fontes_originais/MOD_010 \
   2>&1 | tee ~/diogenes_MOD010_$(date +%Y%m%d_%H%M%S).log
 
-# manhã: chancelar
+# Manhã seguinte: verificar report.html + chancelar
 diogenes seal --cycle MOD_010_A1_<ts>
 ```
 
@@ -315,4 +353,4 @@ Após chancelado, rodar Atividade 2 (revalidação) usando o ciclo A1 como hist�
 ---
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*
-*Atualizado em 2026-06-04 — pós-ciclo noturno MOD_010, painel de acompanhamento e Fase de Entrega*
+*Atualizado em 2026-06-10 — batimento agente-por-agente concluído; calibrações ativas*
