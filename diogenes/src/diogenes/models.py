@@ -86,6 +86,9 @@ class WatsonOutput:
     ultimo_id_alerta: str = ""   # ex: "W010-003" — propagado entre chamadas per-file
     # cabeçalho watson_consolidado.md — lido pelo orquestrador para acionar Sherlock com prioridade
     nota_metodologica_com_alteracao: bool = False
+    # True quando o output foi produzido por fallback determinístico (LLM indisponível).
+    # O Orquestrador pausa o ciclo em vez de seguir para revisão/consolidação.
+    is_fallback: bool = False
 
 
 @dataclass(frozen=True)
@@ -213,6 +216,9 @@ class SherlockOutput:
     nota_metodologica_com_alteracao: bool = False  # sherlock_ponto_*.md: campo "verificada neste ponto"
     notas_metodologicas_count: int = 0             # sherlock_consolidado.md seção 7
     pendencias_simulador_count: int = 0            # sherlock_consolidado.md seção 9
+    # True quando o output foi produzido por fallback determinístico (LLM indisponível).
+    # O Orquestrador pausa o ciclo em vez de seguir para revisão/consolidação.
+    is_fallback: bool = False
 
 
 @dataclass(frozen=True)

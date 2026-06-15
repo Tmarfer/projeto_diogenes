@@ -73,6 +73,7 @@ TRANSICOES_VALIDAS: dict[CycleState, set[CycleState]] = {
     },
     CycleState.EM_EXECUCAO_WATSON: {
         CycleState.AGUARDANDO_REVISAO_MYCROFT_WATSON,
+        CycleState.PAUSADO_LESTRADE,           # consolidação em fallback determinístico
         CycleState.ABORTADO_FALHA_AGENTE,
         CycleState.ABORTADO_LESTRADE,
     },
@@ -90,6 +91,7 @@ TRANSICOES_VALIDAS: dict[CycleState, set[CycleState]] = {
     },
     CycleState.EM_EXECUCAO_SHERLOCK: {
         CycleState.AGUARDANDO_REVISAO_MYCROFT_SHERLOCK,
+        CycleState.PAUSADO_LESTRADE,           # validação/consolidação em fallback determinístico
         CycleState.ABORTADO_FALHA_AGENTE,
         CycleState.ABORTADO_LESTRADE,
     },
@@ -124,7 +126,8 @@ TRANSICOES_VALIDAS: dict[CycleState, set[CycleState]] = {
         CycleState.ABORTADO_LESTRADE,
     },
     CycleState.PAUSADO_LESTRADE: {
-        CycleState.EM_EXECUCAO_SHERLOCK,       # retomada após alerta crítico
+        CycleState.EM_EXECUCAO_WATSON,         # retomada após fallback na consolidação Watson
+        CycleState.EM_EXECUCAO_SHERLOCK,       # retomada após alerta crítico ou fallback Sherlock
         CycleState.ABORTADO_LESTRADE,
     },
     # Estados terminais — sem transições de saída

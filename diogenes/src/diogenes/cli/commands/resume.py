@@ -38,7 +38,15 @@ def resume(cycle: str = typer.Option(..., "--cycle", "-c")) -> None:
 
     try:
         orq = Orchestrator(cycle)
-        resultado = orq.retomar_apos_alerta(manifest)
+        fase_fallback = orq.tem_fallback_pendente()
+        if fase_fallback is not None:
+            display.aviso(
+                f"Pausa por fallback determinístico na fase '{fase_fallback}' — "
+                f"re-executando a fase (análises Watson voltam dos checkpoints)."
+            )
+            resultado = orq.retomar_apos_fallback(manifest)
+        else:
+            resultado = orq.retomar_apos_alerta(manifest)
         if resultado:
             display.passo_ok(f"Ciclo concluído. Output: {resultado}")
         else:

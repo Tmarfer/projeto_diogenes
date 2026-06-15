@@ -20,6 +20,37 @@ from diogenes.llm.exceptions import LLMCallError, LLMTimeoutError
 from diogenes.llm.seed import calcular_seed
 from diogenes.models import InputFileInfo, LLMCall, LLMMessage, WatsonOutput
 
+# Limiar de consolidação em lotes (map-reduce). Acima deste total de chars, as
+# análises individuais são consolidadas por lotes e os parciais reduzidos numa
+# chamada final. Calibração: na rodada noturna MOD_010 (2026-06-11) a chamada
+# monolítica chegou a 2,43M chars (~615k tokens), estourou 1× o timeout de 1500s
+# e levou 1760s na 2ª tentativa; chamadas de ~150k tokens (~600k chars) fecham
+# em ~1100s com folga dentro do timeout.
+_MAX_CHARS_CONSOLIDACAO_MONOLITICA = 600_000
+
+
+def dividir_lotes_consolidacao(
+    analises: list[WatsonOutput], max_chars: int = _MAX_CHARS_CONSOLIDACAO_MONOLITICA,
+) -> list[list[WatsonOutput]]:
+    """
+    Particiona as análises em lotes contíguos cujo texto agregado não excede
+    max_chars (uma análise maior que o limite vira lote próprio). Puro, sem LLM.
+    """
+    lotes: list[list[WatsonOutput]] = []
+    atual: list[WatsonOutput] = []
+    chars_atual = 0
+    for a in analises:
+        tam = len(a.texto)
+        if atual and chars_atual + tam > max_chars:
+            lotes.append(atual)
+            atual = []
+            chars_atual = 0
+        atual.append(a)
+        chars_atual += tam
+    if atual:
+        lotes.append(atual)
+    return lotes
+
 
 class WatsonAgent:
     FASE = "watson_integridade"
@@ -124,24 +155,13 @@ class WatsonAgent:
             partes.append(f"[ANÁLISE DO ARQUIVO #{i}]\n{a.texto}")
 
         import logging as _logging
-        user = injetar_heartbeat(hb, "\n\n---\n\n".join(partes))
+        corpo = "\n\n---\n\n".join(partes)
         try:
-            resp = self._llm.complete(LLMCall(
-                call_id=gerar_call_id("watson", call_type),
-                cycle_id=self._cycle_id, phase=self.FASE,
-                agent="watson", call_type=call_type,
-                model=self._spec.modelo, temperature=self._spec.temperatura,
-                max_tokens=self._spec.max_tokens,
-                seed=calcular_seed(self._seed_base, self._cycle_id, self.FASE, call_type),
-                messages=[
-                    LLMMessage(role="system", content=self._system_prompt),
-                    LLMMessage(role="user", content=user),
-                ],
-                timeout_segundos=self._spec.timeout_segundos,
-                max_tentativas_retry=self._spec.max_tentativas_retry,
-                backoff_segundos=self._spec.backoff_segundos,
-            ))
-            consolidado = self._parsear_output(resp.content)
+            if len(corpo) <= _MAX_CHARS_CONSOLIDACAO_MONOLITICA:
+                resp_content = self._chamar_consolidar(hb, corpo)
+            else:
+                resp_content = self._consolidar_em_lotes(hb, analises, tasks_mycroft)
+            consolidado = self._parsear_output(resp_content)
             # Garantir contagem de críticos: máximo entre o que o LLM reportou
             # e a soma das análises individuais (defesa contra omissão na síntese)
             total_criticos = max(
@@ -157,6 +177,7 @@ class WatsonAgent:
                 has_unanalyzable_files=has_nao_analisavel,
                 secoes=consolidado.secoes,
                 ultimo_id_alerta=consolidado.ultimo_id_alerta,
+                nota_metodologica_com_alteracao=consolidado.nota_metodologica_com_alteracao,
             )
         except (LLMCallError, LLMTimeoutError) as exc:
             _logging.getLogger(__name__).warning(
@@ -168,7 +189,8 @@ class WatsonAgent:
             return WatsonOutput(
                 texto=(
                     "## 1. Síntese Executiva\n\n"
-                    f"[Consolidação automática — Watson LLM indisponível: {exc}]\n\n"
+                    "[FALLBACK — Watson LLM indisponível — RESULTADO INVÁLIDO PARA "
+                    f"CONSOLIDAÇÃO: {exc}]\n\n"
                     f"Total de arquivos analisados: {len(analises)}\n"
                     f"Arquivos não analisáveis: {nao_analisaveis}\n"
                     f"Total de alertas críticos: {total_criticos}\n\n"
@@ -183,7 +205,76 @@ class WatsonAgent:
                 has_unanalyzable_files=has_nao_analisavel,
                 secoes={},
                 ultimo_id_alerta="",
+                is_fallback=True,
             )
+
+    def _chamar_consolidar(self, hb: str, corpo: str) -> str:
+        """Uma chamada de consolidação (call_type consolidar_watson). Retorna o content."""
+        user = injetar_heartbeat(hb, corpo)
+        resp = self._llm.complete(LLMCall(
+            call_id=gerar_call_id("watson", "consolidar_watson"),
+            cycle_id=self._cycle_id, phase=self.FASE,
+            agent="watson", call_type="consolidar_watson",
+            model=self._spec.modelo, temperature=self._spec.temperatura,
+            max_tokens=self._spec.max_tokens,
+            seed=calcular_seed(self._seed_base, self._cycle_id, self.FASE, "consolidar_watson"),
+            messages=[
+                LLMMessage(role="system", content=self._system_prompt),
+                LLMMessage(role="user", content=user),
+            ],
+            timeout_segundos=self._spec.timeout_segundos,
+            max_tentativas_retry=self._spec.max_tentativas_retry,
+            backoff_segundos=self._spec.backoff_segundos,
+        ))
+        return resp.content
+
+    def _consolidar_em_lotes(
+        self, hb: str, analises: list[WatsonOutput], tasks_mycroft: str,
+    ) -> str:
+        """
+        Consolidação map-reduce: lotes de análises → consolidados parciais →
+        redução final. Sequencial (Artigo 3). Mantém o mesmo heartbeat
+        consolidar_watson; os marcadores [CONSOLIDAÇÃO PARCIAL]/[CONSOLIDAÇÃO FINAL]
+        estão documentados na seção do heartbeat.md.
+        """
+        import logging as _logging
+        lotes = dividir_lotes_consolidacao(analises)
+        n = len(lotes)
+        _logging.getLogger(__name__).info(
+            "[Watson] consolidação em lotes: %d análises em %d lotes.", len(analises), n
+        )
+        parciais: list[str] = []
+        indice_global = 0
+        for li, lote in enumerate(lotes, 1):
+            partes_lote: list[str] = [
+                f"[CONSOLIDAÇÃO PARCIAL — LOTE {li}/{n}]\n"
+                f"Este lote contém um subconjunto contíguo das análises do ciclo "
+                f"(arquivos #{indice_global + 1} a #{indice_global + len(lote)} de "
+                f"{len(analises)}). Produza o watson_consolidado.md APENAS deste lote, "
+                f"seguindo o protocolo normal. A redução final entre lotes ocorrerá em "
+                f"chamada posterior — não especule sobre arquivos fora deste lote."
+            ]
+            if tasks_mycroft:
+                partes_lote.append(f"[TASKS DE MYCROFT]\n{tasks_mycroft}")
+            for a in lote:
+                indice_global += 1
+                partes_lote.append(f"[ANÁLISE DO ARQUIVO #{indice_global}]\n{a.texto}")
+            parciais.append(self._chamar_consolidar(hb, "\n\n---\n\n".join(partes_lote)))
+
+        partes_final: list[str] = [
+            f"[CONSOLIDAÇÃO FINAL — REDUÇÃO DE {n} LOTES]\n"
+            f"As análises individuais do ciclo ({len(analises)} arquivos) foram "
+            f"consolidadas em {n} lotes. Abaixo seguem os consolidados parciais. "
+            f"Produza o watson_consolidado.md ÚNICO do ciclo a partir deles: una os "
+            f"inventários, reconecte a cadeia de produção entre lotes, reúna todos os "
+            f"alertas (IDs já fixados — transcreva sem alterar), consolide notas "
+            f"metodológicas e insights, e produza a posição consolidada do pacote inteiro."
+        ]
+        if tasks_mycroft:
+            partes_final.append(f"[TASKS DE MYCROFT]\n{tasks_mycroft}")
+        for li, parcial in enumerate(parciais, 1):
+            partes_final.append(f"[CONSOLIDADO PARCIAL DO LOTE {li}/{n}]\n{parcial}")
+        return self._chamar_consolidar(hb, "\n\n---\n\n".join(partes_final))
 
     def validacao_planilha_rn(
         self,

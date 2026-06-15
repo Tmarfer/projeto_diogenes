@@ -1,3 +1,129 @@
+---
+documento: SDD Derivado — Dr. John Watson (Reescrita Guiada v2)
+projeto: DVA-CBS | Projeto Diógenes
+processo: TC 015.848/2025-6
+unidade: SecexContas — Tribunal de Contas da União
+versao: 0.1
+status: Documento de Trabalho Interno
+data: 2026-06-11
+uso: Interno Restrito
+documentos_fonte:
+  - src/diogenes/agents/watson.py (referência v1, 506 LOC) + agents/file_prep.py
+  - docs/agentes/watson/{agent,soul,skills,heartbeat}.md
+  - docs/auditoria_agentes/watson/contrato.md
+  - agents_spec.yaml + CLAUDE.md (correções 2026-06-11)
+---
+
+# SDD Derivado — Dr. John Watson
+
+> O "como" da reescrita v2 de Watson. Parte de onde o
+> [PRD_derivado_watson.md](PRD_derivado_watson.md) encerra. Pacote de Trabalho
+> único: PT-WA-1 (Seção 11).
+
+---
+
+## 1. Relação com o SDD mestre
+
+Blocos de origem: 1.2 (decisões fundadoras), 1.6 (Watson = Camada 0), 2.3/2.4
+(definição × invocação), 8 (fluxo do ciclo). O map-reduce do `consolidar`, os
+checkpoints e o `is_fallback` são posteriores ao SDD v0.1 — documentados no
+CLAUDE.md (correções 2026-06-11) e aqui.
+
+## 2. Posição na arquitetura
+
+```
+[IRENE_CONCLUIDA] → Mycroft.definir_tasks_watson → [EM_EXECUCAO_WATSON]
+   Watson.analisar_arquivo × N  (1 arquivo/chamada; checkpoint por arquivo)
+   Watson.consolidar            (map-reduce se >600k chars)
+   Watson.validacao_planilha_rn (CONDICIONAL: Planilha de Verificação no manifesto)
+   → gate is_fallback → Stranger Room (01_apresentacao.md)
+   → [AGUARDANDO_REVISAO_MYCROFT_WATSON] → (até 2× responder_critica)
+```
+
+- **Quem chama:** o Orquestrador, na ordem das tasks de Mycroft (sem
+  reordenação, RF-OR-03). Watson nunca entrega diretamente a Sherlock.
+- **Tracker de ID:** o Orquestrador injeta `proximo_id_alerta` e acumula
+  `alert_counter += output.critical_alerts_count` após cada chamada; o ID é
+  propagado via `InputFileInfo.ultimo_id_alerta`.
+
+## 3. Invocador — classe, assinaturas e parâmetros
+
+Classe v1: `WatsonAgent` (`agents/watson.py:55`).
+
+| Método | Linha v1 | Retorno | call_type / heartbeat |
+|---|---|---|---|
+| `analisar_arquivo(...)` | `:69` | `WatsonOutput` | `analise_arquivo` |
+| `consolidar(...)` | `:139` | `WatsonOutput` | `consolidar_watson` |
+| `validacao_planilha_rn(...)` | `:279` | `WatsonOutput` | `validacao_planilha_rn` |
+| `responder_critica(...)` | `:319` | `WatsonOutput` | `resposta_r1` / `resposta_r2` |
+| `_chamar_consolidar(hb, corpo)` | `:211` | str | interno |
+| `_consolidar_em_lotes(...)` | `:231` | str | interno (map-reduce) |
+| `_construir_system_prompt()` | `:381` | str | soul + skills |
+| `_parsear_output(content)` | `:386` | `WatsonOutput` | interno |
+
+Função de módulo: `dividir_lotes_consolidacao(...)` (`:32`) — particiona as
+análises em lotes para o map-reduce.
+
+Helpers de parsing: `_extrair_secoes` (`:402`), `_secao_por_nome` (`:435`),
+`_contar_criticos` (`:443` — campo de cabeçalho com fallback para nomes de
+seção), `_extrair_nota_metodologica` (`:465`), `_extrair_ultimo_id` (`:480`).
+
+**Parâmetros** (`agents_spec.yaml::agentes.watson`): `gpt-5.5-thinking`,
+temperatura 0.0, max_tokens 8000, max_tokens_ciclo 131072, timeout 1500s,
+retry 4×, backoff 30s. (`agent.md` documenta modelos Claude projetados — a fonte
+da verdade é o spec.)
+
+**`file_prep.py` (contrato de input):** `preparar_arquivo` converte
+xlsx (openpyxl) / sql (sqlparse) / ipynb (nbformat) / pdf (pdfminer.six) / md em
+texto canonicalizado; `ARQUIVOS_SEMPRE_ANALISE` libera `protocolo_recebimento.md`
+e `inventario.xlsx` independentemente de `DIRS_IGNORADOS`.
+
+## 4. Consolidação dos 4 arquivos de definição
+
+```python
+system_prompt = soul.md + "\n\n---\n\n" + skills.md   # filesystem, sem cache
+user_prompt   = heartbeat.md[call_type] + "\n\n" + inputs
+```
+
+### 4.1 `soul.md` — síntese (151 linhas)
+
+| Regra | Conteúdo |
+|---|---|
+| Identidade | Primeira linha de exame (Camada 0); pragmatismo, disciplina, registro fiel; sem juízo de intenção |
+| Art. 6 | Não interpreta metodologia; desvio metodológico percebido vira **insight analítico**, nunca "divergência" |
+| Obstáculos | Arquivo não analisável → registra e avança; arredondamento → BAIXA documentada; "parece correto mas não rastreio" → ALTA/CRITICA |
+| Anti-PII (ChatTCU) | Mascaramento (`***.***.***-**`); não-transcrição de dados brutos/chaves NF-e; síntese estrutural |
+| Posição | Responde a Mycroft; 2 rodadas na Stranger Room; sem contato com Sherlock/Lestrade |
+
+### 4.2 `skills.md` — síntese (759 linhas)
+
+| Elemento | Conteúdo |
+|---|---|
+| Escala de severidade | CRITICA / ALTA / MEDIA / BAIXA (critérios objetivos) |
+| Template 1 `analise_arquivo` | Verificação de Metadados Mínimos; Consistência Numérica; Tradução do Script; Tradução da Estrutura de Dados; Análise da Documentação (+ Verificação de Nota Metodológica com Alteração); Detecções (Premissas Fora da Metodologia, Anomalias Quantitativas, Amostragem/Inferência, Dupla Contagem); Alertas Consolidados (narrativas obrigatórias CRITICA/ALTA); Insumos para a Cadeia de Produção; Insights |
+| Template 1b | Trace de Raciocínio (opcional, 1ª pessoa) |
+| Template 2 `consolidar_watson` | 6 seções: Inventário Consolidado; Notas Metodológicas com Alteração; Cadeia de Produção; Alertas Consolidados; Insights Analíticos; Posição Consolidada — cabeçalho com contadores **inteiros estritos** |
+| Template 3 | `watson_registro_decisao.md` (decisões de julgamento + Nota de Ausência) |
+| Template 4 `validacao_planilha_rn` | Verificações Ponto a Ponto da Planilha de Verificação |
+
+### 4.3 `agent.md` — composição por call_type (contrato)
+
+- `analise_arquivo`: heartbeat + `MC_tasks_watson.md` + **exatamente um arquivo**
+  + `proximo_id_alerta` injetado pelo invocador.
+- `consolidar_watson`: heartbeat + `MC_tasks_watson.md` + todas as
+  `watson_analise_*.md` — **NÃO inclui os originais do pacote RFB**.
+- `resposta_r1/r2`: heartbeat + output anterior + avaliação de Mycroft + trace
+  do arquivo questionado (injetado pelo invocador SE Mycroft questionou arquivo
+  específico E o trace existe).
+- `validacao_planilha_rn`: heartbeat + `MC_tasks_watson.md` + planilha + outputs
+  isolados.
+
+### 4.4 `heartbeat.md` — transcrição verbatim (contrato de prompt)
+
+Transcrição integral de `docs/agentes/watson/heartbeat.md` (2026-06-11). O
+prompt v2 deve ser **byte-idêntico** (gate nº 2); o arquivo original prevalece.
+
+<!-- INÍCIO TRANSCRIÇÃO VERBATIM heartbeat.md (Watson) -->
 # Heartbeat — Dr. John Watson
 ## Auditor de Integridade Técnica | DVA-CBS | Projeto Diógenes
 
@@ -454,3 +580,155 @@ Holmes, Auditor Chefe."
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6*
 *Documento de protocolo operacional do agente — uso interno restrito*
+<!-- FIM TRANSCRIÇÃO VERBATIM heartbeat.md (Watson) -->
+
+---
+
+## 5. Dataclasses e parsing
+
+`WatsonOutput` (`models.py:81`, frozen):
+
+```python
+texto: str
+critical_alerts_count: int
+has_unanalyzable_files: bool
+secoes: dict
+ultimo_id_alerta: str = ""                    # ex: "W010-003" — propagado entre chamadas
+nota_metodologica_com_alteracao: bool = False # cabeçalho do consolidado — aciona prioridade Sherlock
+is_fallback: bool = False                     # fallback determinístico → Orquestrador pausa
+```
+
+Regras de parsing canônicas (defaults seguros):
+- `_contar_criticos`: lê `**Alertas CRITICA:** N` do cabeçalho (sobrevive a
+  truncagem de tabela); fallback para nomes de seção dos templates; default 0.
+- `_extrair_nota_metodologica`: `Sim/Não` → bool, default `False`.
+- `_extrair_ultimo_id`: campo "Último ID de alerta usado"; default `""`.
+
+## 6. Artefatos no filesystem
+
+| Lê | Escreve (via Orquestrador) |
+|---|---|
+| `MC_tasks_watson.md`; um arquivo do pacote por chamada (texto de `file_prep`); catálogo Irene (contexto via tasks) | `watson_analise_{nome}.md` (+ `watson_trace_{nome}.md` opcional em `_runtime/`) |
+| todas as `watson_analise_*.md` | `watson_consolidado.md` + `watson_registro_decisao.md` |
+| planilha + outputs isolados | `watson_planilha_rn.md` |
+| consolidado + crítica de Mycroft (+ trace) | `watson_resposta_r[n].md` |
+| — | checkpoints em `_runtime/watson_checkpoints/` (retomada + `--reuse-watson-from` com validação SHA-256) |
+
+Stranger Room: o Orquestrador persiste `01_apresentacao.md` / `03_resposta_r1.md`
+/ `05_resposta_r2.md` na fase `watson_integridade` — Watson não escreve na sala
+diretamente.
+
+## 7. Fluxo de execução por call_type
+
+1. `analisar_arquivo` × N, na ordem das tasks de Mycroft; checkpoint por arquivo;
+   ID de alerta encadeado pelo invocador.
+2. `consolidar`: monolítico até 600k chars; acima, `dividir_lotes_consolidacao` →
+   `_consolidar_em_lotes` (marcadores `[CONSOLIDAÇÃO PARCIAL — LOTE i/N]`,
+   documentados no heartbeat) → redução final via `_chamar_consolidar`.
+3. `validacao_planilha_rn`: CONDICIONAL — flag `Planilha de Verificação no
+   pacote` de `MC_tasks_watson.md`.
+4. `responder_critica`: até 2 rodadas; recebe a crítica como input (por isso
+   Watson pode ser desenvolvido antes da fatia M2 de Mycroft — fixture do
+   baseline).
+5. A2 (revalidação): instrução de confronto com o histórico A1 nas tasks.
+
+## 8. Erro e resiliência
+
+- Retry 4× / backoff 30s; recusa do filtro ChatTCU ("I'm sorry...") = falha de
+  chamada, não análise.
+- Arquivo não analisável (RF-WA-08): registra e segue; `has_unanalyzable_files`.
+- Fallback determinístico → `is_fallback=True` → o Orquestrador pausa
+  (`PAUSADO_LESTRADE`, marker `_runtime/fallback_watson_integridade.md`) ANTES
+  da Stranger Room; `retomar_apos_fallback()` re-executa a fase com análises
+  voltando dos checkpoints.
+- Map-reduce evita a chamada monolítica gigante (lição da rodada 2026-06-11);
+  o consolidado em lotes **preserva** `nota_metodologica_com_alteracao` (fix).
+
+## 9. Decisões v2
+
+| Tema | Decisão |
+|---|---|
+| Assinaturas, `WatsonOutput` e defaults de parsing | **Preservar** (contrato com Orquestrador/Mycroft) |
+| Prompts (soul/skills/heartbeat) | **Preservar byte-idêntico** |
+| Map-reduce do consolidar (limiar 600k chars, marcadores) | **Preservar** — comportamento canônico pós-correção |
+| Checkpoints por arquivo + `--reuse-watson-from` | **Preservar** (contrato com autorun/resume) |
+| `file_prep.py` | **Preservar conversões e allowlist**; estrutura interna aberta |
+| Template de ocorrência em 4 blocos + fonte de dado (item P1 nº 4) | **Aberta** — calibração de skills/heartbeat; se aplicada, registrar aqui e repontuar contra o gabarito |
+| Formato numérico estrito do cabeçalho | **Preservar** (calibração F1 já aplicada) |
+
+## 10. Testes de referência v1
+
+- `tests/unit/test_file_prep.py` — conversões por formato.
+- `tests/unit/test_resiliencia_agentes.py` — map-reduce, `is_fallback`, lotes.
+- `tests/unit/test_ciclo_atividade2.py` — confronto A2.
+- `tests/integration/test_ciclo_completo.py` — fase Watson no E2E.
+- Golden: artefatos do baseline `MOD_010_A1_20260602T202655Z`
+  (`watson_consolidado.md`, `watson_registro_decisao.md`) e gabarito
+  `MOD_SINT_001`.
+
+---
+
+## 11. Pacote de Trabalho
+
+### Pacote de Trabalho PT-WA-1 — Reescrita do invocador Watson + file_prep
+**Fatia/Fase:** Watson (completo) | **Pré-requisitos:** G-M1, G-IR | **Status:** A INICIAR
+
+#### Objetivo
+Reescrever `WatsonAgent` (análise por arquivo, consolidação map-reduce,
+validação condicional da planilha, resposta a crítica) e `file_prep.py`,
+preservando o contrato de parsing e os campos de cabeçalho monitorados.
+
+#### Contexto mínimo (leitura obrigatória do devsquad)
+Este derivado (Seções 2–9) + `docs/reescrita_v2/watson/PRD_derivado_watson.md`
+(Seções 3–5, 8) + `docs/agentes/watson/heartbeat.md` +
+`docs/reescrita_v2/00_METODOLOGIA.md` (Seções 5 e 8).
+
+#### Escopo — entregáveis
+- `WatsonAgent`: `analisar_arquivo`, `consolidar` (+ `dividir_lotes_consolidacao`,
+  `_consolidar_em_lotes`), `validacao_planilha_rn`, `responder_critica`,
+  `_parsear_output` e helpers de cabeçalho.
+- `agents/file_prep.py` (conversões + `ARQUIVOS_SEMPRE_ANALISE`).
+- Testes unitários equivalentes aos v1.
+- **Fora de escopo:** Orquestrador (tracker de ID, loop de rodadas, gate de
+  fallback), Mycroft, Irene, `models.py`.
+
+#### Arquivos de referência v1 (somente leitura)
+`src/diogenes/agents/watson.py`, `src/diogenes/agents/file_prep.py`,
+`src/diogenes/agents/heartbeat.py`, `src/diogenes/models.py`,
+`src/diogenes/orchestrator/orchestrator.py` (tracker `_proximo_id_alerta`).
+
+#### Arquivos a produzir (v2)
+Na branch `feat/reescrita-v2`, mesmo path: `src/diogenes/agents/watson.py`,
+`src/diogenes/agents/file_prep.py` (+ testes em `tests/unit/`).
+
+#### Critérios de aceite
+- [ ] RF-WA-01..10 atestados com evidência `arquivo:linha`.
+- [ ] `diogenes bench preview watson --call-type analise_arquivo` (e demais) byte-idêntico ao v1.
+- [ ] `_contar_criticos` lê inteiro do cabeçalho com fallback de seção; defaults seguros.
+- [ ] Map-reduce dispara acima de 600k chars; `nota_metodologica_com_alteracao` preservada no consolidado em lotes.
+- [ ] `validacao_planilha_rn` só roda com a flag da Planilha de Verificação.
+- [ ] `responder_critica` validado com crítica-fixture real do baseline.
+- [ ] `is_fallback=True` em todo fallback determinístico.
+
+#### Prompt sugerido (colar no Copilot devsquad)
+> Você vai reescrever o agente Watson do projeto Diógenes (branch
+> `feat/reescrita-v2`): `src/diogenes/agents/watson.py` e
+> `src/diogenes/agents/file_prep.py`. Leia
+> `docs/reescrita_v2/watson/SDD_derivado_watson.md` (Seções 3–9) e o PRD
+> derivado. O código v1 é referência canônica — prompts byte-idênticos
+> (`system = soul.md + skills.md`; `user = heartbeat[call_type] + inputs`).
+> Restrições inegociáveis: síncrono sem threads/asyncio; `config.py` único
+> leitor de config; `models.py` intocado (reusar `WatsonOutput`); Watson não
+> interpreta metodologia (Art. 6) — isso é prompt, não código, mas o invocador
+> jamais injeta metodologia no contexto de Watson; um arquivo por chamada de
+> análise; consolidar nunca recebe os originais do pacote RFB; ChatTCU único
+> provider. Comportamentos canônicos a preservar: map-reduce acima de 600k chars
+> com marcadores de lote; parsing de cabeçalho com defaults seguros
+> (`**Alertas CRITICA:** N` inteiro, fallback por seção); `is_fallback` marcado
+> em fallback determinístico; checkpoints por arquivo. Entregáveis: os dois
+> módulos + testes equivalentes a `test_file_prep.py` e
+> `test_resiliencia_agentes.py` (parte Watson).
+
+---
+
+*DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*

@@ -74,8 +74,12 @@ agentes:
     max_tokens: 8000    # ChatTCU piloto; OpenRouter legítimo ~16.4k tok
     max_tokens_ciclo: 131072
     timeout_segundos: 1500  # 600→1500 (2026-06-10): validacao_inicial estourou 600s 4× no ciclo
-                            # MOD_SINT_001_A1_20260610T133554Z e colapsou em fallback determinístico
-    max_tentativas_retry: 4   # aumentado de 2→4
+                            # MOD_SINT_001_A1_20260610T133554Z e colapsou em fallback determinístico.
+                            # 2026-06-11 (MOD_010): estourou 1500s 4× — timeout maior não resolve;
+                            # validacao_inicial agora usa degradação escalonada (sherlock.py):
+                            # 2 tentativas com pacote completo → 2 com réguas truncadas → pausa
+                            # do ciclo (PAUSADO_LESTRADE) em vez de fallback silencioso.
+    max_tentativas_retry: 4   # demais call_types; validacao_inicial usa 2 por estágio (override)
     backoff_segundos: 30      # aumentado de 10→30s
 
 # Teto de custo global por ciclo em USD (RNF-CUST-02)

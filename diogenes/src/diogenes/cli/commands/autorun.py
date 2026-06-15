@@ -11,6 +11,9 @@ ocorrências), o ciclo é chancelado automaticamente. Bloqueado em dev_mode.
 """
 from __future__ import annotations
 
+import hashlib
+import shutil
+import time
 import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,6 +37,13 @@ app = typer.Typer()
 # inesperado de pausas (cada iteração resolve no máximo uma pausa do ciclo).
 _MAX_RETOMADAS = 6
 
+# Pausa por fallback determinístico (LLM indisponível): número máximo de
+# retomadas automáticas e cooldown entre elas — dá tempo ao ChatTCU recuperar
+# antes de re-executar a fase. Esgotadas as retomadas, o ciclo permanece
+# PAUSADO_LESTRADE sem seal; retomar de manhã com `diogenes resume`.
+_MAX_RETOMADAS_FALLBACK = 2
+_FALLBACK_RETRY_COOLDOWN_S = 300
+
 
 @app.command()
 def autorun(
@@ -46,6 +56,14 @@ def autorun(
     auto_seal: bool = typer.Option(
         False, "--auto-seal",
         help="Se o Motor de Saída confirmar LIMPO, chancela automaticamente. Bloqueado em dev_mode.",
+    ),
+    reuse_watson_from: str | None = typer.Option(
+        None, "--reuse-watson-from",
+        help=(
+            "Cycle ID anterior do qual reaproveitar checkpoints de análise Watson. "
+            "Copia apenas checkpoints de arquivos com SHA-256 idêntico — arquivos "
+            "alterados são reanalisados normalmente."
+        ),
     ),
 ) -> None:
     """Executa o ciclo completo sem paradas (auto-Lestrade).
@@ -81,6 +99,17 @@ def autorun(
         f"Inputs verificados: {len(manifest.input_files)} arquivos ({n_analise} para análise)"
     )
     display.passo_ok(f"Ciclo criado: {cycle}")
+
+    # ── 1b. Reuso de checkpoints Watson de ciclo anterior (opcional) ─────────
+    if reuse_watson_from:
+        copiados, ignorados = _reusar_checkpoints_watson(
+            cfg.workspace.path, manifest, reuse_watson_from
+        )
+        display.passo_ok(
+            f"Checkpoints Watson reaproveitados de {reuse_watson_from}: "
+            f"{copiados} arquivo(s) (sha idêntico); {ignorados} serão reanalisados."
+        )
+
     _abrir_painel(cfg.workspace.path, cycle)
 
     # ── 2. Confirmação automática do manifesto ───────────────────────────────
@@ -180,9 +209,12 @@ def _resolver_pausas(
     Enquanto o orquestrador devolve "" (pausa), relê o status e retoma:
       - AGUARDANDO_DECISAO_LESTRADE_ALERTA → retomar_apos_alerta
       - AGUARDANDO_COMPLETUDE             → retomar_apos_completude (rede de segurança)
+      - PAUSADO_LESTRADE com marker de fallback → cooldown + retomar_apos_fallback
+        (até _MAX_RETOMADAS_FALLBACK vezes; depois o ciclo permanece pausado, SEM seal)
     Qualquer outro estado encerra o loop (situação inesperada).
     """
     iteracoes = 0
+    retomadas_fallback = 0
     while resultado == "" and iteracoes < _MAX_RETOMADAS:
         record = audit.get_cycle(manifest.cycle_id)
         status = record["status"] if record else "?"
@@ -192,10 +224,75 @@ def _resolver_pausas(
         elif status == CycleState.AGUARDANDO_COMPLETUDE.value:
             display.aviso("Completude do Sherlock insuficiente — retomando automaticamente.")
             resultado = orq.retomar_apos_completude(manifest)
+        elif (status == CycleState.PAUSADO_LESTRADE.value
+              and orq.tem_fallback_pendente() is not None):
+            if retomadas_fallback >= _MAX_RETOMADAS_FALLBACK:
+                display.aviso(
+                    "Fallback determinístico persistente — retomadas automáticas esgotadas. "
+                    f"Ciclo permanece pausado; de manhã: diogenes resume --cycle {manifest.cycle_id}"
+                )
+                break
+            retomadas_fallback += 1
+            display.aviso(
+                f"Agente em fallback determinístico (LLM indisponível) — aguardando "
+                f"{_FALLBACK_RETRY_COOLDOWN_S}s e retomando a fase "
+                f"({retomadas_fallback}/{_MAX_RETOMADAS_FALLBACK})."
+            )
+            time.sleep(_FALLBACK_RETRY_COOLDOWN_S)
+            resultado = orq.retomar_apos_fallback(manifest)
         else:
             break
         iteracoes += 1
     return resultado
+
+
+def _sha256_arquivo(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for bloco in iter(lambda: f.read(1 << 20), b""):
+            h.update(bloco)
+    return h.hexdigest()
+
+
+def _reusar_checkpoints_watson(
+    workspace: Path, manifest: CycleManifest, src_cycle: str
+) -> tuple[int, int]:
+    """
+    Copia para o ciclo novo os checkpoints Watson do ciclo `src_cycle` cujos
+    arquivos de input têm SHA-256 idêntico ao do manifesto atual. Evita re-rodar
+    horas de análise por arquivo quando o pacote de entrega não mudou.
+    Retorna (copiados, ignorados).
+    """
+    from diogenes.orchestrator.orchestrator import _watson_ckpt_path
+
+    src_dir = workspace / "cycles" / src_cycle
+    src_ckpt = src_dir / "_runtime" / "watson_checkpoints"
+    src_inputs = src_dir / "inputs"
+    if not src_ckpt.is_dir():
+        display.aviso(
+            f"--reuse-watson-from: ciclo '{src_cycle}' sem watson_checkpoints — ignorado."
+        )
+        return 0, 0
+
+    dst_ckpt = workspace / "cycles" / manifest.cycle_id / "_runtime" / "watson_checkpoints"
+    dst_ckpt.mkdir(parents=True, exist_ok=True)
+
+    copiados = 0
+    ignorados = 0
+    for fi in manifest.input_files:
+        if fi.categoria != "analisavel":
+            continue
+        ckpt_origem = _watson_ckpt_path(src_ckpt, fi.rel_path)
+        arquivo_antigo = src_inputs / fi.rel_path
+        if not ckpt_origem.exists() or not arquivo_antigo.exists():
+            ignorados += 1
+            continue
+        if fi.sha256 and _sha256_arquivo(arquivo_antigo) != fi.sha256:
+            ignorados += 1   # conteúdo mudou — reanalisar
+            continue
+        shutil.copy2(ckpt_origem, _watson_ckpt_path(dst_ckpt, fi.rel_path))
+        copiados += 1
+    return copiados, ignorados
 
 
 def _abrir_painel(workspace: Path, cycle: str) -> None:

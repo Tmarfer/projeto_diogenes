@@ -440,7 +440,7 @@ real, usado na Fase D.
 - Exceções em `except` clauses usam `raise ... from e` (B904)
 - Nenhuma semicolon em statements múltiplos (E702)
 
-**Estado atual:** 216 testes passando, 1 skipped (`docling` não instalado no Mac), ruff limpo nos arquivos tocados.
+**Estado atual:** 374 testes passando, ruff limpo nos arquivos tocados.
 
 ---
 
@@ -490,8 +490,49 @@ entre famílias de modelo (`gpt-5.4`, `gpt-5.5`, Claude).
 - ~40 erros de mypy pré-existentes (`dict` sem type args, etc.)
 - `fase_ativa: B` em `agents_spec.yaml` é apenas rótulo de rastreabilidade
 
+### Resiliência pós-rodada noturna MOD_010 (2026-06-11)
+
+Causa raiz da rodada de 7h "perdida": `sherlock.validacao_inicial` estourou o
+read-timeout de 1500s **4× idênticas** e caiu num fallback determinístico que
+fabricava as 11 seções — passou na completude, Mycroft aprovou e o `--auto-seal`
+chancelou um ciclo metodologicamente vazio (`NAO_VERIFICAVEL_MAJORITARIAMENTE`
+era artefato da falha, não achado). Correções:
+
+- `models.py` — `is_fallback` em `WatsonOutput`/`SherlockOutput`; todo fallback
+  determinístico agora é marcado e **nunca** segue para revisão/consolidação.
+- `agents/sherlock.py` — `validar()` com degradação escalonada: pacote completo
+  (2 tentativas) → réguas truncadas via `reduzir_pacote_sherlock` (40k metodologia /
+  15k corpus, com ressalva obrigatória no output) → fallback marcado.
+- `agents/watson.py` — `consolidar()` map-reduce: acima de 600k chars as análises
+  são consolidadas por lotes (`[CONSOLIDAÇÃO PARCIAL — LOTE i/N]`) e reduzidas numa
+  chamada final (marcadores documentados no heartbeat). Evita a chamada monolítica
+  de 2,43M chars/615k tokens da rodada noturna. Fix adicional: o consolidado não
+  descarta mais `nota_metodologica_com_alteracao` (a propagação à Frente 3b nunca
+  disparava).
+- `orchestrator.py` — gate de fallback ANTES de escrever no Stranger Room (fase
+  permanece re-executável): pausa em `PAUSADO_LESTRADE` com marker
+  `_runtime/fallback_{fase}.md`; `retomar_apos_fallback()` re-executa a fase
+  (análises Watson voltam dos checkpoints). `states.py`: transições
+  `EM_EXECUCAO_{WATSON,SHERLOCK} → PAUSADO_LESTRADE` e `PAUSADO → EM_EXECUCAO_WATSON`.
+- `autorun.py` — pausa por fallback: até 2 retomadas automáticas com cooldown de
+  300s; esgotadas, o ciclo fica pausado SEM seal. Nova flag `--reuse-watson-from
+  <cycle_id>`: copia checkpoints Watson de ciclo anterior validando SHA-256 por
+  arquivo (re-rodada do MOD_010 sem repetir ~5h de análise por arquivo).
+- `resume.py` — despacha para `retomar_apos_fallback` quando há marker pendente.
+- Testes: `tests/unit/test_resiliencia_agentes.py` (17 testes).
+
 ### Próximo passo
-Novo `autorun` completo com as correções — Sherlock agora recebe a RN inteira.
-O painel abre sozinho no browser durante a execução.
+Re-rodada do MOD_010 reaproveitando a análise por arquivo da rodada de 2026-06-11:
+
+```bash
+caffeinate -i diogenes autorun --module MOD_010 --activity 1 \
+  --delivery .../MOD_010_Pessoa_Fisica \
+  --reuse-watson-from MOD_010_A1_20260611T020454Z \
+  --auto-seal
+```
+
+Com os checkpoints reaproveitados, o ciclo pula direto para a consolidação Watson
+(agora em lotes) e re-tenta a fase Sherlock com degradação escalonada. Se o ChatTCU
+voltar a não responder, o ciclo pausa SEM chancela — retomar com `diogenes resume`.
 
 *DVA-CBS | Projeto Diógenes | TC 015.848/2025-6 | Uso Interno Restrito*

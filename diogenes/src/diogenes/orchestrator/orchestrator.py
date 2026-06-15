@@ -198,9 +198,10 @@ class Orchestrator:
                     self._events.log("POST_IRENE_COOLDOWN_FIM",
                                      details={"segundos": cooldown})
 
-            decisao_watson, tasks_result, output_watson, _ = (
-                self._executar_fase_watson(manifest)
-            )
+            fase_watson = self._executar_fase_watson(manifest)
+            if fase_watson is None:
+                return ""   # consolidação Watson em fallback — pausado para retomada
+            decisao_watson, tasks_result, output_watson, _ = fase_watson
 
             if decisao_watson.has_critical_alert:
                 self._transicionar(CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA)
@@ -228,6 +229,94 @@ class Orchestrator:
         return self._executar_fase_sherlock_e_consolidar(
             manifest, _DTR(tasks_text="", planilha_verificacao_no_pacote=False), None
         )
+
+    def _pausar_por_fallback(self, fase: str, call_type: str, texto: str) -> str:
+        """
+        Pausa o ciclo quando um agente devolveu fallback determinístico
+        (LLM indisponível). O texto do fallback vai para _runtime/ apenas como
+        auditoria — o Stranger Room da fase permanece intocado, então a fase é
+        integralmente re-executável via `diogenes resume` (retomar_apos_fallback).
+        """
+        marker = self._runtime_dir / f"fallback_{fase}.md"
+        marker.write_text(
+            f"# Fallback determinístico — {call_type}\n\n"
+            f"Fase: {fase}\nGravado em: {datetime.now(UTC).isoformat()}\n\n"
+            f"O ciclo foi pausado (PAUSADO_LESTRADE). Retomar com "
+            f"`diogenes resume --cycle {self._cycle_id}`.\n\n---\n\n{texto}",
+            encoding="utf-8",
+        )
+        self._events.log("AGENTE_FALLBACK_LLM", phase=fase,
+                         details={"call_type": call_type, "marker": marker.name})
+        self._transicionar(CycleState.PAUSADO_LESTRADE)
+        logger.warning(
+            "[Orchestrator] %s caiu em fallback determinístico — ciclo pausado. "
+            "Retomar com `diogenes resume --cycle %s`.", call_type, self._cycle_id,
+        )
+        return ""
+
+    def tem_fallback_pendente(self) -> str | None:
+        """Retorna a fase com fallback pendente de retomada, ou None."""
+        for fase in ("watson_integridade", "sherlock_validacao"):
+            if (self._runtime_dir / f"fallback_{fase}.md").exists():
+                return fase
+        return None
+
+    def retomar_apos_fallback(self, manifest: CycleManifest) -> str:
+        """
+        Chamado por `diogenes resume` (e pelo autorun) quando o ciclo pausou por
+        fallback determinístico de um agente. Re-executa a fase afetada:
+          - watson_integridade: análises por arquivo voltam dos checkpoints;
+            apenas a consolidação é re-chamada; segue para Sherlock.
+          - sherlock_validacao: re-executa a fase Sherlock completa a partir
+            do Stranger Room de Watson (imutável, já validado).
+        """
+        record = self._audit.get_cycle(self._cycle_id)
+        if not record or record["status"] != CycleState.PAUSADO_LESTRADE.value:
+            estado_atual = record.get("status") if record else "N/A"
+            raise OrchestratorError(
+                f"Ciclo não está em PAUSADO_LESTRADE (estado atual: {estado_atual})"
+            )
+        fase = self.tem_fallback_pendente()
+        if fase is None:
+            raise OrchestratorError(
+                "Nenhum marker de fallback em _runtime/ — use `diogenes resume` "
+                "apenas para ciclos pausados por fallback ou alerta crítico."
+            )
+        self._events.log("FALLBACK_RETOMADA", phase=fase, details={})
+
+        if fase == "watson_integridade":
+            fase_watson = self._executar_fase_watson(manifest)
+            if fase_watson is None:
+                return ""   # caiu em fallback de novo — permanece pausado
+            self._arquivar_marker_fallback(fase)
+            decisao_watson, tasks_result, output_watson, _ = fase_watson
+            if decisao_watson.has_critical_alert:
+                self._transicionar(CycleState.AGUARDANDO_DECISAO_LESTRADE_ALERTA)
+                self._events.log("CRITICAL_ALERT_NOTIFIED", phase=fase,
+                                 details={"count": decisao_watson.critical_alerts_count})
+                return ""
+            return self._executar_fase_sherlock_e_consolidar(
+                manifest, tasks_result, output_watson
+            )
+
+        # sherlock_validacao — mesmos defaults seguros de retomar_apos_alerta
+        from diogenes.models import DefinirTasksResult as _DTR
+        resultado = self._executar_fase_sherlock_e_consolidar(
+            manifest, _DTR(tasks_text="", planilha_verificacao_no_pacote=False), None
+        )
+        if resultado:
+            self._arquivar_marker_fallback(fase)
+        return resultado
+
+    def _arquivar_marker_fallback(self, fase: str) -> None:
+        """Renomeia o marker para .resolvido — preserva auditoria, libera a retomada."""
+        marker = self._runtime_dir / f"fallback_{fase}.md"
+        if marker.exists():
+            destino = self._runtime_dir / (
+                f"fallback_{fase}.resolvido_"
+                f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.md"
+            )
+            marker.rename(destino)
 
     def retomar_apos_completude(self, manifest: CycleManifest) -> str:
         """
@@ -430,9 +519,11 @@ class Orchestrator:
 
     def _executar_fase_watson(
         self, manifest: CycleManifest
-    ) -> tuple[DecisaoFinal, DefinirTasksResult, WatsonOutput, list[WatsonOutput]]:
+    ) -> tuple[DecisaoFinal, DefinirTasksResult, WatsonOutput, list[WatsonOutput]] | None:
         """
-        Retorna (decisao_final, tasks_result, output_watson_consolidado, analises_por_arquivo).
+        Retorna (decisao_final, tasks_result, output_watson_consolidado, analises_por_arquivo),
+        ou None quando a consolidação caiu em fallback determinístico e o ciclo foi
+        pausado (PAUSADO_LESTRADE) para retomada via `diogenes resume`.
         tasks_result carrega planilha_verificacao_no_pacote para uso na fase Sherlock.
         output_watson_consolidado carrega nota_metodologica_com_alteracao para propagação.
         analises_por_arquivo é necessário para validacao_planilha_rn (Frente 1/3).
@@ -522,6 +613,12 @@ class Orchestrator:
 
         # Fase 2: consolidação
         output_watson = self._watson.consolidar(analises_watson, tasks)
+        if output_watson.is_fallback:
+            # Nada foi escrito no Stranger Room desta fase — a fase é re-executável.
+            # As análises por arquivo permanecem nos checkpoints: a retomada re-roda
+            # apenas a consolidação.
+            self._pausar_por_fallback(fase, "consolidar_watson", output_watson.texto)
+            return None
         self._sr.escrever_apresentacao(fase=fase, author="watson",
                                         content=output_watson.texto)
         proximo_id = _avancar_id_alerta(proximo_id, output_watson)
@@ -657,9 +754,14 @@ class Orchestrator:
         self._events.log("PHASE_STARTED", phase=fase, agent="sherlock")
 
         # Fase 1: validação metodológica monolítica (call_type validacao_inicial —
-        # todos os pontos numa única chamada; o modo per-ponto verificar_ponto é
-        # reservado à bancada).
+        # todos os pontos numa única chamada com degradação escalonada; o modo
+        # per-ponto verificar_ponto é reservado à bancada).
         output_pontos = self._sherlock.validar(pacote)
+        if output_pontos.is_fallback:
+            # A validação NÃO executou (LLM indisponível em todos os estágios).
+            # Nada foi escrito no Stranger Room desta fase — pausar para retomada
+            # em vez de consolidar um relatório materialmente vazio.
+            return self._pausar_por_fallback(fase, "validacao_inicial", output_pontos.texto)
 
         # Frente 3a: validacao_planilha_rn_sherlock — acionado condicionalmente quando
         # a Planilha de Verificação está no manifesto e Watson já a validou.
@@ -683,6 +785,8 @@ class Orchestrator:
         # output (não o de uma verificação de ponto) que sofre review de Mycroft e
         # passa pela verificação de completude.
         output_sherlock = self._sherlock.consolidar(output_pontos, output_planilha_sherlock)
+        if output_sherlock.is_fallback:
+            return self._pausar_por_fallback(fase, "consolidar_sherlock", output_sherlock.texto)
         self._events.log("SHERLOCK_CONSOLIDADO", phase=fase)
         self._persistir_ocorrencias_sherlock(output_sherlock.texto)
 

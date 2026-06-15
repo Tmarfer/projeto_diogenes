@@ -21,6 +21,55 @@ from diogenes.models import LLMCall, LLMMessage, SherlockOutput
 
 logger = logging.getLogger(__name__)
 
+# ── Degradação escalonada da validação monolítica ────────────────────────────
+# Retentativas idênticas de um prompt que estoura o timeout não convergem
+# (rodadas 2026-06-10 MOD_SINT_001 e 2026-06-11 MOD_010: 4× timeout no mesmo
+# payload). A estratégia é: poucas tentativas por estágio, reduzindo o payload
+# entre estágios, e só então o fallback determinístico — que agora é marcado
+# como is_fallback e pausa o ciclo no Orquestrador em vez de seguir adiante.
+_TENTATIVAS_POR_ESTAGIO = 2
+
+# Limites de truncagem das réguas no estágio degradado (chars do corpo da seção).
+# Os títulos correspondem aos cabeçalhos montados por Mycroft.montar_pacote_sherlock.
+_LIMITES_REDUCAO_PACOTE: dict[str, int] = {
+    "## Metodologia e Regra de Negócio do Módulo": 40_000,
+    "## Arcabouço Jurídico Curado — Dispositivos Aplicáveis": 15_000,
+}
+
+_BANNER_MODO_DEGRADADO = (
+    "[MODO DEGRADADO — REEXECUÇÃO COM PACOTE REDUZIDO]\n"
+    "A tentativa anterior desta validação excedeu o tempo-limite da infraestrutura. "
+    "As réguas metodológica e jurídica abaixo foram truncadas para viabilizar a chamada. "
+    "Execute o protocolo normalmente e registre, em cada ponto afetado pela truncagem, "
+    "a ressalva expressa de que a régua estava parcial nesta execução.\n\n"
+)
+
+
+def reduzir_pacote_sherlock(pacote: str) -> str:
+    """
+    Trunca as seções de régua (metodologia + arcabouço jurídico) do pacote de
+    Sherlock para o estágio degradado da validação. Determinístico, sem LLM.
+    A análise de Watson e a síntese de Mycroft permanecem íntegras.
+    """
+    resultado = pacote
+    for titulo, limite in _LIMITES_REDUCAO_PACOTE.items():
+        idx = resultado.find(titulo)
+        if idx < 0:
+            continue
+        corpo_inicio = idx + len(titulo)
+        proxima = resultado.find("\n\n---\n\n## ", corpo_inicio)
+        fim = proxima if proxima >= 0 else len(resultado)
+        corpo = resultado[corpo_inicio:fim]
+        if len(corpo) <= limite:
+            continue
+        marcador = (
+            f"\n\n[RÉGUA TRUNCADA — MODO DEGRADADO: seção original com "
+            f"{len(corpo)} chars reduzida a {limite} chars para viabilizar a chamada. "
+            f"Registrar como ressalva metodológica desta execução.]"
+        )
+        resultado = resultado[:corpo_inicio] + corpo[:limite] + marcador + resultado[fim:]
+    return resultado
+
 
 class SherlockAgent:
     FASE = "sherlock_validacao"
@@ -37,15 +86,51 @@ class SherlockAgent:
         self._heartbeat = HeartbeatLoader(docs_dir / "heartbeat.md")
 
     def validar(self, pacote_sherlock: str) -> SherlockOutput:
+        """
+        Validação metodológica monolítica com degradação escalonada:
+          Estágio 1 — pacote completo (2 tentativas).
+          Estágio 2 — pacote com réguas truncadas + ressalva obrigatória (2 tentativas).
+          Estágio 3 — fallback determinístico marcado is_fallback=True
+                      (o Orquestrador pausa o ciclo; nada segue para consolidação).
+        """
         call_type = "validacao_inicial"
         hb = self._heartbeat.get_section(call_type)
+
+        # Estágio 1: pacote completo
         user = injetar_heartbeat(hb, pacote_sherlock)
         try:
-            resp = self._llm.complete(self._montar_call(call_type, user))
+            resp = self._llm.complete(
+                self._montar_call(call_type, user, max_tentativas=_TENTATIVAS_POR_ESTAGIO)
+            )
             return self._parsear_output(resp.content)
         except (LLMCallError, LLMTimeoutError) as exc:
-            logger.warning("[Sherlock] validar indisponível — fallback determinístico: %s", exc)
-            return self._fallback_output_completo()
+            logger.warning(
+                "[Sherlock] validar estágio 1 (pacote completo, %d chars) falhou: %s",
+                len(pacote_sherlock), exc,
+            )
+
+        # Estágio 2: pacote degradado (réguas truncadas)
+        pacote_reduzido = reduzir_pacote_sherlock(pacote_sherlock)
+        if len(pacote_reduzido) < len(pacote_sherlock):
+            user = injetar_heartbeat(hb, _BANNER_MODO_DEGRADADO + pacote_reduzido)
+            try:
+                resp = self._llm.complete(
+                    self._montar_call(call_type, user, max_tentativas=_TENTATIVAS_POR_ESTAGIO)
+                )
+                logger.warning(
+                    "[Sherlock] validar concluído em MODO DEGRADADO "
+                    "(pacote %d → %d chars; réguas truncadas).",
+                    len(pacote_sherlock), len(pacote_reduzido),
+                )
+                return self._parsear_output(resp.content)
+            except (LLMCallError, LLMTimeoutError) as exc:
+                logger.warning(
+                    "[Sherlock] validar estágio 2 (pacote reduzido, %d chars) falhou: %s",
+                    len(pacote_reduzido), exc,
+                )
+
+        logger.warning("[Sherlock] validar indisponível — fallback determinístico marcado.")
+        return self._fallback_output_completo()
 
     def validacao_planilha_rn_sherlock(
         self,
@@ -74,6 +159,7 @@ class SherlockAgent:
                 dilemmas_count=0,
                 has_divergencias=False,
                 secoes={},
+                is_fallback=True,
             )
 
     def consolidar(
@@ -131,7 +217,9 @@ class SherlockAgent:
         skills = (self._docs_dir / "skills.md").read_text(encoding="utf-8")
         return f"{soul}\n\n---\n\n{skills}"
 
-    def _montar_call(self, call_type: str, user: str) -> LLMCall:
+    def _montar_call(
+        self, call_type: str, user: str, max_tentativas: int | None = None,
+    ) -> LLMCall:
         return LLMCall(
             call_id=gerar_call_id("sherlock", call_type),
             cycle_id=self._cycle_id, phase=self.FASE,
@@ -144,22 +232,32 @@ class SherlockAgent:
                 LLMMessage(role="user", content=user),
             ],
             timeout_segundos=self._spec.timeout_segundos,
-            max_tentativas_retry=self._spec.max_tentativas_retry,
+            max_tentativas_retry=(
+                max_tentativas if max_tentativas is not None
+                else self._spec.max_tentativas_retry
+            ),
             backoff_segundos=self._spec.backoff_segundos,
         )
 
     def _fallback_output_completo(self) -> SherlockOutput:
-        """Fallback com as 11 seções obrigatórias para passar _verificar_completude_sherlock."""
+        """
+        Fallback determinístico — INVÁLIDO para consolidação. is_fallback=True faz o
+        Orquestrador pausar o ciclo (PAUSADO_LESTRADE) em vez de seguir adiante; o
+        texto existe apenas para auditoria em _runtime/ e para consumidores legados.
+        """
         secoes_txt = "\n".join(
             f"### 10.{i}\nNão avaliado — LLM indisponível no momento da execução."
             for i in range(1, 12)
         )
         texto = (
             "## Validação Metodológica Sherlock\n\n"
-            "**[FALLBACK — LLM indisponível]** Validação concluída com fallback determinístico. "
-            "Nenhum dilema interpretativo identificado na análise automatizada disponível.\n\n"
+            "**[FALLBACK — LLM indisponível — RESULTADO INVÁLIDO PARA CONSOLIDAÇÃO]** "
+            "A validação metodológica NÃO foi executada: a infraestrutura LLM não respondeu "
+            "em nenhum estágio (pacote completo e pacote reduzido). Este texto não atesta "
+            "aderência nem não-verificabilidade — o ciclo deve ser retomado com "
+            "`diogenes resume` para reexecutar a fase.\n\n"
             "## Dilemas Interpretativos\n\n"
-            "(nenhum dilema identificado nesta execução)\n\n"
+            "(fase não executada)\n\n"
             f"## Relatório Estruturado\n\n{secoes_txt}\n"
         )
         return SherlockOutput(
@@ -167,6 +265,7 @@ class SherlockAgent:
             dilemmas_count=0,
             has_divergencias=False,
             secoes={},
+            is_fallback=True,
         )
 
     def _parsear_output(self, content: str) -> SherlockOutput:
